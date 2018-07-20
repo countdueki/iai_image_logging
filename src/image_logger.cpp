@@ -58,8 +58,29 @@ bool loadConfiguration(iai_image_logging_msgs::Configuration::Request& req,
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg, uint32_t level)
 {
-  g_cfg = cfg;
+    g_cfg = cfg;
+    dynamic_reconfigure::ReconfigureRequest req;
+    dynamic_reconfigure::ReconfigureResponse res;
+    dynamic_reconfigure::StrParameter format;
+    dynamic_reconfigure::IntParameter jpeg;
+    dynamic_reconfigure::IntParameter png;
+    dynamic_reconfigure::Config conf_req;
 
+    format.name = "format";
+    format.value = cfg.format;
+
+    jpeg.name = "jpeg_quality";
+    jpeg.value = cfg.jpeg_quality;
+
+    png.name = "png_level";
+    png.value = cfg.png_level;
+
+    req.config.strs.push_back(format);
+    req.config.ints.push_back(jpeg);
+    req.config.ints.push_back(png);
+
+    ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
+    ROS_INFO_STREAM("Set parameters");
 }
 
 /**
@@ -97,7 +118,6 @@ int main(int argc, char** argv)
     string topic = g_cfg.topic;
 
   ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 1, compressedImageCb);
-
 
   ros::Rate r(1.0);
 
