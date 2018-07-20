@@ -33,25 +33,24 @@ using mongodb_store::add_meta_for_msg;
 class ImageLogger
 {
 private:
-    // General Parameters
+  // General Parameters
   string topic_;
   string format_;
-    int jpeg_quality_;
+  int jpeg_quality_;
 
-    int png_level_;
-    string db_host_;
-    string collection_;
+  int png_level_;
+  string db_host_;
+  string collection_;
 
-    // Depth parameters
-    // double_t depth_max_;
-    // double_t depth_quantization_;
+  // Depth parameters
+  // double_t depth_max_;
+  // double_t depth_quantization_;
 
-    // Theora parameters
-    int keyframe_frequency_;
-    // int optimize_for_;
-    int t_quality_;
-    uint32_t target_bitrate_;
-
+  // Theora parameters
+  int keyframe_frequency_;
+  // int optimize_for_;
+  int t_quality_;
+  uint32_t target_bitrate_;
 
 public:
   const string& getTopic() const;
@@ -66,17 +65,17 @@ public:
 
   void setCollection(const string& collection_);
 
-    const string &getFormat() const;
+  const string& getFormat() const;
 
-    void setFormat(const string &format_);
+  void setFormat(const string& format_);
 
-    int getJpegQuality() const;
+  int getJpegQuality() const;
 
-    void setJpegQuality(int jpeg_quality);
+  void setJpegQuality(int jpeg_quality);
 
-    int getPngLevel() const;
+  int getPngLevel() const;
 
-    void setPngLevel(int png_level);
+  void setPngLevel(int png_level);
 
 public:
   ImageLogger(string topic) : topic_(topic)
@@ -86,7 +85,7 @@ public:
 
   ImageLogger()
   {
-      // TODO enter defaults
+    // TODO enter defaults
     topic_ = "/camera/rgb/image_raw";
     db_host_ = "localhost";
     collection_ = "db.image_color_compressed";
@@ -123,28 +122,34 @@ void ImageLogger::setCollection(const string& collection)
   ImageLogger::collection_ = collection;
 }
 
-const string &ImageLogger::getFormat() const {
-    return format_;
+const string& ImageLogger::getFormat() const
+{
+  return format_;
 }
 
-void ImageLogger::setFormat(const string &format) {
-    ImageLogger::format_ = format;
+void ImageLogger::setFormat(const string& format)
+{
+  ImageLogger::format_ = format;
 }
 
-int ImageLogger::getJpegQuality() const {
-    return jpeg_quality_;
+int ImageLogger::getJpegQuality() const
+{
+  return jpeg_quality_;
 }
 
-void ImageLogger::setJpegQuality(int jpeg_quality) {
-    ImageLogger::jpeg_quality_ = jpeg_quality;
+void ImageLogger::setJpegQuality(int jpeg_quality)
+{
+  ImageLogger::jpeg_quality_ = jpeg_quality;
 }
 
-int ImageLogger::getPngLevel() const {
-    return png_level_;
+int ImageLogger::getPngLevel() const
+{
+  return png_level_;
 }
 
-void ImageLogger::setPngLevel(int png_level) {
-    ImageLogger::png_level_ = png_level;
+void ImageLogger::setPngLevel(int png_level)
+{
+  ImageLogger::png_level_ = png_level;
 }
 
 #endif  // IAI_IMAGE_LOGGING_IMAGE_LOGGER_H

@@ -3,6 +3,7 @@
 import rospy
 
 import dynamic_reconfigure.client
+import iai_image_logging_msgs.cfg.DefaultConfig
 
 
 def callback(config):
@@ -10,17 +11,16 @@ def callback(config):
 
 
 if __name__ == "__main__":
-    rospy.init_node("dynamic_client")
+    rospy.init_node("image_logging_client")
 
-    client = dynamic_reconfigure.client.Client("dynamic_tutorials", timeout=30, config_callback=callback)
+    client = dynamic_reconfigure.client.Client("image_logger", timeout=30, config_callback=callback)
 
     r = rospy.Rate(0.1)
-    x = 0
+    i = 0
+    d = 0.0
+    config = iai_image_logging_msgs.cfg.DefaultConfig.defaults
     b = False
     while not rospy.is_shutdown():
-        x = x+1
-        if x>10:
-            x=0
-        b = not b
-        client.update_configuration({"int_param":x, "double_param":(1/(x+1)), "str_param":str(rospy.get_rostime()), "bool_param":b, "size":1})
-        r.sleep()
+
+      client.update_configuration({"int_param": i, "double_param": d, "str_param":str(rospy.get_rostime()), "bool_param": b, "size": 1})
+      r.sleep()
