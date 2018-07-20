@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(iai_image_logging)
+
+add_compile_options(-std=c++11)
+
+find_package(catkin REQUIRED
+        roscpp
+        dynamic_reconfigure
+        iai_image_logging_msgs
+        mongodb_store
+        mongodb_log
+
+        )
+
+catkin_package(
+          CATKIN_DEPENDS  iai_image_logging_msgs
+)
+
+include_directories(
+ ${catkin_INCLUDE_DIRS}
+)
+
+add_library(image_logger_lib src/image_logger.cpp
+        )
+
+add_executable(image_logger src/image_logger.cpp)
+
+ target_link_libraries(image_logger
+   ${catkin_LIBRARIES}
+ )
+

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>iai_image_logging</name>
+  <version>0.0.1</version>
+  <description>The iai_image_logging package</description>
+  <maintainer email="ta_wu@tzi.de">Tammo Wübbena</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>iai_image_logging_msgs</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>driver_base</build_depend>
+  <exec_depend>iai_image_logging_msgs</exec_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
+  <exec_depend>driver_base</exec_depend>
+  <export>
+  </export>
+</package>
