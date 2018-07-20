@@ -8,7 +8,7 @@
 
 DBClientConnection* mongodb_conn;
 
-iai_image_logging_msgs::DefaultConfig* g_cfg;
+iai_image_logging_msgs::DefaultConfig g_cfg;
 
 /**
  * Callback for the compressed images sent by one camera
@@ -16,10 +16,9 @@ iai_image_logging_msgs::DefaultConfig* g_cfg;
  */
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
-
   initialize();
   BSONObjBuilder document;
-  std::string collection = g_cfg->collection;
+  std::string collection = g_cfg.collection;
 
   ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " <<  msg->format);
 
@@ -33,14 +32,6 @@ void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 
 }
 
-void imageCb(sensor_msgs::ImageConstPtr msg)
-{
-  ROS_INFO_STREAM("Topic: " << g_cfg->topic);
-  ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with encoding " <<  msg->encoding);
-  ROS_INFO_STREAM("Size: " << msg->data.size() /1000 << " KB");
-
-
-}
 
 /**
  * Service for compression manipulation
@@ -67,37 +58,8 @@ bool loadConfiguration(iai_image_logging_msgs::Configuration::Request& req,
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg, uint32_t level)
 {
-  g_cfg = &cfg;
-  ROS_INFO_STREAM("Topic: " << cfg.topic);
-  ROS_INFO_STREAM("Format: " << cfg.format);
-  ROS_INFO_STREAM("JPEG quality: " << cfg.jpeg_quality);
-  ROS_INFO_STREAM("PNG level: " << cfg.png_level);
-  ROS_INFO_STREAM("DB host: " << cfg.db_host);
-  ROS_INFO_STREAM("Collection: " << cfg.collection);
+  g_cfg = cfg;
 
-  string param_topic = g_cfg->topic;
-  string format_t =  param_topic + "/compressed/format";
-  string jpeg_t = param_topic + "/compressed/jpeg_quality";
-  string png_t = param_topic + "/compressed/png_level";
-
-  ROS_INFO_STREAM("Format topic: " << format_t);
-  ROS_INFO_STREAM("JPEG quality topic: " << jpeg_t);
-  ROS_INFO_STREAM("PNG level topic: " << png_t);
-
-  ROS_INFO_STREAM("Format request: " << cfg.format);
-  ROS_INFO_STREAM("JPEG quality request: " << cfg.jpeg_quality);
-  ROS_INFO_STREAM("PNG level request: " << cfg.png_level);
-
-  ros::param::set(format_t, cfg.format);  // set compression to requested format
-  ros::param::set(jpeg_t,cfg.jpeg_quality);
-  ros::param::set(png_t,cfg.png_level);
-
-  /*
-     string check;
-     ros::param::get(topic, check);       // check if format is requested format
-     if (check == req.topic)
-       res.success = 1;  // Actual success report
-  */
 }
 
 /**
@@ -112,7 +74,6 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-
     // Server for dynamic_reconfigure callback
   dynamic_reconfigure::Server<iai_image_logging_msgs::DefaultConfig> server;
   dynamic_reconfigure::Server<iai_image_logging_msgs::DefaultConfig>::CallbackType f;
@@ -120,29 +81,23 @@ int main(int argc, char** argv)
   f = boost::bind(&configurationCb, _1, _2);
   server.setCallback(f);
 
-  // Handle mongodb client connection
-  string topic = g_cfg->topic;
-  string db_host = g_cfg->db_host;
 
-  string err = string("");
 
-  // Check connection to MongoDB
-  mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
-  if (!mongodb_conn->connect(db_host, err))
-  {
-    ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-    return -1;
-  }
+    // Check connection to MongoDB
+    string err = string("");
+    string db_host = g_cfg.db_host;
+    mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
+    if (!mongodb_conn->connect(g_cfg.db_host, err))
+    {
+        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+
+    }
+
+
+    string topic = g_cfg.topic;
 
   ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 1, compressedImageCb);
 
-  image_transport::ImageTransport it(n);
-  image_transport::TransportHints th("compressed",ros::TransportHints(),n,topic);
-  image_transport::SubscriberFilter(it,topic,1,th);
-  image_transport::Subscriber img_sub = it.subscribe(topic , 1, imageCb, ros::VoidPtr(), th);
-
-  //ros::ServiceServer service_cfg = n.advertiseService("image_logger/set_configuration", setConfiguration);
-  //ros::ServiceServer service_cfg_yaml = n.advertiseService("image_logger/load_configuration", loadConfiguration);
 
   ros::Rate r(1.0);
 
@@ -150,6 +105,9 @@ int main(int argc, char** argv)
 
   while (n.ok())
   {
+
+      ros::ServiceServer service_cfg = n.advertiseService("image_logger/set_configuration", setConfiguration);
+      ros::ServiceServer service_cfg_yaml = n.advertiseService("image_logger/load_configuration", loadConfiguration);
     ros::spinOnce();
     r.sleep();
   }
