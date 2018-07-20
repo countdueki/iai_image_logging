@@ -16,19 +16,7 @@ iai_image_logging_msgs::DefaultConfig g_cfg;
  */
 void imageCb(sensor_msgs::ImageConstPtr msg)
 {
-  initialize();
-  BSONObjBuilder document;
-  std::string collection = g_cfg.collection;
 
-  ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec);
-
-  Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-  // document.append("format", msg->format);
-  document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
-
-  add_meta_for_msg<sensor_msgs::Image>(msg, document);
-  mongodb_conn->insert(collection, document.obj());
 }
 
 /**
@@ -112,6 +100,8 @@ int main(int argc, char** argv)
   }
 
   string topic = g_cfg.topic;
+
+  // image_transport sub
   image_transport::ImageTransport it(n);
   image_transport::TransportHints th("compressed");
   image_transport::Subscriber img_sub = it.subscribe(topic, 1, imageCb, ros::VoidPtr(), th);
