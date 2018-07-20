@@ -8,19 +8,20 @@
 
 DBClientConnection* mongodb_conn;
 
-ImageLogger* iai_image_logger;  // initialize logger with standard topic "/camera/rgb/image_color/compressed"
+iai_image_logging_msgs::DefaultConfig* g_cfg;
 
 /**
  * Callback for the compressed images sent by one camera
  * @param msg compressed image pointer
  */
-void compressedImageCb(sensor_msgs::CompressedImage::ConstPtr msg)
+void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
+
   initialize();
   BSONObjBuilder document;
-  std::string collection = iai_image_logger->getCollection();
+  std::string collection = g_cfg->collection;
 
-  ROS_INFO("Saving Image at sec %u, type %s", msg->header.stamp.sec,  msg->format);
+  ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " <<  msg->format);
 
   Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
   document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
@@ -29,6 +30,16 @@ void compressedImageCb(sensor_msgs::CompressedImage::ConstPtr msg)
 
   add_meta_for_msg<sensor_msgs::CompressedImage>(msg, document);
   mongodb_conn->insert(collection, document.obj());
+
+}
+
+void imageCb(sensor_msgs::ImageConstPtr msg)
+{
+  ROS_INFO_STREAM("Topic: " << g_cfg->topic);
+  ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with encoding " <<  msg->encoding);
+  ROS_INFO_STREAM("Size: " << msg->data.size() /1000 << " KB");
+
+
 }
 
 /**
@@ -56,23 +67,18 @@ bool loadConfiguration(iai_image_logging_msgs::Configuration::Request& req,
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg, uint32_t level)
 {
-  ROS_INFO_STREAM("Listening to topic: " << cfg.topic);
-  ROS_INFO_STREAM("Database host: " << cfg.db_host);
+  g_cfg = &cfg;
+  ROS_INFO_STREAM("Topic: " << cfg.topic);
+  ROS_INFO_STREAM("Format: " << cfg.format);
+  ROS_INFO_STREAM("JPEG quality: " << cfg.jpeg_quality);
+  ROS_INFO_STREAM("PNG level: " << cfg.png_level);
+  ROS_INFO_STREAM("DB host: " << cfg.db_host);
   ROS_INFO_STREAM("Collection: " << cfg.collection);
 
-  iai_image_logger->setTopic(cfg.topic);
-  iai_image_logger->setFormat(cfg.format);
-  iai_image_logger->setJpegQuality(cfg.jpeg_quality);
-  iai_image_logger->setPngLevel(cfg.png_level);
-  iai_image_logger->setDbHost(cfg.db_host);
-  iai_image_logger->setCollection(cfg.collection);
-
-
-  // execute
-
-  string format_t = iai_image_logger->getTopic() + "/format";
-  string jpeg_t = iai_image_logger->getTopic() + "/jpeg_quality";
-  string png_t = iai_image_logger->getTopic() + "/png_level";
+  string param_topic = g_cfg->topic;
+  string format_t =  param_topic + "/compressed/format";
+  string jpeg_t = param_topic + "/compressed/jpeg_quality";
+  string png_t = param_topic + "/compressed/png_level";
 
   ROS_INFO_STREAM("Format topic: " << format_t);
   ROS_INFO_STREAM("JPEG quality topic: " << jpeg_t);
@@ -106,8 +112,6 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-  ImageLogger il_1;
-  iai_image_logger = &il_1;
 
     // Server for dynamic_reconfigure callback
   dynamic_reconfigure::Server<iai_image_logging_msgs::DefaultConfig> server;
@@ -117,8 +121,8 @@ int main(int argc, char** argv)
   server.setCallback(f);
 
   // Handle mongodb client connection
-  string topic = iai_image_logger->getTopic();
-  string db_host = iai_image_logger->getDbHost();
+  string topic = g_cfg->topic;
+  string db_host = g_cfg->db_host;
 
   string err = string("");
 
@@ -130,10 +134,15 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic, 1, compressedImageCb);
+  ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 1, compressedImageCb);
 
-  ros::ServiceServer service_cfg = n.advertiseService("image_logger/set_configuration", setConfiguration);
-  ros::ServiceServer service_cfg_yaml = n.advertiseService("image_logger/load_configuration", loadConfiguration);
+  image_transport::ImageTransport it(n);
+  image_transport::TransportHints th("compressed",ros::TransportHints(),n,topic);
+  image_transport::SubscriberFilter(it,topic,1,th);
+  image_transport::Subscriber img_sub = it.subscribe(topic , 1, imageCb, ros::VoidPtr(), th);
+
+  //ros::ServiceServer service_cfg = n.advertiseService("image_logger/set_configuration", setConfiguration);
+  //ros::ServiceServer service_cfg_yaml = n.advertiseService("image_logger/load_configuration", loadConfiguration);
 
   ros::Rate r(1.0);
 

@@ -13,6 +13,8 @@
 #include <iai_image_logging_msgs/Configuration.h>
 #include <iai_image_logging_msgs/ConfigurationYAML.h>
 #include <iai_image_logging_msgs/DefaultConfig.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <iostream>
 

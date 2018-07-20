@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
         roscpp
         dynamic_reconfigure
         iai_image_logging_msgs
+        image_transport
         mongodb_store
         mongodb_log
 
