@@ -22,7 +22,7 @@ void imageCb(sensor_msgs::ImageConstPtr msg)
 
 void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample_size)
 {
-  if (count % sample_size == 0)
+  if ( count != 0 && count % sample_size == 0)
   {
     ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
     ROS_INFO_STREAM("Format = " << conf.format);
@@ -68,12 +68,13 @@ void matrixFunction()
 {
   iai_image_logging_msgs::DefaultConfig conf;
   conf = g_cfg;
-  int sample_size = 10;
+  int sample_size = 100;
 
   if (count < sample_size)
   {
     conf.format = "jpeg";
     conf.jpeg_quality = 100;
+    conf.png_level = 1;
     conf.collection = "db.im_raw_comp_jpeg_100";
     configurationCb(conf);
   }
@@ -81,36 +82,54 @@ void matrixFunction()
   else if (count < 2 * sample_size)
   {
     conf.format = "jpeg";
-    conf.jpeg_quality = 80;
-    conf.collection = "db.im_raw_comp_jpeg_80";
+    conf.jpeg_quality = 100;
+      conf.png_level = 5;
+
+      conf.collection = "db.im_raw_comp_jpeg_80";
     configurationCb(conf);
   }
 
   else if (count < 3 * sample_size)
   {
-    conf.format = "jpeg";
-    conf.jpeg_quality = 30;
-    conf.collection = "db.im_raw_comp_jpeg_30";
-    configurationCb(conf);
+      conf.format = "jpeg";
+      conf.jpeg_quality = 100;
+      conf.png_level = 9;
+
+      conf.collection = "db.im_raw_comp_jpeg_50";
+      configurationCb(conf);
   }
 
   else if (count < 4 * sample_size)
   {
     conf.format = "png";
     conf.png_level = 1;
-    conf.collection = "db.im_raw_comp_png_1";
+      conf.jpeg_quality = 100;
+
+      conf.collection = "db.im_raw_comp_png_1";
     configurationCb(conf);
   }
 
   else if (count < 5 * sample_size)
   {
     conf.format = "png";
-    conf.png_level = 2;
-    conf.collection = "db.im_raw_comp_png_2";
+    conf.png_level = 1;
+      conf.jpeg_quality = 50;
+
+      conf.collection = "db.im_raw_comp_png_2";
     configurationCb(conf);
   }
 
   else if (count < 6 * sample_size)
+  {
+      conf.format = "png";
+      conf.png_level = 1;
+      conf.jpeg_quality = 30;
+
+      conf.collection = "db.im_raw_comp_png_5";
+      configurationCb(conf);
+  }
+
+  else if (count < 8 * sample_size)
   {
     conf.format = "png";
     conf.png_level = 7;
@@ -118,6 +137,13 @@ void matrixFunction()
     configurationCb(conf);
   }
 
+  else if (count >= 8 * sample_size)
+  {
+      conf.format = "jpeg";
+      conf.jpeg_quality = 1;
+      conf.collection = "STOPPING WITH MISSING '.'";
+      configurationCb(conf);
+  }
   printDatabaseEntries(conf, sample_size);
   count++;
 }
