@@ -10,7 +10,6 @@ DBClientConnection* mongodb_conn;
 
 int count = 0;
 
-
 iai_image_logging_msgs::DefaultConfig g_cfg;
 
 /**
@@ -19,18 +18,17 @@ iai_image_logging_msgs::DefaultConfig g_cfg;
  */
 void imageCb(sensor_msgs::ImageConstPtr msg)
 {
-
 }
 
 void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample_size)
 {
-    if (count % sample_size == 0)
-    {
-        ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
-        ROS_INFO_STREAM("Format = " << conf.format);
-        ROS_INFO_STREAM("JPEG quality = " << conf.jpeg_quality);
-        ROS_INFO_STREAM("PNG level = " << conf.png_level);
-    }
+  if (count % sample_size == 0)
+  {
+    ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
+    ROS_INFO_STREAM("Format = " << conf.format);
+    ROS_INFO_STREAM("JPEG quality = " << conf.jpeg_quality);
+    ROS_INFO_STREAM("PNG level = " << conf.png_level);
+  }
 }
 
 /**
@@ -39,98 +37,89 @@ void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
 {
-    g_cfg = cfg;
-    dynamic_reconfigure::ReconfigureRequest req;
-    dynamic_reconfigure::ReconfigureResponse res;
-    dynamic_reconfigure::StrParameter format;
-    dynamic_reconfigure::IntParameter jpeg;
-    dynamic_reconfigure::IntParameter png;
-    dynamic_reconfigure::Config conf_req;
+  g_cfg = cfg;
+  dynamic_reconfigure::ReconfigureRequest req;
+  dynamic_reconfigure::ReconfigureResponse res;
+  dynamic_reconfigure::StrParameter format;
+  dynamic_reconfigure::IntParameter jpeg;
+  dynamic_reconfigure::IntParameter png;
+  dynamic_reconfigure::Config conf_req;
 
-    format.name = "format";
-    format.value = cfg.format;
+  format.name = "format";
+  format.value = cfg.format;
 
-    jpeg.name = "jpeg_quality";
-    jpeg.value = cfg.jpeg_quality;
+  jpeg.name = "jpeg_quality";
+  jpeg.value = cfg.jpeg_quality;
 
-    png.name = "png_level";
-    png.value = cfg.png_level;
+  png.name = "png_level";
+  png.value = cfg.png_level;
 
-    req.config.strs.push_back(format);
-    req.config.ints.push_back(jpeg);
-    req.config.ints.push_back(png);
+  req.config.strs.push_back(format);
+  req.config.ints.push_back(jpeg);
+  req.config.ints.push_back(png);
 
-    ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
-    ROS_DEBUG_STREAM("Set parameters on topic " << cfg.topic + "/compressed");
-    ROS_DEBUG_STREAM("Request " << req.config.ints[0].name << ": " << req.config.ints[0].value);
-    ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
+  ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
+  ROS_DEBUG_STREAM("Set parameters on topic " << cfg.topic + "/compressed");
+  ROS_DEBUG_STREAM("Request " << req.config.ints[0].name << ": " << req.config.ints[0].value);
+  ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
 }
-
 
 void matrixFunction()
 {
-    iai_image_logging_msgs::DefaultConfig conf;
-    conf = g_cfg;
-    int sample_size = 10;
+  iai_image_logging_msgs::DefaultConfig conf;
+  conf = g_cfg;
+  int sample_size = 10;
 
-    if (count < sample_size)
-    {
-        conf.format = "jpeg";
-        conf.jpeg_quality = 100;
-        conf.collection = "db.im_raw_comp_jpeg_100";
-        configurationCb(conf);
-    }
+  if (count < sample_size)
+  {
+    conf.format = "jpeg";
+    conf.jpeg_quality = 100;
+    conf.collection = "db.im_raw_comp_jpeg_100";
+    configurationCb(conf);
+  }
 
-    else if (count < 2* sample_size)
-    {
-        conf.format = "jpeg";
-        conf.jpeg_quality = 80;
-        conf.collection = "db.im_raw_comp_jpeg_80";
-        configurationCb(conf);
-    }
+  else if (count < 2 * sample_size)
+  {
+    conf.format = "jpeg";
+    conf.jpeg_quality = 80;
+    conf.collection = "db.im_raw_comp_jpeg_80";
+    configurationCb(conf);
+  }
 
-    else if (count < 3 * sample_size)
-    {
-        conf.format = "jpeg";
-        conf.jpeg_quality = 30;
-        conf.collection = "db.im_raw_comp_jpeg_30";
-        configurationCb(conf);
+  else if (count < 3 * sample_size)
+  {
+    conf.format = "jpeg";
+    conf.jpeg_quality = 30;
+    conf.collection = "db.im_raw_comp_jpeg_30";
+    configurationCb(conf);
+  }
 
-    }
+  else if (count < 4 * sample_size)
+  {
+    conf.format = "png";
+    conf.png_level = 1;
+    conf.collection = "db.im_raw_comp_png_1";
+    configurationCb(conf);
+  }
 
-    else if (count < 4 * sample_size)
-    {
-        conf.format = "png";
-        conf.png_level = 1;
-        conf.collection = "db.im_raw_comp_png_1";
-        configurationCb(conf);
+  else if (count < 5 * sample_size)
+  {
+    conf.format = "png";
+    conf.png_level = 2;
+    conf.collection = "db.im_raw_comp_png_2";
+    configurationCb(conf);
+  }
 
-    }
+  else if (count < 6 * sample_size)
+  {
+    conf.format = "png";
+    conf.png_level = 7;
+    conf.collection = "db.im_raw_comp_png_7";
+    configurationCb(conf);
+  }
 
-    else if (count < 5 * sample_size)
-    {
-        conf.format = "png";
-        conf.png_level = 2;
-        conf.collection = "db.im_raw_comp_png_2";
-        configurationCb(conf);
-
-    }
-
-    else if (count < 6 * sample_size)
-    {
-        conf.format = "png";
-        conf.png_level = 7;
-        conf.collection = "db.im_raw_comp_png_7";
-        configurationCb(conf);
-
-    }
-
-
-    printDatabaseEntries(conf, sample_size);
-    count++;
-
-
-
+  printDatabaseEntries(conf, sample_size);
+  count++;
 }
 /**
  * Callback for the compressed images sent by one camera
@@ -138,9 +127,7 @@ void matrixFunction()
  */
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
-
-
-    matrixFunction();
+  matrixFunction();
 
   initialize();
   BSONObjBuilder document;
@@ -196,10 +183,8 @@ int main(int argc, char** argv)
 
   ros::Rate r(1.0);
 
-    while (n.ok())
+  while (n.ok())
   {
-
-
     ros::spinOnce();
     r.sleep();
   }
