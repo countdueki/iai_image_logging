@@ -75,7 +75,7 @@ void matrixFunction()
     conf.format = "jpeg";
     conf.jpeg_quality = 100;
     conf.png_level = 1;
-    conf.collection = "db.im_raw_comp_jpeg_100";
+    conf.collection = "db.im_raw_comp_jpeg100_png1";
     configurationCb(conf);
   }
 
@@ -85,17 +85,17 @@ void matrixFunction()
     conf.jpeg_quality = 100;
       conf.png_level = 5;
 
-      conf.collection = "db.im_raw_comp_jpeg_80";
+      conf.collection = "db.im_raw_comp_jpeg100_png9";
     configurationCb(conf);
   }
 
   else if (count < 3 * sample_size)
   {
-      conf.format = "jpeg";
+      conf.format = "png";
       conf.jpeg_quality = 100;
-      conf.png_level = 9;
+      conf.png_level = 1;
 
-      conf.collection = "db.im_raw_comp_jpeg_50";
+      conf.collection = "db.im_raw_comp_png1_jpeg100";
       configurationCb(conf);
   }
 
@@ -103,41 +103,14 @@ void matrixFunction()
   {
     conf.format = "png";
     conf.png_level = 1;
-      conf.jpeg_quality = 100;
+      conf.jpeg_quality = 1;
 
-      conf.collection = "db.im_raw_comp_png_1";
+      conf.collection = "db.im_raw_comp_png1_jpeg1";
     configurationCb(conf);
   }
 
-  else if (count < 5 * sample_size)
-  {
-    conf.format = "png";
-    conf.png_level = 1;
-      conf.jpeg_quality = 50;
 
-      conf.collection = "db.im_raw_comp_png_2";
-    configurationCb(conf);
-  }
-
-  else if (count < 6 * sample_size)
-  {
-      conf.format = "png";
-      conf.png_level = 1;
-      conf.jpeg_quality = 30;
-
-      conf.collection = "db.im_raw_comp_png_5";
-      configurationCb(conf);
-  }
-
-  else if (count < 8 * sample_size)
-  {
-    conf.format = "png";
-    conf.png_level = 7;
-    conf.collection = "db.im_raw_comp_png_7";
-    configurationCb(conf);
-  }
-
-  else if (count >= 8 * sample_size)
+  else if (count >= 4 * sample_size)
   {
       conf.format = "jpeg";
       conf.jpeg_quality = 1;
@@ -153,8 +126,7 @@ void matrixFunction()
  */
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
-  matrixFunction();
-
+  // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;
   std::string collection = g_cfg.collection;

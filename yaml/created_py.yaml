@@ -1,0 +1,27 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  collection: db.image_color_compressed_jpeg
+  db_host: localhost
+  format: jpeg
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      collection: db.image_color_compressed_jpeg
+      db_host: localhost
+      format: jpeg
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      jpeg_quality: 100
+      name: Default
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      png_level: 9
+      state: true
+      topic: /camera/rgb/image_raw
+      type: ''
+    state: []
+  jpeg_quality: 100
+  png_level: 9
+  topic: /camera/rgb/image_raw
+state: []
