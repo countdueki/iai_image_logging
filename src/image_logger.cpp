@@ -10,7 +10,8 @@ DBClientConnection* mongodb_conn;
 
 int count = 0;
 ImageLogger imageLogger;
-Configurator cfg_g;
+Configurator g_cfg;
+vector<iai_image_logging_msgs::DefaultConfig> g_cfg_multi;
 
 /**
  * Callback for the compressed images sent by one camera
@@ -38,7 +39,7 @@ void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
 {
   imageLogger.cfg_list.push_back(cfg);
-  cfg_g.configuration(imageLogger.cfg_list);
+  g_cfg.configuration(imageLogger.cfg_list);
 }
 
 void matrixFunction()
@@ -102,7 +103,6 @@ void matrixFunction()
  */
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
-  // TODO move saving to logger
   // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;

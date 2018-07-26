@@ -18,6 +18,7 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <iostream>
 #include "configurator.h"
+#include "logger.h"
 
 #include <mongo/client/dbclient.h>
 #include <mongodb_store/util.h>

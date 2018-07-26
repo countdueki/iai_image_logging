@@ -3,10 +3,10 @@
 //
 
 #include "configurator.h"
-using std::vector;
 
 void Configurator::configuration(vector<iai_image_logging_msgs::DefaultConfig> cfg_multi)
 {
+  g_cfg_multi = cfg_multi;
   dynamic_reconfigure::ReconfigureRequest req;
   dynamic_reconfigure::ReconfigureResponse res;
   dynamic_reconfigure::StrParameter format;
