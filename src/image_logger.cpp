@@ -9,8 +9,8 @@
 DBClientConnection* mongodb_conn;
 
 int count = 0;
-
-iai_image_logging_msgs::DefaultConfig g_cfg;
+ImageLogger imageLogger;
+Configurator cfg_g;
 
 /**
  * Callback for the compressed images sent by one camera
@@ -22,7 +22,7 @@ void imageCb(sensor_msgs::ImageConstPtr msg)
 
 void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample_size)
 {
-  if ( count != 0 && count % sample_size == 0)
+  if (count != 0 && count % sample_size == 0)
   {
     ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
     ROS_INFO_STREAM("Format = " << conf.format);
@@ -37,37 +37,14 @@ void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
 {
-  g_cfg = cfg;
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-  dynamic_reconfigure::StrParameter format;
-  dynamic_reconfigure::IntParameter jpeg;
-  dynamic_reconfigure::IntParameter png;
-  dynamic_reconfigure::Config conf_req;
-
-  format.name = "format";
-  format.value = cfg.format;
-
-  jpeg.name = "jpeg_quality";
-  jpeg.value = cfg.jpeg_quality;
-
-  png.name = "png_level";
-  png.value = cfg.png_level;
-
-  req.config.strs.push_back(format);
-  req.config.ints.push_back(jpeg);
-  req.config.ints.push_back(png);
-
-  ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
-  ROS_DEBUG_STREAM("Set parameters on topic " << cfg.topic + "/compressed");
-  ROS_DEBUG_STREAM("Request " << req.config.ints[0].name << ": " << req.config.ints[0].value);
-  ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
+  imageLogger.cfg_list.push_back(cfg);
+  cfg_g.configuration(imageLogger.cfg_list);
 }
 
 void matrixFunction()
 {
   iai_image_logging_msgs::DefaultConfig conf;
-  conf = g_cfg;
+  conf = imageLogger.cfg_list[0];
   int sample_size = 100;
 
   if (count < sample_size)
@@ -83,39 +60,38 @@ void matrixFunction()
   {
     conf.format = "jpeg";
     conf.jpeg_quality = 100;
-      conf.png_level = 5;
+    conf.png_level = 5;
 
-      conf.collection = "db.im_raw_comp_jpeg100_png9";
+    conf.collection = "db.im_raw_comp_jpeg100_png9";
     configurationCb(conf);
   }
 
   else if (count < 3 * sample_size)
   {
-      conf.format = "png";
-      conf.jpeg_quality = 100;
-      conf.png_level = 1;
+    conf.format = "png";
+    conf.jpeg_quality = 100;
+    conf.png_level = 1;
 
-      conf.collection = "db.im_raw_comp_png1_jpeg100";
-      configurationCb(conf);
+    conf.collection = "db.im_raw_comp_png1_jpeg100";
+    configurationCb(conf);
   }
 
   else if (count < 4 * sample_size)
   {
     conf.format = "png";
     conf.png_level = 1;
-      conf.jpeg_quality = 1;
+    conf.jpeg_quality = 1;
 
-      conf.collection = "db.im_raw_comp_png1_jpeg1";
+    conf.collection = "db.im_raw_comp_png1_jpeg1";
     configurationCb(conf);
   }
 
-
   else if (count >= 4 * sample_size)
   {
-      conf.format = "jpeg";
-      conf.jpeg_quality = 1;
-      conf.collection = "STOPPING WITH MISSING '.'";
-      configurationCb(conf);
+    conf.format = "jpeg";
+    conf.jpeg_quality = 1;
+    conf.collection = "STOPPING WITH MISSING '.'";
+    configurationCb(conf);
   }
   printDatabaseEntries(conf, sample_size);
   count++;
@@ -126,10 +102,11 @@ void matrixFunction()
  */
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
+  // TODO move saving to logger
   // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;
-  std::string collection = g_cfg.collection;
+  std::string collection = imageLogger.cfg_list[0].collection;
 
   ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
 
@@ -163,14 +140,14 @@ int main(int argc, char** argv)
 
   // Check connection to MongoDB
   string err = string("");
-  string db_host = g_cfg.db_host;
+  string db_host = imageLogger.cfg_list[0].db_host;
   mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
-  if (!mongodb_conn->connect(g_cfg.db_host, err))
+  if (!mongodb_conn->connect(imageLogger.cfg_list[0].db_host, err))
   {
     ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
   }
 
-  string topic = g_cfg.topic;
+  string topic = imageLogger.cfg_list[0].topic;
 
   // image_transport sub
   image_transport::ImageTransport it(n);

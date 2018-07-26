@@ -17,12 +17,14 @@
 #include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <iostream>
+#include "configurator.h"
 
 #include <mongo/client/dbclient.h>
 #include <mongodb_store/util.h>
 #include <mongodb_store/message_store.h>
 
 using std::string;
+using std::vector;
 using mongo::client::initialize;
 using mongo::BSONObjBuilder;
 using mongo::Date_t;
@@ -41,6 +43,9 @@ private:
   int png_level_;
   string db_host_;
   string collection_;
+
+public:
+  vector<iai_image_logging_msgs::DefaultConfig> cfg_list;
 
   // Depth parameters
   // double_t depth_max_;
