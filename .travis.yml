@@ -85,7 +85,7 @@ install:
   - cd ~/catkin_ws
   - catkin build
   - source devel/setup.bash
-  - cd catkin_ws/src
+  - cd ~/catkin_ws/src
   - git clone https://github.com/countdueki/iai_image_logging
   - git clone https://github.com/countdueki/iai_image_logging_msgs
   - wstool init
