@@ -6,10 +6,10 @@
 
 bool logCb(iai_image_logging_msgs::LogRequestConstPtr& req, iai_image_logging_msgs::LogResponseConstPtr& res)
 {
-  for (iai_image_logging_msgs::DefaultConfig cfg : g_cfg_multi)
+/*  for (iai_image_logging_msgs::DefaultConfig cfg : g_cfg_multi)
   {
     // TODO Move Saving here (callback to multiple topics)
-  }
+  }*/
 }
 
 /**
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
   ros::NodeHandle n;
 
-  ros::ServiceServer ser_log = n.advertiseService("image_logger/log", logCb);
+  // ros::ServiceServer ser_log = n.advertiseService("image_logger/log", logCb);
   // ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 100,
   // compressedImageCb);
 

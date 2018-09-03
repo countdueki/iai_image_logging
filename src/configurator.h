@@ -11,7 +11,6 @@
 using std::vector;
 
 using std::vector;
-extern vector<iai_image_logging_msgs::DefaultConfig> g_cfg_multi;
 
 class Configurator
 {

@@ -11,7 +11,9 @@ DBClientConnection* mongodb_conn;
 int count = 0;
 ImageLogger imageLogger;
 Configurator g_cfg;
-vector<iai_image_logging_msgs::DefaultConfig> g_cfg_multi;
+
+std::map<ros::Subscriber, iai_image_logging_msgs::DefaultConfig> g_subs_cfgs;
+
 
 /**
  * Callback for the compressed images sent by one camera
@@ -152,15 +154,23 @@ int main(int argc, char** argv)
   // image_transport sub
   image_transport::ImageTransport it(n);
   image_transport::TransportHints th("compressed");
-  image_transport::Subscriber img_sub = it.subscribe(topic, 1, imageCb, ros::VoidPtr(), th);
+  image_transport::Subscriber comp_img_sub = it.subscribe(topic, 1, imageCb, ros::VoidPtr(), th);
+  //image_transport::Subscriber img_sub = it.subscribe(topic,1, imageCb);
 
   ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 100, compressedImageCb);
+    ros::Subscriber sub_cfg;
+/*  for (iai_image_logging_msgs::DefaultConfig cfg : g_cfg_multi)
+  {
+      ros::Subscriber sub_cfg = n.subscribe<sensor_msgs::CompressedImage>(cfg.topic + "/compressed", 100, compressedImageCb);
 
+
+  }*/
   ros::Rate r(1.0);
 
   while (n.ok())
   {
-    ros::spinOnce();
+
+          ros::spinOnce();
     r.sleep();
   }
 
