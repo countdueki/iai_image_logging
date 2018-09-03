@@ -95,7 +95,6 @@ before_script:
   # source dependencies: install using wstool.
   - cd ~/catkin_ws/src
   - wstool init
-  - wstool scrape -t ../
   - if [[ -f $ROSINSTALL_FILE ]] ; then wstool merge $ROSINSTALL_FILE ; fi
   - wstool up
   # package depdencies: install using rosdep.
