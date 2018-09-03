@@ -91,9 +91,6 @@ install:
   - wstool init
   - rosdep install -y --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
-  # Add the package under integration to the workspace using a symlink.
-  - cd ~/catkin_ws/src
-  - ln -s $CI_SOURCE_PATH .
 
 # Install all dependencies, using wstool first and rosdep second.
 # wstool looks for a ROSINSTALL_FILE defined in the environment variables.
