@@ -112,7 +112,8 @@ before_script:
 script:
   - source /opt/ros/$ROS_DISTRO/setup.bash
   - cd ~/catkin_ws
-  - catkin build --blacklist iai_image_logging_msgs
+  - catkin config --blacklist iai_image_logging_msgs
+  - catkin build
   #- catkin_make $( [ -f $CATKIN_OPTIONS ] && cat $CATKIN_OPTIONS )
   # Run the tests, ensuring the path is set correctly.
   #- source devel/setup.bash
