@@ -87,7 +87,7 @@ install:
   - source devel/setup.bash
   - cd ~/catkin_ws/src
   - git clone https://github.com/countdueki/iai_image_logging
-  - git clone https://github.com/countdueki/iai_image_logging_msgs
+  #- git clone https://github.com/countdueki/iai_image_logging_msgs
 
 # Install all dependencies, using wstool first and rosdep second.
 # wstool looks for a ROSINSTALL_FILE defined in the environment variables.

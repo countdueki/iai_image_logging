@@ -1,6 +1,3 @@
 - git:
-    local-name: iai_image_logging
-    uri: https://github.com/countdueki/iai_image_logging
-- git:
     local-name: iai_image_logging_msgs
     uri: https://github.com/countdueki/iai_image_logging_msgs
