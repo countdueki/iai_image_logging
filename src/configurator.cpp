@@ -3,7 +3,6 @@
 //
 
 #include "configurator.h"
-vector<defcon_ptr> g_cfg_multi;
 
 void Configurator::configuration(vector<defcon_ptr> cfg_multi)
 {

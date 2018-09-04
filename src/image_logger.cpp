@@ -6,10 +6,14 @@
 
 #include "image_logger.h"
 
-DBClientConnection* mongodb_conn;
+std::vector<defcon_ptr> g_cfg_multi;
+
+
 int count = 0;
 boost::shared_ptr<ImageLogger> imageLogger(new ImageLogger());
 boost::shared_ptr<Configurator> g_cfg(new Configurator());
+boost::shared_ptr<Logger> logger(new Logger());
+DBClientConnection* mongodb_connection;
 
 
 /**
@@ -114,19 +118,8 @@ void matrixFunction()
 void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
 {
   // matrixFunction(); // for building test entries
-  initialize();
-  BSONObjBuilder document;
   std::string collection = imageLogger->cfg_list[0]->collection;
-
-  ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
-
-  Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-  document.append("format", msg->format);
-  document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
-
-  add_meta_for_msg<sensor_msgs::CompressedImage>(msg, document);
-  mongodb_conn->insert(collection, document.obj());
+  logger->log(msg, g_cfg_multi, mongodb_connection);
 }
 
 /**
@@ -148,14 +141,6 @@ int main(int argc, char** argv)
   f = boost::bind(&configurationCb, _1);
   server.setCallback(f);
 
-  // Check connection to MongoDB
-  string err = string("");
-  string db_host = imageLogger->cfg_list[0]->db_host;
-  mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
-  if (!mongodb_conn->connect(imageLogger->cfg_list[0]->db_host, err))
-  {
-    ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-  }
 
   string topic = imageLogger->cfg_list[0]->topic;
 

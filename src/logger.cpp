@@ -3,39 +3,32 @@
 //
 
 #include "logger.h"
-vector<defcon_ptr> g_cfg_multi;
-bool logCb(iai_image_logging_msgs::LogRequestConstPtr& req, iai_image_logging_msgs::LogResponseConstPtr& res)
-{
-/*  for (iai_image_logging_msgs::DefaultConfig cfg : g_cfg_multi)
-  {
-    // TODO Move Saving here (callback to multiple topics)
-  }*/
-}
 
-/**
- * Starting the main node for image logging
- * @param argc TODO
- * @param argv TODO
- * @return 0 on successful execution
- */
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "logger");
 
-  ros::NodeHandle n;
+std::vector<defcon_ptr> cfg_global;
+DBClientConnection *mongodb_conn;
+void Logger::log(sensor_msgs::CompressedImageConstPtr msg, std::vector<defcon_ptr> cfg_multi, DBClientConnection *mongodb_conn) {
 
-   //ros::ServiceServer ser_log = n.advertiseService("image_logger/log", logCb);
-   //ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(g_cfg_multi.at(0)->topic + "/compressed", 100,   compressedImageCb);
+    // Check connection to MongoDB
+    string err = string("");
+    string db_host = cfg_global[0]->db_host;
+    mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
+    if (!mongodb_conn->connect(cfg_global[0]->db_host, err))
+    {
+        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+    }
 
-  ros::Rate r(1.0);
+  initialize();
+  BSONObjBuilder document;
 
-  ROS_INFO_STREAM("LOGGER: I have been called and run!");
-  while (n.ok())
-  {
-    ROS_INFO_STREAM("LOGGER: spins!");
-    ros::spinOnce();
-    r.sleep();
-  }
+    cfg_global = cfg_multi;
+  ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
 
-  return (0);
+  Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+  document.append("format", msg->format);
+  document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
+
+  add_meta_for_msg<sensor_msgs::CompressedImage>(msg, document);
+  mongodb_conn->insert(cfg_multi[0]->collection, document.obj());
 }

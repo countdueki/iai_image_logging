@@ -22,22 +22,10 @@
 #include "logger.h"
 #include "image_logger_types.h"
 
-#include <mongo/client/dbclient.h>
-#include <mongodb_store/util.h>
-#include <mongodb_store/message_store.h>
-
 
 
 using std::string;
 using std::vector;
-using mongo::client::initialize;
-using mongo::BSONObjBuilder;
-using mongo::Date_t;
-using mongo::DBClientConnection;
-using mongo::BinDataGeneral;
-using mongodb_store::add_meta_for_msg;
-
-extern std::vector<defcon_ptr> g_cfg_multi;
 
 
 class ImageLogger

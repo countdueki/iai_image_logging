@@ -21,16 +21,19 @@ include_directories(
  ${catkin_INCLUDE_DIRS}
 )
 
-add_library(image_logger_lib src/image_logger.cpp src/configurator.cpp src/preprocessor.cpp src/image_logger_types.h)
+add_library(image_logger_lib
+        src/image_logger.cpp
+        src/configurator.cpp
+        src/preprocessor.cpp
+        src/logger.cpp
+        src/image_logger_types.h)
 
-add_executable(image_logger src/image_logger.cpp src/configurator.cpp ) # src/configurator.cpp src/configurator.h src/preprocessor.cpp src/preprocessor.h src/logger.cpp src/logger.h
+add_executable(image_logger
+        src/image_logger.cpp
+        src/configurator.cpp
+        src/logger.cpp) # src/configurator.cpp src/configurator.h src/preprocessor.cpp src/preprocessor.h src/logger.cpp src/logger.h
 
  target_link_libraries(image_logger
    ${catkin_LIBRARIES}
  )
 
-add_executable(logger src/logger.cpp ) # src/configurator.cpp src/configurator.h src/preprocessor.cpp src/preprocessor.h src/logger.cpp src/logger.h
-
-target_link_libraries(logger
-        ${catkin_LIBRARIES}
-        )

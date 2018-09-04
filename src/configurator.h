@@ -9,9 +9,10 @@
 #include "image_logger_types.h"
 
 #include <ros/ros.h>
-using std::vector;
+#include <mongo/client/dbclient.h>
 
 using std::vector;
+extern std::vector<defcon_ptr> g_cfg_multi;
 
 class Configurator
 {
