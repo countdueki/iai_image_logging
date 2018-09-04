@@ -7,12 +7,9 @@
 #include "image_logger.h"
 
 DBClientConnection* mongodb_conn;
-
 int count = 0;
-ImageLogger imageLogger;
-Configurator g_cfg;
-
-std::map<ros::Subscriber, iai_image_logging_msgs::DefaultConfig> g_subs_cfgs;
+boost::shared_ptr<ImageLogger> imageLogger(new ImageLogger());
+boost::shared_ptr<Configurator> g_cfg(new Configurator());
 
 
 /**
@@ -40,14 +37,25 @@ void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample
  */
 void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
 {
-  imageLogger.cfg_list.push_back(cfg);
-  g_cfg.configuration(imageLogger.cfg_list);
+  defcon_ptr input(new iai_image_logging_msgs::DefaultConfig(cfg));
+  imageLogger->cfg_list.push_back(input);
+  g_cfg->configuration(imageLogger->cfg_list);
 }
 
 void matrixFunction()
 {
+  defcon_ptr conf_ptr;
+
+  conf_ptr = imageLogger->cfg_list[0];
   iai_image_logging_msgs::DefaultConfig conf;
-  conf = imageLogger.cfg_list[0];
+
+  conf.png_level = conf_ptr->png_level;
+  conf.jpeg_quality = conf_ptr->jpeg_quality;
+  conf.format = conf_ptr->format;
+  conf.collection = conf_ptr->collection;
+  conf.topic = conf_ptr->topic;
+  conf.db_host = conf_ptr->db_host;
+  conf.groups = conf_ptr->groups;
   int sample_size = 100;
 
   if (count < sample_size)
@@ -108,7 +116,7 @@ void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
   // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;
-  std::string collection = imageLogger.cfg_list[0].collection;
+  std::string collection = imageLogger->cfg_list[0]->collection;
 
   ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
 
@@ -142,14 +150,14 @@ int main(int argc, char** argv)
 
   // Check connection to MongoDB
   string err = string("");
-  string db_host = imageLogger.cfg_list[0].db_host;
+  string db_host = imageLogger->cfg_list[0]->db_host;
   mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
-  if (!mongodb_conn->connect(imageLogger.cfg_list[0].db_host, err))
+  if (!mongodb_conn->connect(imageLogger->cfg_list[0]->db_host, err))
   {
     ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
   }
 
-  string topic = imageLogger.cfg_list[0].topic;
+  string topic = imageLogger->cfg_list[0]->topic;
 
   // image_transport sub
   image_transport::ImageTransport it(n);
@@ -159,12 +167,12 @@ int main(int argc, char** argv)
 
   ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 100, compressedImageCb);
     ros::Subscriber sub_cfg;
-/*  for (iai_image_logging_msgs::DefaultConfig cfg : g_cfg_multi)
+  for (defcon_ptr cfg : g_cfg_multi)
   {
-      ros::Subscriber sub_cfg = n.subscribe<sensor_msgs::CompressedImage>(cfg.topic + "/compressed", 100, compressedImageCb);
+      ros::Subscriber sub_cfg = n.subscribe<sensor_msgs::CompressedImage>(cfg->topic + "/compressed", 100, compressedImageCb);
 
 
-  }*/
+  }
   ros::Rate r(1.0);
 
   while (n.ok())

@@ -6,6 +6,7 @@
 #define IAI_IMAGE_LOGGING_CONFIGURATOR_H
 #include <iai_image_logging_msgs/DefaultConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include "image_logger_types.h"
 
 #include <ros/ros.h>
 using std::vector;
@@ -20,7 +21,7 @@ public:
   }
 
 public:
-  void configuration(vector<iai_image_logging_msgs::DefaultConfig> cfg_multi);
+  void configuration(vector<defcon_ptr> cfg_multi);
 };
 
 #endif  // IAI_IMAGE_LOGGING_CONFIGURATOR_H

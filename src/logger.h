@@ -9,6 +9,7 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <iai_image_logging_msgs/DefaultConfig.h>
 #include <iai_image_logging_msgs/Log.h>
+#include "image_logger_types.h"
 using std::vector;
 
 
