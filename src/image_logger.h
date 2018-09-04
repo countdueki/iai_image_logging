@@ -7,25 +7,44 @@
 #define IAI_IMAGE_LOGGING_IMAGE_LOGGER_H
 
 #include <ros/ros.h>
+#include <iostream>
+
+#include <sensor_msgs/CompressedImage.h>
 
 #include <dynamic_reconfigure/server.h>
 
 #include <iai_image_logging_msgs/Configuration.h>
 #include <iai_image_logging_msgs/ConfigurationYAML.h>
 #include <iai_image_logging_msgs/DefaultConfig.h>
+#include <iai_image_logging_msgs/Log.h>
+
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
-#include <sensor_msgs/CompressedImage.h>
-#include <iostream>
-#include <memory>
-#include "configurator.h"
-#include "logger.h"
-#include "image_logger_types.h"
 
+#include <mongo/client/dbclient.h>
+#include <mongodb_store/util.h>
+#include <mongodb_store/message_store.h>
 
-
+// namespaces
 using std::string;
 using std::vector;
+using mongo::client::initialize;
+using mongo::BSONObjBuilder;
+using mongo::Date_t;
+using mongo::DBClientConnection;
+using mongo::BinDataGeneral;
+using mongodb_store::add_meta_for_msg;
+using std::string;
+
+// typedefs
+typedef iai_image_logging_msgs::DefaultConfig iai_defcon;
+
+
+// global variables
+
+std::vector<iai_defcon> g_cfg_list;
+DBClientConnection* mongodb_conn;
+int count = 0;
 
 
 class ImageLogger
@@ -41,7 +60,7 @@ private:
   string collection_;
 
 public:
-  vector<defcon_ptr> cfg_list;
+  vector<iai_defcon> cfg_list;
 
   // Depth parameters
   // double_t depth_max_;

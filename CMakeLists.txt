@@ -23,15 +23,11 @@ include_directories(
 
 add_library(image_logger_lib
         src/image_logger.cpp
-        src/configurator.cpp
-        src/preprocessor.cpp
-        src/logger.cpp
-        src/image_logger_types.h)
+        )
 
 add_executable(image_logger
         src/image_logger.cpp
-        src/configurator.cpp
-        src/logger.cpp) # src/configurator.cpp src/configurator.h src/preprocessor.cpp src/preprocessor.h src/logger.cpp src/logger.h
+      ) # src/configurator.cpp src/configurator.h src/preprocessor.cpp src/preprocessor.h src/logger.cpp src/logger.h
 
  target_link_libraries(image_logger
    ${catkin_LIBRARIES}
