@@ -12,9 +12,14 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>driver_base</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>mongodb_store</build_depend>
+  <build_depend>mongodb_log</build_depend>
+
   <exec_depend>iai_image_logging_msgs</exec_depend>
   <exec_depend>dynamic_reconfigure</exec_depend>
   <exec_depend>driver_base</exec_depend>
+
   <export>
   </export>
 </package>
