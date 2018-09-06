@@ -5,28 +5,26 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED
         roscpp
+        nodelet
         dynamic_reconfigure
         iai_image_logging_msgs
         image_transport
         mongodb_store
-        mongodb_log
-
         )
 
 catkin_package(
-          CATKIN_DEPENDS  iai_image_logging_msgs
+          CATKIN_DEPENDS  iai_image_logging_msgs nodelet
 )
 
 include_directories(
  ${catkin_INCLUDE_DIRS}
 )
 
-add_library(image_logger_lib src/image_logger.cpp
+add_library(image_logger_nodelet src/image_logger.cpp src/preprocessor.cpp
         )
 
-add_executable(image_logger src/image_logger.cpp)
 
- target_link_libraries(image_logger
-   ${catkin_LIBRARIES}
- )
-
+target_link_libraries(image_logger_nodelet ${catkin_LIBRARIES})
+if(catkin_EXPORTED_LIBRARIES)
+    add_dependencies(image_logger_nodelet ${catkin_EXPORTED_LIBRARIES})
+endif()

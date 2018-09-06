@@ -12,15 +12,16 @@
 
 #include <iai_image_logging_msgs/Configuration.h>
 #include <iai_image_logging_msgs/ConfigurationYAML.h>
-#include <iai_image_logging_msgs/DefaultConfig.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <iai_image_logging_msgs/CompressedConfig.h>
+#include <iai_image_logging_msgs/Process.h>
 #include <iostream>
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 #include <mongo/client/dbclient.h>
 #include <mongodb_store/util.h>
 #include <mongodb_store/message_store.h>
+
+#include <nodelet/nodelet.h>
 
 using std::string;
 using mongo::client::initialize;
@@ -30,8 +31,11 @@ using mongo::DBClientConnection;
 using mongo::BinDataGeneral;
 using mongodb_store::add_meta_for_msg;
 
-typedef iai_image_logging_msgs::DefaultConfig DefCon;
-class ImageLogger
+typedef iai_image_logging_msgs::CompressedConfig CompConf;
+
+namespace image_logger
+{
+class ImageLogger : public nodelet::Nodelet
 {
 private:
   // General Parameters
@@ -91,6 +95,10 @@ public:
     db_host_ = "localhost";
     collection_ = "db.image_color_compressed";
   }
+
+  ~ImageLogger();
+
+  virtual void onInit();
 };
 
 const string& ImageLogger::getTopic() const
@@ -152,5 +160,5 @@ void ImageLogger::setPngLevel(int png_level)
 {
   ImageLogger::png_level_ = png_level;
 }
-
+}
 #endif  // IAI_IMAGE_LOGGING_IMAGE_LOGGER_H

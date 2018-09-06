@@ -5,40 +5,24 @@
  */
 
 #include "image_logger.h"
+#include <pluginlib/class_list_macros.h>
 
+namespace image_logger
+{
 DBClientConnection* mongodb_conn;
 
 int count = 0;
 
-boost::shared_ptr<DefCon> g_cfg( new DefCon());
-boost::shared_ptr<ImageLogger> g_imageLogger(new ImageLogger());
-
-/**
- * Callback for the compressed images sent by one camera
- * @param msg compressed image pointer
- */
-void imageCb(sensor_msgs::ImageConstPtr msg)
-{
-}
-
-void printDatabaseEntries(iai_image_logging_msgs::DefaultConfig conf, int sample_size)
-{
-  if ( count != 0 && count % sample_size == 0)
-  {
-    ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
-    ROS_INFO_STREAM("Format = " << conf.format);
-    ROS_INFO_STREAM("JPEG quality = " << conf.jpeg_quality);
-    ROS_INFO_STREAM("PNG level = " << conf.png_level);
-  }
-}
+boost::shared_ptr<CompConf> g_cfg;
+boost::shared_ptr<ImageLogger> g_imageLogger;
 
 /**
  * Configuration callback for dynamic reconfiguration
  * @param cfg
  */
-void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
+void configurationCb(iai_image_logging_msgs::CompressedConfig& cfg)
 {
-  boost::shared_ptr<DefCon> cfg_ptr(new DefCon(cfg));
+  boost::shared_ptr<CompConf> cfg_ptr(new CompConf(cfg));
   g_cfg = cfg_ptr;
   dynamic_reconfigure::ReconfigureRequest req;
   dynamic_reconfigure::ReconfigureResponse res;
@@ -66,79 +50,11 @@ void configurationCb(iai_image_logging_msgs::DefaultConfig& cfg)
   ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
 }
 
-void matrixFunction()
-{
-  boost::shared_ptr<DefCon> conf;
-  conf = g_cfg;
-  int sample_size = 100;
-
-  if (count < sample_size)
-  {
-    conf->format = "jpeg";
-    conf->jpeg_quality = 100;
-    conf->png_level = 1;
-    conf->collection = "db.im_raw_comp_jpeg100_png1";
-    configurationCb(*conf);
-  }
-
-  else if (count < 2 * sample_size)
-  {
-    conf->format = "jpeg";
-    conf->jpeg_quality = 100;
-    conf->png_level = 5;
-    conf->collection = "db.im_raw_comp_jpeg100_png9";
-    configurationCb(*conf);
-  }
-
-  else if (count < 3 * sample_size)
-  {
-    conf->format = "png";
-    conf->jpeg_quality = 100;
-    conf->png_level = 1;
-    conf->collection = "db.im_raw_comp_png1_jpeg100";
-    configurationCb(*conf);
-  }
-
-  else if (count < 4 * sample_size)
-  {
-    conf->format = "png";
-    conf->png_level = 1;
-    conf->jpeg_quality = 1;
-    conf->collection = "db.im_raw_comp_png1_jpeg1";
-    configurationCb(*conf);
-  }
-
-
-  else if (count >= 4 * sample_size)
-  {
-      conf->format = "jpeg";
-      conf->jpeg_quality = 1;
-      conf->collection = "STOPPING WITH MISSING '.'";
-      configurationCb(*conf);
-  }
-  printDatabaseEntries(*conf, sample_size);
-  count++;
-}
 /**
- * Callback for the compressed images sent by one camera
- * @param msg compressed image pointer
+ *
  */
-void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
+void ImageLogger::onInit()
 {
-  // matrixFunction(); // for building test entries
-  initialize();
-  BSONObjBuilder document;
-  std::string collection = g_cfg->collection;
-
-  ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
-
-  Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-  document.append("format", msg->format);
-  document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
-
-  add_meta_for_msg<sensor_msgs::CompressedImage>(msg, document);
-  mongodb_conn->insert(collection, document.obj());
 }
 
 /**
@@ -147,44 +63,57 @@ void compressedImageCb(sensor_msgs::CompressedImageConstPtr msg)
  * @param argv TODO
  * @return 0 on successful execution
  */
-int main(int argc, char** argv)
+int imageLoggerSetup(int argc, char** argv)
 {
   ros::init(argc, argv, "image_logger");
 
   ros::NodeHandle n;
 
   // Server for dynamic_reconfigure callback
-  dynamic_reconfigure::Server<iai_image_logging_msgs::DefaultConfig> server;
-  dynamic_reconfigure::Server<iai_image_logging_msgs::DefaultConfig>::CallbackType f;
+  dynamic_reconfigure::Server<iai_image_logging_msgs::CompressedConfig> server;
+  dynamic_reconfigure::Server<iai_image_logging_msgs::CompressedConfig>::CallbackType f;
 
   f = boost::bind(&configurationCb, _1);
   server.setCallback(f);
 
-  // Check connection to MongoDB
-  string err = string("");
-  string db_host = g_cfg->db_host;
-  mongodb_conn = new DBClientConnection(/* auto reconnect*/ true);
-  if (!mongodb_conn->connect(g_cfg->db_host, err))
-  {
-    ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-  }
+  // Testing client
 
-  string topic = g_cfg->topic;
+  //  iai_image_logging_msgs::Setup setup;
+  //  ros::M_string header;
+  //  header[0] = "header";
+  //  ros::ServiceClient setup_client = n.serviceClient<iai_image_logging_msgs::Process>("setup_client",false,header);
 
-  // image_transport sub
-  image_transport::ImageTransport it(n);
-  image_transport::TransportHints th("compressed");
-  image_transport::Subscriber img_sub = it.subscribe(topic, 1, imageCb, ros::VoidPtr(), th);
+  iai_image_logging_msgs::ProcessRequest proc_req;
+  iai_image_logging_msgs::ProcessResponse proc_res;
 
-  ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(topic + "/compressed", 100, compressedImageCb);
+  proc_req.set.db_host = "localhost";
+  proc_req.set.topic = "/camera/rgb/image_raw/compressed";
+  proc_req.set.format = "png";
+  proc_req.set.jpeg_quality = 1;
+  proc_req.set.png_level = 9;
+  proc_req.set.collection = "db.process_requested_png";
 
+  iai_image_logging_msgs::CompressedConfig proc_cfg;
+  proc_cfg.db_host = "localhost";
+  proc_cfg.topic = "/camera/rgb/image_raw/compressed";
+  proc_cfg.format = "png";
+  proc_cfg.jpeg_quality = 1;
+  proc_cfg.png_level = 9;
+  proc_cfg.collection = "db.process_requested_png";
+  configurationCb(proc_cfg);
   ros::Rate r(1.0);
 
   while (n.ok())
   {
+    // setup_client.call(proc_req,proc_res);
+    ros::service::call("/preprocessor/process", proc_req, proc_res);
+    if (proc_res.success == true)
+      ROS_INFO_STREAM("Successfully called service");
     ros::spinOnce();
     r.sleep();
   }
 
   return 0;
 }
+}
+PLUGINLIB_EXPORT_CLASS(image_logger::ImageLogger, nodelet::Nodelet)

@@ -1,5 +1,5 @@
 <launch>
         <node name="image_logger" pkg="iai_image_logging" type="image_logger" output="screen"/>
-        <!-- node name="logger" pkg="iai_image_logging" type="logger" output="screen" /-->
+        <node name="preprocessor" pkg="iai_image_logging" type="preprocessor" output="screen"/>
 
 </launch>
