@@ -7,6 +7,7 @@
 #define IAI_IMAGE_LOGGING_IMAGE_LOGGER_H
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -98,7 +99,10 @@ public:
 
   ~ImageLogger();
 
+
   virtual void onInit();
+
+
 };
 
 const string& ImageLogger::getTopic() const

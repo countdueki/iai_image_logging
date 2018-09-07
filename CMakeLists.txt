@@ -13,18 +13,30 @@ find_package(catkin REQUIRED
         )
 
 catkin_package(
-          CATKIN_DEPENDS  iai_image_logging_msgs nodelet
+        LIBRARIES ${PROJECT_NAME}
+
+        CATKIN_DEPENDS  iai_image_logging_msgs nodelet
 )
 
 include_directories(
  ${catkin_INCLUDE_DIRS}
 )
 
-add_library(image_logger_nodelet src/image_logger.cpp src/preprocessor.cpp
+add_library(iai_image_logging src/image_logger.cpp src/preprocessor.cpp
         )
 
 
-target_link_libraries(image_logger_nodelet ${catkin_LIBRARIES})
+target_link_libraries(iai_image_logging ${catkin_LIBRARIES})
+
+
+#add_library(initiatior src/Initiator.cpp)
+#
+#target_link_libraries(initiator ${catkin_LIBRARIES})
+#
+#
+#add_executable(initiator
+#        src/Initiator.cpp)
+#
 if(catkin_EXPORTED_LIBRARIES)
-    add_dependencies(image_logger_nodelet ${catkin_EXPORTED_LIBRARIES})
+    add_dependencies(iai_image_logging ${catkin_EXPORTED_LIBRARIES})
 endif()

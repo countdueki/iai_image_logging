@@ -7,6 +7,8 @@
 #include "image_logger.h"
 #include <pluginlib/class_list_macros.h>
 
+ros::Publisher pub;
+
 namespace image_logger
 {
 DBClientConnection* mongodb_conn;
@@ -50,24 +52,26 @@ void configurationCb(iai_image_logging_msgs::CompressedConfig& cfg)
   ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
 }
 
+    void callback(const std_msgs::Float64::ConstPtr& input)
+    {
+      std_msgs::Float64Ptr float_my_boat(new std_msgs::Float64());
+      float_my_boat->data = 42.0;
+      ROS_INFO_STREAM("Adding "<< float_my_boat->data);
+      pub.publish(float_my_boat);
+    }
+
 /**
  *
  */
 void ImageLogger::onInit()
 {
-}
+  ros::NodeHandle& nh = getNodeHandle();
 
-/**
- * Starting the main node for image logging
- * @param argc TODO
- * @param argv TODO
- * @return 0 on successful execution
- */
-int imageLoggerSetup(int argc, char** argv)
-{
-  ros::init(argc, argv, "image_logger");
+  pub = nh.advertise<std_msgs::Float64>("out_test",1);
 
-  ros::NodeHandle n;
+
+  ros::Subscriber sub = nh.subscribe("in", 10, &callback);
+
 
   // Server for dynamic_reconfigure callback
   dynamic_reconfigure::Server<iai_image_logging_msgs::CompressedConfig> server;
@@ -75,7 +79,7 @@ int imageLoggerSetup(int argc, char** argv)
 
   f = boost::bind(&configurationCb, _1);
   server.setCallback(f);
-
+  ROS_INFO_STREAM("I initiated (ImageLogger Nodelet)");
   // Testing client
 
   //  iai_image_logging_msgs::Setup setup;
@@ -101,9 +105,11 @@ int imageLoggerSetup(int argc, char** argv)
   proc_cfg.png_level = 9;
   proc_cfg.collection = "db.process_requested_png";
   configurationCb(proc_cfg);
+
+
   ros::Rate r(1.0);
 
-  while (n.ok())
+  while (nh.ok())
   {
     // setup_client.call(proc_req,proc_res);
     ros::service::call("/preprocessor/process", proc_req, proc_res);
@@ -112,8 +118,7 @@ int imageLoggerSetup(int argc, char** argv)
     ros::spinOnce();
     r.sleep();
   }
-
-  return 0;
 }
+
 }
 PLUGINLIB_EXPORT_CLASS(image_logger::ImageLogger, nodelet::Nodelet)

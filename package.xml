@@ -17,8 +17,11 @@
   <build_depend>nodelet</build_depend>
 
   <exec_depend>iai_image_logging_msgs</exec_depend>
+  <exec_depend>image_transport</exec_depend>
   <exec_depend>dynamic_reconfigure</exec_depend>
   <exec_depend>driver_base</exec_depend>
+  <exec_depend>mongodb_store</exec_depend>
+  <exec_depend>mongodb_log</exec_depend>
   <exec_depend>nodelet</exec_depend>
   <export>
   </export>
