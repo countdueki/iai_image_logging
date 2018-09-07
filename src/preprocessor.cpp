@@ -66,9 +66,6 @@ int main(int argc, char** argv)
   // image_transport::Subscriber img_sub = it.subscribe("/camera/rgb/image_raw", 1, imageCb, ros::VoidPtr(), th);
 
   image_transport::Subscriber img_sub = it.subscribe("/camera/rgb/image_raw", 1, imageCb);
-
-  // ros::Subscriber img_sub = n.subscribe("camera/rgb/image_raw",1,imageCb);
-
   image_transport::Publisher img_pub = it.advertise("preprocessor/images", 1);
 
   ros::Rate r = 1;

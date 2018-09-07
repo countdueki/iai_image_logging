@@ -8,6 +8,7 @@ find_package(catkin REQUIRED
         dynamic_reconfigure
         iai_image_logging_msgs
         image_transport
+        compressed_image_transport
         mongodb_store
         )
 
@@ -34,6 +35,17 @@ add_executable(preprocessor
         src/preprocessor.cpp
         )
 target_link_libraries(preprocessor
+        ${catkin_LIBRARIES}
+        )
+
+
+add_library(logger_lib
+        src/logger.cpp
+        )
+add_executable(logger
+        src/logger.cpp
+        )
+target_link_libraries(logger
         ${catkin_LIBRARIES}
         )
 

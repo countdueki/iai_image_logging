@@ -3,83 +3,11 @@
 //
 
 #include "logger.h"
+CompConfPtr g_cfg(new CompConf());
 
 DBClientConnection* mongodb_conn;
 
-/**
- *
- * @param conf
- * @param sample_size
- */
-void printDatabaseEntries(iai_image_logging_msgs::CompressedConfig conf, int sample_size)
-{
-  if (count != 0 && count % sample_size == 0)
-  {
-    ROS_INFO_STREAM("Saved " << sample_size << " images to " << conf.collection);
-    ROS_INFO_STREAM("Format = " << conf.format);
-    ROS_INFO_STREAM("JPEG quality = " << conf.jpeg_quality);
-    ROS_INFO_STREAM("PNG level = " << conf.png_level);
-  }
-}
-
-/**
- *
- */
-void matrixFunction()
-{
-  boost::shared_ptr<CompConf> conf;
-  conf = g_cfg;
-  int sample_size = 100;
-
-  if (count < sample_size)
-  {
-    conf->format = "jpeg";
-    conf->jpeg_quality = 100;
-    conf->png_level = 1;
-    conf->collection = "db.im_raw_comp_jpeg100_png1";
-    configurationCb(*conf);
-  }
-
-  else if (count < 2 * sample_size)
-  {
-    conf->format = "jpeg";
-    conf->jpeg_quality = 100;
-    conf->png_level = 5;
-    conf->collection = "db.im_raw_comp_jpeg100_png9";
-    configurationCb(*conf);
-  }
-
-  else if (count < 3 * sample_size)
-  {
-    conf->format = "png";
-    conf->jpeg_quality = 100;
-    conf->png_level = 1;
-    conf->collection = "db.im_raw_comp_png1_jpeg100";
-    configurationCb(*conf);
-  }
-
-  else if (count < 4 * sample_size)
-  {
-    conf->format = "png";
-    conf->png_level = 1;
-    conf->jpeg_quality = 1;
-    conf->collection = "db.im_raw_comp_png1_jpeg1";
-    configurationCb(*conf);
-  }
-
-  else if (count >= 4 * sample_size)
-  {
-    conf->format = "jpeg";
-    conf->jpeg_quality = 1;
-    conf->collection = "STOPPING WITH MISSING '.'";
-    configurationCb(*conf);
-  }
-  printDatabaseEntries(*conf, sample_size);
-  count++;
-}
-
-// TODO new type with sensor or ask dynamic server
-void savingImagesCb(const sensor_msgs::ImageConstPtr& msg)
+void savingImagesCb(const sensor_msgs::CompressedImageConstPtr& msg)
 {  // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;
@@ -101,6 +29,12 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "logger");
   ros::NodeHandle nh;
 
+  g_cfg->format = "jpeg";
+  g_cfg->jpeg_quality = 100;
+  g_cfg->png_level = 1;
+  g_cfg->collection = "db.direct_compressed";
+  g_cfg->db_host = "localhost";
+
   // Check connection to MongoDB
   string err = string("");
   string db_host = g_cfg->db_host;
@@ -110,13 +44,16 @@ int main(int argc, char** argv)
     ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
   }
 
-  image_transport::ImageTransport it(nh);
-  image_transport::Subscriber img_sub = it.subscribe("/preprocessor/images", 1, savingImagesCb);
+  // image_transport::ImageTransport it(nh);
+  // image_transport::TransportHints th("compressed");
+  // image_transport::Subscriber img_sub = it.subscribe("preprocessor/images", 1, savingImagesCb, ros::VoidPtr(), th);
+  // image_transport::Subscriber log_sub = it.subscribe("/preprocessor/images/compressed", 1, savingImagesCb);
 
+  ros::Subscriber sub_img = nh.subscribe("/camera/rgb/image_raw/compressed", 1, savingImagesCb);
   ros::Rate r = 1;
-  while (n.ok())
+  while (nh.ok())
   {
-    ros::spin();
+    ros::spinOnce();
     r.sleep();
   }
 }

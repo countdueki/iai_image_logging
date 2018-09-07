@@ -7,8 +7,8 @@
 #define IAI_IMAGE_LOGGING_IMAGE_LOGGER_H
 
 #include <ros/ros.h>
-#include <std_msgs/Float64.h>
 
+#include <boost/smart_ptr/shared_ptr.hpp>
 #include <dynamic_reconfigure/server.h>
 
 #include <iai_image_logging_msgs/Configuration.h>
@@ -16,20 +16,8 @@
 #include <iai_image_logging_msgs/CompressedConfig.h>
 #include <iai_image_logging_msgs/Process.h>
 #include <iostream>
-#include <boost/smart_ptr/shared_ptr.hpp>
-
-#include <mongo/client/dbclient.h>
-#include <mongodb_store/util.h>
-#include <mongodb_store/message_store.h>
 
 using std::string;
-using mongo::client::initialize;
-using mongo::BSONObjBuilder;
-using mongo::Date_t;
-using mongo::DBClientConnection;
-using mongo::BinDataGeneral;
-using mongodb_store::add_meta_for_msg;
-
 typedef iai_image_logging_msgs::CompressedConfig CompConf;
 typedef boost::shared_ptr<iai_image_logging_msgs::CompressedConfig> CompConfPtr;
 

@@ -4,12 +4,15 @@
 
 #ifndef IAI_IMAGE_LOGGING_PREPROCESSOR_H
 #define IAI_IMAGE_LOGGING_PREPROCESSOR_H
+
 #include <ros/ros.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/Image.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <iai_image_logging_msgs/Process.h>
+
+#include "image_logger.h"
 
 class Preprocessor
 {
