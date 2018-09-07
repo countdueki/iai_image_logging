@@ -3,19 +3,26 @@
 //
 
 #include "preprocessor.h"
-#include <pluginlib/class_list_macros.h>
-namespace image_logger
-{
-sensor_msgs::ImageConstPtr g_image_msg;
-std::string g_topic = "";
+
+sensor_msgs::ImagePtr g_image_msg(new sensor_msgs::Image());
+std::string g_topic;
 
 /**
  * Callback for the compressed images sent by one camera
  * @param msg compressed image pointer
  */
-void imageCb(sensor_msgs::ImageConstPtr msg)
+void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-  g_image_msg = msg;
+  g_image_msg->data = msg->data;
+  g_image_msg->encoding = msg->encoding;
+  g_image_msg->header = msg->header;
+  g_image_msg->height = msg->height;
+  g_image_msg->is_bigendian = msg->is_bigendian;
+  g_image_msg->step = msg->step;
+  g_image_msg->width = msg->width;
+  // g_image_msg = msg;
+
+  ROS_INFO_STREAM("msg is filled! width: " << msg->width << " height: " << msg->height);
 }
 
 /**
@@ -34,59 +41,45 @@ void compressedImageCb(sensor_msgs::CompressedImage msg)
  */
 bool processCb(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
 {
-  // get Images from Topic
-  // preprocess Images
+  // Set up Subscribers
   ROS_INFO_STREAM("Requested Topic from ImageLogger: " << req.set.topic);
   g_topic = req.set.topic;
 
   res.success = true;
   return true;
 }
-
-void Preprocessor::onInit()
-{
-}
-
 /**
  *
  * @param argc
  * @param argv
  * @return
  */
-int preprocessorSetup(int argc, char** argv)
+int main(int argc, char** argv)
 {
-  // TODO: Use Nodelets
-
   ros::init(argc, argv, "preprocessor");
 
   ros::NodeHandle n;
-
-  // string topic = g_cfg->topic;
+  ros::ServiceServer process_service = n.advertiseService("/preprocessor/process", processCb);
 
   image_transport::ImageTransport it(n);
-  image_transport::TransportHints th("compressed");
-  image_transport::Subscriber img_sub = it.subscribe("/camera/rgb/image_raw", 1, imageCb, ros::VoidPtr(), th);
+  // image_transport::TransportHints th("compressed");
+  // image_transport::Subscriber img_sub = it.subscribe("/camera/rgb/image_raw", 1, imageCb, ros::VoidPtr(), th);
 
-  ros::ServiceServer process_service = n.advertiseService("/preprocessor/process", processCb);
-  ROS_INFO_STREAM("Subscribed to: " << g_topic);
+  image_transport::Subscriber img_sub = it.subscribe("/camera/rgb/image_raw", 1, imageCb);
 
-  // do stuff with images
-  ros::Publisher pub_comp_img = n.advertise<sensor_msgs::CompressedImage>("/preprocessor/compressed_images", 1);
+  // ros::Subscriber img_sub = n.subscribe("camera/rgb/image_raw",1,imageCb);
+
+  image_transport::Publisher img_pub = it.advertise("preprocessor/images", 1);
+
   ros::Rate r = 1;
   while (n.ok())
   {
-    if (g_topic != "")
-    {
-      // ros::Subscriber sub_kinect = n.subscribe<sensor_msgs::CompressedImage>(g_topic.c_str(), 100,
-      // compressedImageCb);
-    }
-    pub_comp_img.publish(g_image_msg);
-    ros::spin();
+    ROS_INFO_STREAM("g_img_msg is filled! width: " << g_image_msg->width << " height: " << g_image_msg->height);
+    img_pub.publish(g_image_msg);
+
+    ros::spinOnce();
     r.sleep();
   }
 
   return 0;
 }
-}
-
-PLUGINLIB_EXPORT_CLASS(image_logger::Preprocessor, nodelet::Nodelet)

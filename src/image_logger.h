@@ -22,8 +22,6 @@
 #include <mongodb_store/util.h>
 #include <mongodb_store/message_store.h>
 
-#include <nodelet/nodelet.h>
-
 using std::string;
 using mongo::client::initialize;
 using mongo::BSONObjBuilder;
@@ -33,10 +31,9 @@ using mongo::BinDataGeneral;
 using mongodb_store::add_meta_for_msg;
 
 typedef iai_image_logging_msgs::CompressedConfig CompConf;
+typedef boost::shared_ptr<iai_image_logging_msgs::CompressedConfig> CompConfPtr;
 
-namespace image_logger
-{
-class ImageLogger : public nodelet::Nodelet
+class ImageLogger
 {
 private:
   // General Parameters
@@ -98,11 +95,6 @@ public:
   }
 
   ~ImageLogger();
-
-
-  virtual void onInit();
-
-
 };
 
 const string& ImageLogger::getTopic() const
@@ -163,6 +155,5 @@ int ImageLogger::getPngLevel() const
 void ImageLogger::setPngLevel(int png_level)
 {
   ImageLogger::png_level_ = png_level;
-}
 }
 #endif  // IAI_IMAGE_LOGGING_IMAGE_LOGGER_H

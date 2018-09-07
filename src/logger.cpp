@@ -4,6 +4,8 @@
 
 #include "logger.h"
 
+DBClientConnection* mongodb_conn;
+
 /**
  *
  * @param conf
@@ -76,7 +78,8 @@ void matrixFunction()
   count++;
 }
 
-int savingImages()
+// TODO new type with sensor or ask dynamic server
+void savingImagesCb(const sensor_msgs::ImageConstPtr& msg)
 {  // matrixFunction(); // for building test entries
   initialize();
   BSONObjBuilder document;
@@ -95,10 +98,8 @@ int savingImages()
 
 int main(int argc, char** argv)
 {
-  // TODO: Use Nodelets
-
-  ros::init(argc, argv);
-  ros::NodeHandle n;
+  ros::init(argc, argv, "logger");
+  ros::NodeHandle nh;
 
   // Check connection to MongoDB
   string err = string("");
@@ -109,7 +110,9 @@ int main(int argc, char** argv)
     ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
   }
 
-  ros::Subscriber sub_comp_img = n.subscribe<sensor_msgs::CompressedImage>("/preprocessor/compressed_images", 1);
+  image_transport::ImageTransport it(nh);
+  image_transport::Subscriber img_sub = it.subscribe("/preprocessor/images", 1, savingImagesCb);
+
   ros::Rate r = 1;
   while (n.ok())
   {
