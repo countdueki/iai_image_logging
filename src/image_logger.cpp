@@ -6,7 +6,6 @@
 
 #include "image_logger.h"
 
-CompConfPtr g_cfg;
 boost::shared_ptr<ImageLogger> g_imageLogger;
 
 /**
@@ -15,8 +14,6 @@ boost::shared_ptr<ImageLogger> g_imageLogger;
  */
 void configurationCb(iai_image_logging_msgs::CompressedConfig& cfg)
 {
-  boost::shared_ptr<CompConf> cfg_ptr(new CompConf(cfg));
-  g_cfg = cfg_ptr;
   dynamic_reconfigure::ReconfigureRequest req;
   dynamic_reconfigure::ReconfigureResponse res;
   dynamic_reconfigure::StrParameter format;
@@ -44,6 +41,7 @@ void configurationCb(iai_image_logging_msgs::CompressedConfig& cfg)
 
   proc_req.set.topic = cfg.topic;
   ros::service::call("preprocessor/process", proc_req, proc_res);
+  ROS_INFO_STREAM("called preprocessor service");
   ROS_DEBUG_STREAM("Set parameters on topic " << cfg.topic + "/compressed");
   ROS_DEBUG_STREAM("Request " << req.config.ints[0].name << ": " << req.config.ints[0].value);
   ROS_DEBUG_STREAM("Respone " << res.config.ints[0].name << ": " << res.config.ints[0].value);
