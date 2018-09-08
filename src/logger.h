@@ -6,7 +6,6 @@
 #define IAI_IMAGE_LOGGING_LOGGER_H
 
 #include <ros/ros.h>
-#include <iai_image_logging_msgs/CompressedConfig.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <mongo/client/dbclient.h>
@@ -14,7 +13,7 @@
 #include <mongodb_store/message_store.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
-#include "image_logger.h"
+#include <iai_image_logging_msgs/Process.h>
 
 using std::string;
 using mongo::client::initialize;
@@ -37,54 +36,9 @@ public:
     }
 
     subscriber = nodeHandle.subscribe(topic, 1, &Logger::savingCompressedImagesCb, this);
-    serviceServer = nodeHandle.advertiseService("logger/start", &Logger::startLogger,
+    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
                                                 this);  // TODO how does 'this' fix the problem of non-static reference?
   };
-
-private:
-  ros::NodeHandle nodeHandle;
-  ros::Subscriber subscriber;
-  ros::ServiceServer serviceServer;
-  DBClientConnection* dbClientConnection = new DBClientConnection(/* auto reconnect*/ true);
-
-public:
-  DBClientConnection* getDbClientConnection() const
-  {
-    return dbClientConnection;
-  }
-
-  void setDbClientConnection(DBClientConnection* dbClientConnection)
-  {
-    Logger::dbClientConnection = dbClientConnection;
-  }
-
-private:
-  std::string db_host = "localhost";
-
-public:
-  const string& getDb_host() const
-  {
-    return db_host;
-  }
-
-  void setDb_host(const string& db_host)
-  {
-    Logger::db_host = db_host;
-  }
-
-private:
-  std::string collection = "db.standard_collection";
-
-public:
-  const ros::NodeHandle& getNodeHandle() const
-  {
-    return nodeHandle;
-  }
-
-  void setNodeHandle(const ros::NodeHandle& nodeHandle)
-  {
-    Logger::nodeHandle = nodeHandle;
-  }
 
   void savingCompressedImagesCb(const sensor_msgs::CompressedImagePtr& msg)
   {  // matrixFunction(); // for building test entries
@@ -105,13 +59,53 @@ public:
     dbClientConnection->insert(collection, document.obj());
   }
 
-  bool startLogger(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
+  bool update(iai_image_logging_msgs::ProcessRequest &req, iai_image_logging_msgs::ProcessResponse &res)
   {
     collection = req.set.collection;
     db_host = req.set.db_host;
 
     res.success = true;
     return true;
+  }
+
+private:
+  ros::NodeHandle nodeHandle;
+  ros::Subscriber subscriber;
+  ros::ServiceServer serviceServer;
+  DBClientConnection* dbClientConnection = new DBClientConnection(/* auto reconnect*/ true);
+  std::string db_host = "localhost";
+  std::string collection = "db.standard_collection";
+
+  // Getter functions
+public:
+  const ros::NodeHandle& getNodeHandle() const
+  {
+    return nodeHandle;
+  }
+
+  const ros::Subscriber& getSubscriber() const
+  {
+    return subscriber;
+  }
+
+  const ros::ServiceServer& getServiceServer() const
+  {
+    return serviceServer;
+  }
+
+  DBClientConnection* getDbClientConnection() const
+  {
+    return dbClientConnection;
+  }
+
+  const string& getDb_host() const
+  {
+    return db_host;
+  }
+
+  const string& getCollection() const
+  {
+    return collection;
   }
 };
 #endif  // IAI_IMAGE_LOGGING_LOGGER_H

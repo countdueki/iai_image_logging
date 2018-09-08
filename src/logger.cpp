@@ -4,8 +4,6 @@
 
 #include "logger.h"
 
-DBClientConnection* mongodb_conn;
-
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "logger");
@@ -23,7 +21,7 @@ int main(int argc, char** argv)
       image_transport::Subscriber log_sub = it.subscribe("/preprocessor/images/compressed", 1, savingImagesCb);
   */
 
-  ros::Rate sleep_rate = 1;
+  ros::Rate sleep_rate(1.0);
   while (logger.getNodeHandle().ok())
   {
     ros::spinOnce();

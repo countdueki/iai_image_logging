@@ -12,7 +12,7 @@
 #include <image_transport/subscriber_filter.h>
 #include <iai_image_logging_msgs/Process.h>
 
-#include "image_logger.h"
+using std::string;
 
 class Preprocessor
 {
@@ -45,17 +45,23 @@ public:
 */
   bool processCb(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
-    ros::Subscriber new_sub = nodeHandle.subscribe(topic, 1, &Preprocessor::compressedImageCb, this);
-    subscriber = new_sub;
+    topic = req.set.topic;
     ROS_INFO_STREAM("Requested Topic from ImageLogger: " << req.set.topic);
 
-    ros::service::call("logger/start", req, res);
+    ros::service::call("logger/update", req, res);
+
     res.success = true;
     return true;
   }
 
 private:
   ros::NodeHandle nodeHandle;
+  ros::Subscriber subscriber;
+  ros::Publisher publisher;
+  ros::ServiceServer process_service;
+  std::string topic = "camera/rgb/image_raw/compressed";
+
+  // Getter functions
 
 public:
   const ros::NodeHandle& getNodeHandle() const
@@ -63,19 +69,9 @@ public:
     return nodeHandle;
   }
 
-  void setNodeHandle(const ros::NodeHandle& nodeHandle)
-  {
-    Preprocessor::nodeHandle = nodeHandle;
-  }
-
   const ros::Subscriber& getSubscriber() const
   {
     return subscriber;
-  }
-
-  void setSubscriber(const ros::Subscriber& subscriber)
-  {
-    Preprocessor::subscriber = subscriber;
   }
 
   const ros::Publisher& getPublisher() const
@@ -83,26 +79,14 @@ public:
     return publisher;
   }
 
-  void setPublisher(const ros::Publisher& publisher)
+  const ros::ServiceServer& getProcess_service() const
   {
-    Preprocessor::publisher = publisher;
+    return process_service;
   }
 
-private:
-  ros::Subscriber subscriber;
-  ros::Publisher publisher;
-  ros::ServiceServer process_service;
-  std::string topic = "camera/rgb/image_raw/compressed";
-
-public:
   const string& getTopic() const
   {
     return topic;
-  }
-
-  void setTopic(const string& topic)
-  {
-    Preprocessor::topic = topic;
   }
 };
 
