@@ -15,158 +15,91 @@ enum
     DEPTH_COMPRESSED
 };
 
-
-void compressedConfigToDynParams(CompConf cfg, dynamic_reconfigure::ReconfigureRequest req)
-{
-  StrParam db_host, collection, topic, format;
-  IntParam jpeg, png;
-
-  db_host.name = "db_host";
-  db_host.value = cfg.db_host;
-
-  collection.name = "collection";
-  collection.value = cfg.collection;
-
-  topic.name = "topic";
-  topic.value = cfg.topic;
-
-  format.name = "format";
-  format.value = cfg.format;
-
-  jpeg.name = "jpeg_quality";
-  jpeg.value = cfg.jpeg_quality;
-
-  png.name = "png_level";
-  png.value = cfg.png_level;
-
-  req.config.strs.push_back(db_host);
-  req.config.strs.push_back(collection);
-  req.config.strs.push_back(topic);
-  req.config.strs.push_back(format);
-  req.config.ints.push_back(jpeg);
-  req.config.ints.push_back(png);
-}
-
-void updateCompressedPreprocessor(CompConf& cfg)
-{
-  ProcReq proc_req;
-  ProcRes proc_res;
-
-  proc_req.set.topic = cfg.topic;
-  proc_req.set.db_host = cfg.db_host;
-  proc_req.set.collection = cfg.collection;
-  proc_req.set.format = cfg.format;
-  proc_req.set.png_level = cfg.png_level;
-  proc_req.set.jpeg_quality = cfg.jpeg_quality;
-
-  ros::service::call("preprocessor/process_compressed", proc_req, proc_res);
-}
-
-/**
- * Configuration callback for dynamic reconfiguration
- * @param cfg
- */
-void compressedConfigurationCb(CompConf& cfg)
-{
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-
-  compressedConfigToDynParams(cfg, req);
-
-  ros::service::call(cfg.topic + "/set_parameters", req, res);
-
-  updateCompressedPreprocessor(cfg);
-}
-
-void theoraConfigToDynParams(TheoraConf cfg, dynamic_reconfigure::ReconfigureRequest req)
-{
-  StrParam db_host, collection, topic;
-  IntParam optimize_for, keyframe_frequency, quality;
-  DoubleParam target_bitrate;
-
-  db_host.name = "db_host";
-  db_host.value = cfg.db_host;
-
-  collection.name = "collection";
-  collection.value = cfg.collection;
-
-  topic.name = "topic";
-  topic.value = cfg.topic;
-
-  optimize_for.name = "optimize_for";
-  optimize_for.value = cfg.optimize_for;
-
-  target_bitrate.name = "target_bitrate";
-  target_bitrate.value = cfg.target_bitrate;
-
-  keyframe_frequency.name = "keyframe_frequency";
-  keyframe_frequency.value = cfg.keyframe_frequency;
-
-  quality.name = "quality";
-  quality.value = cfg.quality;
-
-  req.config.strs.push_back(db_host);
-  req.config.strs.push_back(collection);
-  req.config.strs.push_back(topic);
-  req.config.doubles.push_back(target_bitrate);
-  req.config.ints.push_back(optimize_for);
-  req.config.ints.push_back(keyframe_frequency);
-  req.config.ints.push_back(quality);
-}
-void updateTheoraPreprocessor(TheoraConf& cfg)
-{
-
-  ProcReq proc_req;
-  ProcRes proc_res;
-
-  proc_req.set.topic = cfg.topic;
-  proc_req.set.db_host = cfg.db_host;
-  proc_req.set.collection = cfg.collection;
-}
-void theoraConfigurationCb(TheoraConf& cfg)
-{
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-  theoraConfigToDynParams(cfg, req);
-
-  ros::service::call(cfg.topic + "/set_parameters", req, res);
-
-  updateTheoraPreprocessor(cfg);
-}
-
 void mainConfigurationCb(MainConf& cfg)
 {
-    CompConf comp_cfg;
-    TheoraConf theora_cfg;
-    ROS_INFO_STREAM("CONFIG MODE: " << cfg.mode);
-    switch(cfg.mode)
+    dynamic_reconfigure::ReconfigureRequest req;
+    dynamic_reconfigure::ReconfigureResponse res;
+
+    ProcReq proc_req;
+    ProcRes proc_res;
+
+    StrParam db_host, collection, topic, format;
+    IntParam jpeg, png,optimize_for, keyframe_frequency, quality;
+    DoubleParam target_bitrate;
+
+    db_host.name = "db_host";
+    db_host.value = cfg.db_host;
+
+    collection.name = "collection";
+    collection.value = cfg.collection;
+
+    topic.name = "topic";
+    topic.value = cfg.topic;
+
+    format.name = "format";
+    format.value = cfg.format;
+
+    jpeg.name = "jpeg_quality";
+    jpeg.value = cfg.jpeg_quality;
+
+    png.name = "png_level";
+    png.value = cfg.png_level;
+
+    optimize_for.name = "optimize_for";
+    optimize_for.value = cfg.optimize_for;
+
+    target_bitrate.name = "target_bitrate";
+    target_bitrate.value = cfg.target_bitrate;
+
+    keyframe_frequency.name = "keyframe_frequency";
+    keyframe_frequency.value = cfg.keyframe_frequency;
+
+    quality.name = "quality";
+    quality.value = cfg.quality;
+
+    req.config.strs.push_back(db_host);
+    req.config.strs.push_back(collection);
+    req.config.strs.push_back(topic);
+    req.config.strs.push_back(format);
+    req.config.ints.push_back(jpeg);
+    req.config.ints.push_back(png);
+    req.config.ints.push_back(optimize_for);
+    req.config.ints.push_back(keyframe_frequency);
+    req.config.ints.push_back(quality);
+    req.config.doubles.push_back(target_bitrate);
+
+    ros::service::call(cfg.topic + "/set_parameters", req, res);
+
+    switch (cfg.mode)
     {
-        // TODO implement modes
-        case RAW:
+        case(RAW):
             break;
-        case COMPRESSED:
-            comp_cfg.db_host = cfg.db_host;
-            comp_cfg.topic = cfg.topic;
-            comp_cfg.jpeg_quality = cfg.jpeg_quality;
-            comp_cfg.png_level = cfg.png_level;
-            comp_cfg.format = cfg.format;
-            comp_cfg.collection = cfg.collection;
-            ROS_INFO_STREAM("format " << cfg.format);
-            compressedConfigurationCb(comp_cfg);
-            ROS_INFO_STREAM("COMPRESSED called");
-            break;
-        case THEORA:
+        case(COMPRESSED):
+
+            proc_req.set.topic = cfg.topic;
+            proc_req.set.db_host = cfg.db_host;
+            proc_req.set.collection = cfg.collection;
+            proc_req.set.format = cfg.format;
+            proc_req.set.png_level = cfg.png_level;
+            proc_req.set.jpeg_quality = cfg.jpeg_quality;
+
+            ros::service::call("preprocessor/process_compressed", proc_req, proc_res);
+
 
             break;
-        case DEPTH:
-            break;
-        case DEPTH_COMPRESSED:
-            break;
-        default:
-            ROS_INFO_STREAM("No mode selected");
+        case(THEORA):
+
+            proc_req.set.topic = cfg.topic;
+            proc_req.set.db_host = cfg.db_host;
+            proc_req.set.collection = cfg.collection;
+
+            ros::service::call("preprocessor/process_theora", proc_req, proc_res);
+
             break;
     }
+
 }
+
 /**
  *
  */

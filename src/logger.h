@@ -54,7 +54,9 @@ public:
       }
       string topic = "";
       subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
-      subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
+
+      //subscriber_compressed = nodeHandle.subscribe(topic + "/compressed", 1, &Logger::saveCompressedImagesCb, this);
+      //subscriber_theora = nodeHandle.subscribe(topic + "theora", 1, &Logger::saveTheoraVideoCb, this);
 
       serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
                                                   this);  // TODO how does 'this' fix the problem of non-static reference?

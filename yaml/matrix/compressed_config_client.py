@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     yaml_list = "compressed_config.txt"
 
-    tsleep_rate = 1;
+    tsleep_rate = 10;
 
 while not rospy.is_shutdown():
 
