@@ -1,0 +1,7 @@
+collection: db.rgb_image_raw_jpeg_20
+db_host: localhost
+format: jpeg
+jpeg_quality: 20
+png_level: 9
+topic: /camera/rgb/image_raw/compressed
+mode: 1

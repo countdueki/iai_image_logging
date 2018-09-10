@@ -26,24 +26,70 @@ using mongodb_store::add_meta_for_msg;
 class Logger
 {
 public:
-  Logger(std::string topic)
-  {
-    // Check connection to MongoDB
-    string err = string("");
-    if (!dbClientConnection->connect(db_host, err))
+    Logger(std::string topic)
     {
-      ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-    }
+      // Check connection to MongoDB
+      string err = string("");
+      if (!dbClientConnection->connect(db_host, err))
+      {
+        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+      }
 
-    subscriber = nodeHandle.subscribe(topic, 1, &Logger::savingCompressedImagesCb, this);
-    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
-                                                this);  // TODO how does 'this' fix the problem of non-static reference?
-  };
+      subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
+      //subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
 
-  void savingCompressedImagesCb(const sensor_msgs::CompressedImagePtr& msg)
+      serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
+                                                  this);  // TODO how does 'this' fix the problem of non-static reference?
+    };
+
+
+    Logger(int method)
+    {
+      // TODO update method  topic selection
+      // Check connection to MongoDB
+      string err = string("");
+      if (!dbClientConnection->connect(db_host, err))
+      {
+        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+      }
+      string topic = "";
+      subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
+      subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
+
+      serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
+                                                  this);  // TODO how does 'this' fix the problem of non-static reference?
+    };
+  void saveImagesCb(const sensor_msgs::ImagePtr& msg)
+  {
+    initialize();
+    BSONObjBuilder document;
+
+    Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+    document.append("encoding", msg->encoding);
+    document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
+
+    add_meta_for_msg<sensor_msgs::Image>(msg, document);
+    dbClientConnection->insert(collection, document.obj());
+  }
+
+  void saveTheoraVideoCb(const sensor_msgs::ImagePtr& msg)
+  {
+    initialize();
+    BSONObjBuilder document;
+
+    Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+    document.append("encoding", msg->encoding);
+    document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
+
+    add_meta_for_msg<sensor_msgs::Image>(msg, document);
+    dbClientConnection->insert(collection, document.obj());
+  }
+
+  void saveCompressedImagesCb(const sensor_msgs::CompressedImagePtr& msg)
   {  // matrixFunction(); // for building test entries
 
-    ROS_INFO_STREAM("cb logger");
     initialize();
     BSONObjBuilder document;
 
@@ -55,11 +101,10 @@ public:
     document.appendBinData("data", msg->data.size(), BinDataGeneral, (&msg->data[0]));
 
     add_meta_for_msg<sensor_msgs::CompressedImage>(msg, document);
-    ROS_INFO_STREAM("now saving");
     dbClientConnection->insert(collection, document.obj());
   }
 
-  bool update(iai_image_logging_msgs::ProcessRequest &req, iai_image_logging_msgs::ProcessResponse &res)
+  bool update(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
     collection = req.set.collection;
     db_host = req.set.db_host;
@@ -70,7 +115,8 @@ public:
 
 private:
   ros::NodeHandle nodeHandle;
-  ros::Subscriber subscriber;
+  ros::Subscriber subscriber_compressed;
+  ros::Subscriber subscriber_theora;
   ros::ServiceServer serviceServer;
   DBClientConnection* dbClientConnection = new DBClientConnection(/* auto reconnect*/ true);
   std::string db_host = "localhost";
@@ -85,7 +131,7 @@ public:
 
   const ros::Subscriber& getSubscriber() const
   {
-    return subscriber;
+    return subscriber_compressed;
   }
 
   const ros::ServiceServer& getServiceServer() const
@@ -106,6 +152,11 @@ public:
   const string& getCollection() const
   {
     return collection;
+  }
+
+  const ros::Subscriber getSubscriber_theora() const
+  {
+    return subscriber_theora;
   }
 };
 #endif  // IAI_IMAGE_LOGGING_LOGGER_H

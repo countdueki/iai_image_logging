@@ -14,12 +14,25 @@
 #include <iai_image_logging_msgs/Configuration.h>
 #include <iai_image_logging_msgs/ConfigurationYAML.h>
 #include <iai_image_logging_msgs/CompressedConfig.h>
+#include <iai_image_logging_msgs/TheoraConfig.h>
+#include <iai_image_logging_msgs/MainConfig.h>
 #include <iai_image_logging_msgs/Process.h>
 #include <iostream>
 
 using std::string;
 typedef iai_image_logging_msgs::CompressedConfig CompConf;
 typedef boost::shared_ptr<iai_image_logging_msgs::CompressedConfig> CompConfPtr;
+typedef iai_image_logging_msgs::TheoraConfig TheoraConf;
+typedef boost::shared_ptr<iai_image_logging_msgs::TheoraConfig> TheoraConfPtr;
+typedef iai_image_logging_msgs::MainConfig MainConf;
+typedef boost::shared_ptr<iai_image_logging_msgs::MainConfig> MainConfigPtr;
+
+typedef dynamic_reconfigure::StrParameter StrParam;
+typedef dynamic_reconfigure::IntParameter IntParam;
+typedef dynamic_reconfigure::DoubleParameter DoubleParam;
+
+typedef iai_image_logging_msgs::ProcessRequest ProcReq;
+typedef iai_image_logging_msgs::ProcessResponse ProcRes;
 
 class ImageLogger
 {

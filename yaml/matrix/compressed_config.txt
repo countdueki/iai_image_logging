@@ -1,0 +1,11 @@
+rgb_image_raw_jpeg_100.yaml
+rgb_image_raw_jpeg_1.yaml
+rgb_image_raw_jpeg_20.yaml
+rgb_image_raw_jpeg_40.yaml
+rgb_image_raw_jpeg_60.yaml
+rgb_image_raw_jpeg_80.yaml
+rgb_image_raw_png_1.yaml
+rgb_image_raw_png_3.yaml
+rgb_image_raw_png_5.yaml
+rgb_image_raw_png_7.yaml
+rgb_image_raw_png_9.yaml
