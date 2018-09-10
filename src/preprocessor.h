@@ -23,8 +23,8 @@ public:
         nodeHandle.advertiseService("/preprocessor/process_compressed", &Preprocessor::processCompressedCb, this);
     process_theora_service =
         nodeHandle.advertiseService("/preprocessor/process_theora", &Preprocessor::processTheoraCb, this);
-    subscriber_compressed = nodeHandle.subscribe(topic, 1, &Preprocessor::compressedImageCb, this);
-    //subscriber_theora = nodeHandle.subscribe(topic, 1, &Preprocessor::theoraVideoCb, this);
+    subscriber_compressed = nodeHandle.subscribe(topic, 100, &Preprocessor::compressedImageCb, this);
+    // subscriber_theora = nodeHandle.subscribe(topic, 1, &Preprocessor::theoraVideoCb, this);
     publisher = nodeHandle.advertise<sensor_msgs::CompressedImage>("preprocessor/images/compressed", 1);
   };
 
@@ -38,7 +38,6 @@ public:
   void compressedImageCb(sensor_msgs::CompressedImage msg)
   {
     publisher.publish(msg);
-    ROS_INFO_STREAM("published msg /w format " << msg.format);
   }
 
   /**
@@ -61,13 +60,11 @@ public:
   void theoraVideoCb(sensor_msgs::CompressedImage msg)
   {
     publisher.publish(msg);
-    ROS_INFO_STREAM("published msg /w format " << msg.format);
   }
 
   bool processTheoraCb(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
     topic = req.set.topic;
-    ROS_INFO_STREAM("Requested Theora Topic from ImageLogger: " << req.set.topic);
 
     ros::service::call("logger/update", req, res);
 

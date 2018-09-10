@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
     rate = rospy.Rate(1.0)
 
-    yaml_list = "compressed_config.txt"
+    yaml_list = "../yaml/matrix/compressed_config.txt"
 
-    tsleep_rate = 10;
+    tsleep_rate = 3;
 
 while not rospy.is_shutdown():
 

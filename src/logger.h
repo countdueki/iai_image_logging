@@ -26,41 +26,40 @@ using mongodb_store::add_meta_for_msg;
 class Logger
 {
 public:
-    Logger(std::string topic)
+  Logger(std::string topic)
+  {
+    // Check connection to MongoDB
+    string err = string("");
+    if (!dbClientConnection->connect(db_host, err))
     {
-      // Check connection to MongoDB
-      string err = string("");
-      if (!dbClientConnection->connect(db_host, err))
-      {
-        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-      }
+      ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+    }
 
-      subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
-      //subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
+    subscriber_compressed = nodeHandle.subscribe(topic, 100, &Logger::saveCompressedImagesCb, this);
+    // subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
 
-      serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
-                                                  this);  // TODO how does 'this' fix the problem of non-static reference?
-    };
+    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
+                                                this);  // TODO how does 'this' fix the problem of non-static reference?
+  };
 
-
-    Logger(int method)
+  Logger(int method)
+  {
+    // TODO update method topic selection
+    // Check connection to MongoDB
+    string err = string("");
+    if (!dbClientConnection->connect(db_host, err))
     {
-      // TODO update method  topic selection
-      // Check connection to MongoDB
-      string err = string("");
-      if (!dbClientConnection->connect(db_host, err))
-      {
-        ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-      }
-      string topic = "";
-      subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
+      ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
+    }
+    string topic = "";
+    subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
 
-      //subscriber_compressed = nodeHandle.subscribe(topic + "/compressed", 1, &Logger::saveCompressedImagesCb, this);
-      //subscriber_theora = nodeHandle.subscribe(topic + "theora", 1, &Logger::saveTheoraVideoCb, this);
+    // subscriber_compressed = nodeHandle.subscribe(topic + "/compressed", 1, &Logger::saveCompressedImagesCb, this);
+    // subscriber_theora = nodeHandle.subscribe(topic + "theora", 1, &Logger::saveTheoraVideoCb, this);
 
-      serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
-                                                  this);  // TODO how does 'this' fix the problem of non-static reference?
-    };
+    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
+                                                this);  // TODO how does 'this' fix the problem of non-static reference?
+  };
   void saveImagesCb(const sensor_msgs::ImagePtr& msg)
   {
     initialize();
@@ -95,7 +94,7 @@ public:
     initialize();
     BSONObjBuilder document;
 
-    ROS_DEBUG_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
+    ROS_INFO_STREAM("Saving Image at sec " << msg->header.stamp.sec << " with type " << msg->format);
 
     Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
     document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));

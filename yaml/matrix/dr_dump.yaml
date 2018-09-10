@@ -1,6 +1,0 @@
-  collection: db.image_color_compressed_cfg
-  db_host: localhost
-  format: jpeg
-  jpeg_quality: 80
-  png_level: 9
-  topic: /camera/rgb/image_raw

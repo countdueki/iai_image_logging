@@ -2,6 +2,6 @@ collection: db.rgb_image_raw_png_7
 db_host: localhost
 format: png
 jpeg_quality: 80
-png_level: 5
+png_level: 7
 topic: /camera/rgb/image_raw/compressed
 mode: 1
