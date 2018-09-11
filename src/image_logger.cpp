@@ -6,15 +6,10 @@
 
 #include "image_logger.h"
 
-enum
-{
-  RAW,
-  COMPRESSED,
-  THEORA,
-  DEPTH,
-  DEPTH_COMPRESSED
-};
-
+/**
+ * Callback for dynamic reconfiguration
+ * @param cfg Configuration to update parameters of topics to be logged
+ */
 void mainConfigurationCb(MainConf& cfg)
 {
   dynamic_reconfigure::ReconfigureRequest req;
@@ -57,19 +52,24 @@ void mainConfigurationCb(MainConf& cfg)
   quality.name = "quality";
   quality.value = cfg.quality;
 
+  // Set general parameters
   req.config.strs.push_back(db_host);
   req.config.strs.push_back(collection);
   req.config.strs.push_back(topic);
+
+  // Set parameters for compressed images
   req.config.strs.push_back(format);
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
 
+  // Set parameters for theora video
   req.config.ints.push_back(optimize_for);
   req.config.ints.push_back(keyframe_frequency);
   req.config.ints.push_back(quality);
   req.config.doubles.push_back(target_bitrate);
   ros::service::call(cfg.topic + "/set_parameters", req, res);
 
+  // Call specific preprocessing for different compressions
   switch (cfg.mode)
   {
     case (RAW):
@@ -101,7 +101,10 @@ void mainConfigurationCb(MainConf& cfg)
 }
 
 /**
- *
+ * Main Image Logging node responsible for handling configuration
+ * @param argc
+ * @param argv
+ * @return
  */
 int main(int argc, char** argv)
 {

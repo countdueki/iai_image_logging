@@ -36,30 +36,18 @@ public:
     }
 
     subscriber_compressed = nodeHandle.subscribe(topic, 100, &Logger::saveCompressedImagesCb, this);
+    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update, this);
     // subscriber_theora = nodeHandle.subscribe(topic, 1, &Logger::saveTheoraVideoCb, this);
-
-    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
-                                                this);  // TODO how does 'this' fix the problem of non-static reference?
   };
 
-  Logger(int method)
-  {
+  Logger(int method){
     // TODO update method topic selection
-    // Check connection to MongoDB
-    string err = string("");
-    if (!dbClientConnection->connect(db_host, err))
-    {
-      ROS_ERROR("Failed to connect to MongoDB: %s", err.c_str());
-    }
-    string topic = "";
-    subscriber_compressed = nodeHandle.subscribe(topic, 1, &Logger::saveCompressedImagesCb, this);
-
-    // subscriber_compressed = nodeHandle.subscribe(topic + "/compressed", 1, &Logger::saveCompressedImagesCb, this);
-    // subscriber_theora = nodeHandle.subscribe(topic + "theora", 1, &Logger::saveTheoraVideoCb, this);
-
-    serviceServer = nodeHandle.advertiseService("logger/update", &Logger::update,
-                                                this);  // TODO how does 'this' fix the problem of non-static reference?
   };
+
+  /**
+   * Log regular raw images to MongoDB
+   * @param msg image to save
+   */
   void saveImagesCb(const sensor_msgs::ImagePtr& msg)
   {
     initialize();
@@ -74,6 +62,10 @@ public:
     dbClientConnection->insert(collection, document.obj());
   }
 
+  /**
+   * Log theora compressed video
+   * @param msg image to save
+   */
   void saveTheoraVideoCb(const sensor_msgs::ImagePtr& msg)
   {
     initialize();
@@ -88,6 +80,10 @@ public:
     dbClientConnection->insert(collection, document.obj());
   }
 
+  /**
+   * Log compressed images
+   * @param msg image to log
+   */
   void saveCompressedImagesCb(const sensor_msgs::CompressedImagePtr& msg)
   {  // matrixFunction(); // for building test entries
 
@@ -105,6 +101,12 @@ public:
     dbClientConnection->insert(collection, document.obj());
   }
 
+  /**
+   * Update current configuration of MongoDB
+   * @param req
+   * @param res
+   * @return
+   */
   bool update(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
     collection = req.set.collection;

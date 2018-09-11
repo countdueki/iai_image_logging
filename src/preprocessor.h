@@ -21,19 +21,19 @@ public:
   {
     process_compressed_service =
         nodeHandle.advertiseService("/preprocessor/process_compressed", &Preprocessor::processCompressedCb, this);
-    process_theora_service =
-        nodeHandle.advertiseService("/preprocessor/process_theora", &Preprocessor::processTheoraCb, this);
     subscriber_compressed = nodeHandle.subscribe(topic, 100, &Preprocessor::compressedImageCb, this);
-    // subscriber_theora = nodeHandle.subscribe(topic, 1, &Preprocessor::theoraVideoCb, this);
     publisher = nodeHandle.advertise<sensor_msgs::CompressedImage>("preprocessor/images/compressed", 1);
+    // subscriber_theora = nodeHandle.subscribe(topic, 1, &Preprocessor::theoraVideoCb, this);
+    // process_theora_service =
+    //    nodeHandle.advertiseService("/preprocessor/process_theora", &Preprocessor::processTheoraCb, this);
   };
 
   // not allowed to have a destructor
   //~Preprocessor();
 
   /**
- * Callback for the compressed images sent by one camera
- * @param msg compressed image pointer
+ * Callback for the compressed images sent by one camera. For now just tunneling
+ * @param msg compressed image
  */
   void compressedImageCb(sensor_msgs::CompressedImage msg)
   {
@@ -41,27 +41,38 @@ public:
   }
 
   /**
-*
-*@param req
-*@param res
-*@return
-*/
+   * Process the compressed image from Callback as wished
+   * @param req
+   * @param res
+   * @return true if success, else false
+   */
   bool processCompressedCb(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
     topic = req.set.topic;
     ROS_INFO_STREAM("Requested Compressed Topic from ImageLogger: " << req.set.topic);
 
+    // Call logger to update MongoDB data
     ros::service::call("logger/update", req, res);
 
     res.success = true;
     return true;
   }
 
+  /**
+   * Callback for theora video
+   * @param msg
+   */
   void theoraVideoCb(sensor_msgs::CompressedImage msg)
   {
     publisher.publish(msg);
   }
 
+  /**
+   * Process the compressed theora image as wished
+   * @param req
+   * @param res
+   * @return
+   */
   bool processTheoraCb(iai_image_logging_msgs::ProcessRequest& req, iai_image_logging_msgs::ProcessResponse& res)
   {
     topic = req.set.topic;

@@ -19,9 +19,6 @@ catkin_package(CATKIN_DEPENDS
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-add_library(image_logger_lib
-        src/image_logger.cpp
-        )
 add_executable(image_logger
         src/image_logger.cpp
         )
@@ -29,9 +26,6 @@ target_link_libraries(image_logger
         ${catkin_LIBRARIES}
         )
 
-add_library(preprocessor_lib
-        src/preprocessor.cpp
-        )
 add_executable(preprocessor
         src/preprocessor.cpp
         )
@@ -39,10 +33,6 @@ target_link_libraries(preprocessor
         ${catkin_LIBRARIES}
         )
 
-
-add_library(logger_lib
-        src/logger.cpp
-        )
 add_executable(logger
         src/logger.cpp
         )

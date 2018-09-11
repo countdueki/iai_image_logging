@@ -4,14 +4,12 @@
 
 #include "logger.h"
 
-enum
-{
-  RAW,
-  COMPRESSED,
-  THEORA,
-  DEPTH,
-  DEPTH_COMPRESSED
-};
+/**
+ * Logger node responsible for saving images
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "logger");

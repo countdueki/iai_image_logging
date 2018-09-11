@@ -5,7 +5,7 @@
 #include "preprocessor.h"
 
 /**
- *
+ * Preprocessor node responsible for preprocessing images
  * @param argc
  * @param argv
  * @return

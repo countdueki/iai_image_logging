@@ -19,20 +19,31 @@
 #include <iai_image_logging_msgs/Process.h>
 #include <iostream>
 
-using std::string;
+// Some shorthand
 typedef iai_image_logging_msgs::CompressedConfig CompConf;
 typedef boost::shared_ptr<iai_image_logging_msgs::CompressedConfig> CompConfPtr;
 typedef iai_image_logging_msgs::TheoraConfig TheoraConf;
 typedef boost::shared_ptr<iai_image_logging_msgs::TheoraConfig> TheoraConfPtr;
 typedef iai_image_logging_msgs::MainConfig MainConf;
 typedef boost::shared_ptr<iai_image_logging_msgs::MainConfig> MainConfigPtr;
+typedef iai_image_logging_msgs::ProcessRequest ProcReq;
+typedef iai_image_logging_msgs::ProcessResponse ProcRes;
 
 typedef dynamic_reconfigure::StrParameter StrParam;
 typedef dynamic_reconfigure::IntParameter IntParam;
 typedef dynamic_reconfigure::DoubleParameter DoubleParam;
 
-typedef iai_image_logging_msgs::ProcessRequest ProcReq;
-typedef iai_image_logging_msgs::ProcessResponse ProcRes;
+using std::string;
+
+// Mode enum
+enum
+{
+  RAW,
+  COMPRESSED,
+  THEORA,
+  DEPTH,
+  DEPTH_COMPRESSED
+};
 
 class ImageLogger
 {
