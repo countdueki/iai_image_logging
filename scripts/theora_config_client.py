@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     rate = rospy.Rate(1.0)
 
-    yaml_list = "theora_config.txt"
+    yaml_list = "../yaml/matrix/theora_config.txt"
 
     tsleep_rate = 10;
 

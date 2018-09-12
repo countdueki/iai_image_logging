@@ -3,7 +3,6 @@ project(iai_image_logging)
 
 add_compile_options(-std=c++11)
 
-set(PROJECT_DIR "/home/tammo/catkin_ws/src/iai_image_logging/iai_image_logging")
 find_package(catkin REQUIRED
         roscpp
         dynamic_reconfigure
@@ -25,18 +24,3 @@ add_executable(image_logger
 target_link_libraries(image_logger
         ${catkin_LIBRARIES}
         )
-
-add_executable(preprocessor
-        src/preprocessor.cpp
-        )
-target_link_libraries(preprocessor
-        ${catkin_LIBRARIES}
-        )
-
-add_executable(logger
-        src/logger.cpp
-        )
-target_link_libraries(logger
-        ${catkin_LIBRARIES}
-        )
-
