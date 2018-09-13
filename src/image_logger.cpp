@@ -58,18 +58,8 @@ void setCompressedParameters(MainConfig cfg){
     dynamic_reconfigure::ReconfigureRequest req;
     dynamic_reconfigure::ReconfigureResponse res;
 
-    StrParam db_host, collection, topic, format;
+    StrParam format;
     IntParam jpeg, png;
-
-
-    db_host.name = "db_host";
-    db_host.value = cfg.db_host;
-
-    collection.name = "collection";
-    collection.value = cfg.collection;
-
-    topic.name = "topic";
-    topic.value = cfg.topic;
 
     format.name = "format";
     format.value = cfg.format;
@@ -79,10 +69,6 @@ void setCompressedParameters(MainConfig cfg){
 
     png.name = "png_level";
     png.value = cfg.png_level;
-
-    req.config.strs.push_back(db_host);
-    req.config.strs.push_back(collection);
-    req.config.strs.push_back(topic);
 
     // Set parameters for compressed images
     req.config.strs.push_back(format);
@@ -102,18 +88,7 @@ void setTheoraParameters(MainConfig& cfg)
     dynamic_reconfigure::ReconfigureRequest req;
     dynamic_reconfigure::ReconfigureResponse res;
 
-    StrParam db_host, collection, topic;
-    IntParam  optimize_for, keyframe_frequency, quality;
-    DoubleParam target_bitrate;
-
-    db_host.name = "db_host";
-    db_host.value = cfg.db_host;
-
-    collection.name = "collection";
-    collection.value = cfg.collection;
-
-    topic.name = "topic";
-    topic.value = cfg.topic;
+    IntParam  optimize_for, keyframe_frequency, quality, target_bitrate;
 
     optimize_for.name = "optimize_for";
     optimize_for.value = cfg.optimize_for;
@@ -127,15 +102,11 @@ void setTheoraParameters(MainConfig& cfg)
     quality.name = "quality";
     quality.value = cfg.quality;
 
-    req.config.strs.push_back(db_host);
-    req.config.strs.push_back(collection);
-    req.config.strs.push_back(topic);
-
     // Set parameters for theora video
     req.config.ints.push_back(optimize_for);
     req.config.ints.push_back(keyframe_frequency);
     req.config.ints.push_back(quality);
-    req.config.doubles.push_back(target_bitrate);
+    req.config.ints.push_back(target_bitrate);
 
 
     string new_topic_theora = logger.getTopic() + "/theora";
@@ -149,8 +120,6 @@ void setTheoraParameters(MainConfig& cfg)
  */
 void mainConfigurationCb(MainConfig& cfg)
 {
-  // TODO: Fix: Camera nodelet dies when changing parameters
-
  //setCompressedParameters(cfg);
     g_cfg = cfg;
     setTheoraParameters(cfg);
