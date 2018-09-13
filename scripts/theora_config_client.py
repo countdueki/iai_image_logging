@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     yaml_list = "../yaml/matrix/theora_config.txt"
 
-    tsleep_rate = 10;
+    tsleep_rate = 3;
 
 while not rospy.is_shutdown():
 

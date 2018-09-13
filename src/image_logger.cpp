@@ -23,16 +23,19 @@ void imageCb(const sensor_msgs::CompressedImageConstPtr& msg)
   mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
   document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
   document.append("format", msg->format);
-  document.appendBinData("data", (int)msg->data.size(), mongo::BinDataGeneral, &msg->data);
+  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
   std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
   document.append("type", type);
-  logger.getClientConnection()->insert(logger.getCollection(), document.obj());
+  logger.getClientConnection()->insert(logger.getCollection() + "/compressed", document.obj());
   compressed_chunk += msg->data.size();
 }
 
 void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
 {
 
+
+    ROS_DEBUG_STREAM("LOGGER TOPIC: " << logger.getTopic());
+    ROS_DEBUG_STREAM("LOGGER COLLECTION: " << logger.getCollection());
     mongo::client::initialize();
   mongo::BSONObjBuilder document;
 
@@ -44,10 +47,10 @@ void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
   document.append("end", msg->e_o_s);
   document.append("position", (int)msg->granulepos);
   document.append("packetno", (int)msg->packetno);
-  document.appendBinData("data", (int)msg->data.size(), mongo::BinDataGeneral, &msg->data);
+  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
   string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
   document.append("type", type);
-  logger.getClientConnection()->insert(logger.getCollection(), document.obj());
+  logger.getClientConnection()->insert(logger.getCollection()+"_theora", document.obj());
   theora_chunk += msg->data.size();
 }
 
@@ -146,15 +149,13 @@ void setTheoraParameters(MainConfig& cfg)
  */
 void mainConfigurationCb(MainConfig& cfg)
 {
-  // TODO: Fix: When dynamic reconfigure is not called, config_client.py works. otherwise it does not. dr'ing from jpeg
-  // to png also crashes node. Other options don't!
+  // TODO: Fix: Camera nodelet dies when changing parameters
 
-g_cfg = cfg;
  //setCompressedParameters(cfg);
-setTheoraParameters(cfg);
+    g_cfg = cfg;
+    setTheoraParameters(cfg);
+    setCompressedParameters(cfg);
 
- ROS_WARN_STREAM("LOGGER TOPIC: " << logger.getTopic());
- ROS_WARN_STREAM("LOGGER COLLECTION: " << logger.getCollection());
 
     ROS_WARN_STREAM("MSG CHUNK THEORA: " << cfg.collection << " with " << theora_chunk << " Bytes");
     ROS_WARN_STREAM("MSG CHUNK COMPRESSED: " << cfg.collection << " with " << compressed_chunk << " Bytes");
@@ -188,17 +189,19 @@ int main(int argc, char** argv)
   cb_type = boost::bind(&mainConfigurationCb, _1);
   server.setCallback(cb_type);
 
-  //ros::Subscriber sub_compressed = nh.subscribe(logger.getTopic() + "/compressed", 1, &imageCb);
+
+  ros::Subscriber sub_compressed = nh.subscribe(logger.getTopic() + "/compressed", 1, &imageCb);
 
   ros::Subscriber sub_theora = nh.subscribe(logger.getTopic() + "/theora", 1, &theoraCallback);
 
-  ros::Rate sleep_rate(30.0);
+  // 60 enough, 30 is not
+  ros::Rate hz_rate(60.0);
   while (nh.ok())
   {
       logger.setTopic(g_cfg.topic);
       logger.setCollection(g_cfg.collection);
     ros::spinOnce();
-    sleep_rate.sleep();
+    hz_rate.sleep();
   }
   return 0;
 }

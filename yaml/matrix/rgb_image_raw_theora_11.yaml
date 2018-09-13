@@ -4,4 +4,4 @@ target_bitrate: 800000
 optimize_for: 1
 keyframe_frequency: 64
 quality: 11
-topic: /camera/rgb/image_raw/theora
+topic: /camera/rgb/image_raw
