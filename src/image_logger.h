@@ -29,57 +29,69 @@ typedef dynamic_reconfigure::DoubleParameter DoubleParam;
 
 using std::string;
 
-class ImageLogger {
-
+enum
+{
+  RAW,
+  COMPRESSED,
+  THEORA
+};
+class ImageLogger
+{
 public:
-
-    ImageLogger() {
-        clientConnection = new mongo::DBClientConnection(true);
-        dbHost = "localhost";
-        collection ="db.standard";
-        topic = "camera/rgb/image_raw/compressed";
-        }
+  ImageLogger()
+  {
+    clientConnection = new mongo::DBClientConnection(true);
+    dbHost = "localhost";
+    collection = "db.standard";
+    topic = "camera/rgb/image_raw";
+  }
 
 private:
-    string topic;
-    string dbHost;
-    string collection;
-    mongo::DBClientConnection* clientConnection ;
+  string topic;
+  string dbHost;
+  string collection;
+  mongo::DBClientConnection* clientConnection;
+
 public:
-    const string &getTopic() const {
-        return topic;
-    }
+  const string& getTopic() const
+  {
+    return topic;
+  }
 
-    void setTopic(const string &topic) {
-        ImageLogger::topic = topic;
-    }
+  void setTopic(const string& topic)
+  {
+    ImageLogger::topic = topic;
+  }
 
-    const string &getDbHost() const {
-        return dbHost;
-    }
+  const string& getDbHost() const
+  {
+    return dbHost;
+  }
 
-    void setDbHost(const string &dbHost) {
-        ImageLogger::dbHost = dbHost;
-    }
+  void setDbHost(const string& dbHost)
+  {
+    ImageLogger::dbHost = dbHost;
+  }
 
-    const string &getCollection() const {
-        return collection;
-    }
+  const string& getCollection() const
+  {
+    return collection;
+  }
 
-    void setCollection(const string &collection) {
-        ImageLogger::collection = collection;
-    }
+  void setCollection(const string& collection)
+  {
+    ImageLogger::collection = collection;
+  }
 
-    mongo::DBClientConnection *getClientConnection() const {
-        return clientConnection;
-    }
+  mongo::DBClientConnection* getClientConnection() const
+  {
+    return clientConnection;
+  }
 
-    void setClientConnection(mongo::DBClientConnection *clientConnection) {
-        ImageLogger::clientConnection = clientConnection;
-    }
-
-
-
+  void setClientConnection(mongo::DBClientConnection* clientConnection)
+  {
+    ImageLogger::clientConnection = clientConnection;
+  }
 };
 
 #endif  // IAI_IMAGE_LOGGING_IMAGE_LOGGER_H

@@ -3,5 +3,5 @@ db_host: localhost
 format: jpeg
 jpeg_quality: 80
 png_level: 9
-topic: /camera/rgb/image_raw/compressed
+topic: /camera/rgb/image_raw
 mode: 1
