@@ -9,6 +9,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>iai_image_logging_msgs</build_depend>
+  <build_depend>OpenCV</build_depend>
+  <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>compressed_image_transport</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
@@ -17,6 +19,8 @@
   <build_depend>mongodb_log</build_depend>
 
   <exec_depend>iai_image_logging_msgs</exec_depend>
+  <exec_depend>OpenCV</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
   <exec_depend>image_transport</exec_depend>
   <exec_depend>compressed_image_transport</exec_depend>
   <exec_depend>dynamic_reconfigure</exec_depend>

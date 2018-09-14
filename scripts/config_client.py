@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     yaml_list = "../yaml/matrix/compressed_config.txt"
 
-    tsleep_rate = 3;
+    tsleep_rate = 1;
 
 while not rospy.is_shutdown():
 

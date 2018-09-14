@@ -3,8 +3,11 @@ project(iai_image_logging)
 
 add_compile_options(-std=c++11)
 
+find_package(OpenCV 2 REQUIRED)
 find_package(catkin REQUIRED
         roscpp
+        image_geometry
+        cv_bridge
         dynamic_reconfigure
         iai_image_logging_msgs
         image_transport
@@ -16,11 +19,13 @@ catkin_package(CATKIN_DEPENDS
         iai_image_logging_msgs
         )
 
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS})
 
 add_executable(image_logger
         src/image_logger.cpp
         )
 target_link_libraries(image_logger
+        ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         )
