@@ -1,5 +1,6 @@
 <launch>
         <include file="/opt/ros/kinetic/share/freenect_launch/launch/examples/freenect-registered-xyzrgb.launch"/>
         <node name="image_logger" pkg="iai_image_logging" type="image_logger" output="screen"/>
+        <node name="storage" pkg="iai_image_logging" type="storage" output="screen"/>
 
 </launch>

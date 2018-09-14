@@ -5,116 +5,6 @@
  */
 
 #include "image_logger.h"
-#include <theora_image_transport/Packet.h>
-
-// opencv
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-#include <vector>
-ImageLogger logger;
-MainConfig g_cfg;
-
-unsigned long long compressed_chunk = 0;
-unsigned long long theora_chunk = 0;
-
-void writeImage(const sensor_msgs::CompressedImageConstPtr& msg)
-{
-
-    ROS_INFO_STREAM("Format: " << msg->format);
-    std::vector<int> compression_params;
-    compression_params.push_back(CV_LOAD_IMAGE_COLOR);
-    compression_params.push_back(1);
-  cv_bridge::CvImagePtr cv_image;
-  //cv_image->encoding = sensor_msgs::image_encodings::BAYER_GRBG8;
-  cv_image = cv_bridge::toCvCopy(msg );
-    cv::imshow("DAYUM",cv_image->image);
-
-    cv::imwrite("test.jpg", cv_image->image );
-
-}
-
-void imageCallback(const sensor_msgs::ImageConstPtr &msg)
-{  // matrixFunction(); // for building test entries
-
-  if (logger.getMode() == RAW)
-  {
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("encoding", msg->encoding);
-    document.append("width", msg->width);
-    document.append("height", msg->height);
-    document.append("is_bigendian", msg->is_bigendian);
-
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-    logger.getClientConnection()->insert(logger.getCollection(), document.obj());
-    compressed_chunk += msg->data.size();
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("No compressed images will be logged");
-  }
-}
-
-
-void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr &msg)
-{  // matrixFunction(); // for building test entries
-
-  if (logger.getMode() == COMPRESSED)
-  {
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("format", msg->format);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-    logger.getClientConnection()->insert(logger.getCollection(), document.obj());
-    compressed_chunk += msg->data.size();
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("No compressed images will be logged");
-  }
-}
-
-void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
-{
-  if (logger.getMode() == THEORA)
-  {
-    ROS_DEBUG_STREAM("LOGGER TOPIC: " << logger.getTopic());
-    ROS_DEBUG_STREAM("LOGGER COLLECTION: " << logger.getCollection());
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-
-    mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header",
-                    BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-    document.append("format", "theora");
-    document.append("start", msg->b_o_s);
-    document.append("end", msg->e_o_s);
-    document.append("position", (int)msg->granulepos);
-    document.append("packetno", (int)msg->packetno);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
-    document.append("size", (int)msg->data.size());
-    document.append("type", type);
-    logger.getClientConnection()->insert(logger.getCollection(), document.obj());
-    theora_chunk += msg->data.size();
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("no theora will be logged");
-  }
-}
 
 void setCompressedParameters(MainConfig cfg)
 {
@@ -138,9 +28,8 @@ void setCompressedParameters(MainConfig cfg)
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
 
-  string new_topic = logger.getTopic() + "/compressed";
-  ROS_WARN_STREAM("Called Topic: " << new_topic);
-  ros::service::call(logger.getTopic() + "/compressed/set_parameters", req, res);
+  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
 void setTheoraParameters(MainConfig& cfg)
@@ -168,9 +57,21 @@ void setTheoraParameters(MainConfig& cfg)
   req.config.ints.push_back(quality);
   req.config.ints.push_back(target_bitrate);
 
-  string new_topic_theora = logger.getTopic() + "/theora";
-  ROS_WARN_STREAM("Called Topic: " << new_topic_theora);
-  ros::service::call(logger.getTopic() + "/theora/set_parameters", req, res);
+  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
+}
+
+void updateStorage(MainConfig& cfg)
+{
+  iai_image_logging_msgs::UpdateRequest req;
+  iai_image_logging_msgs::UpdateResponse res;
+  req.set.db_host = cfg.db_host;
+  req.set.collection = cfg.collection;
+  req.set.topic = cfg.topic;
+  req.set.mode = cfg.mode;
+  ROS_WARN_STREAM("Call update storage");
+  ros::service::call("storage/update", req, res);
+  ROS_WARN_STREAM("Call us done");
 }
 /**
  * Callback for dynamic reconfiguration
@@ -178,22 +79,16 @@ void setTheoraParameters(MainConfig& cfg)
  */
 void mainConfigurationCb(MainConfig& cfg)
 {
-  // setCompressedParameters(cfg);
-  g_cfg = cfg;
-  if (logger.getMode() == COMPRESSED)
+  if (cfg.mode == COMPRESSED)
   {
     setCompressedParameters(cfg);
   }
-  else
+  else if (cfg.mode == THEORA)
   {
     setTheoraParameters(cfg);
   }
 
-  ROS_WARN_STREAM("MSG CHUNK THEORA: " << cfg.collection << " with " << theora_chunk << " Bytes");
-  ROS_WARN_STREAM("MSG CHUNK COMPRESSED: " << cfg.collection << " with " << compressed_chunk << " Bytes");
-
-  compressed_chunk = 0;
-  theora_chunk = 0;
+  updateStorage(cfg);
 }
 
 /**
@@ -206,12 +101,6 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "image_logger");
   ros::NodeHandle nh;
-  string errmsg;
-  if (!logger.getClientConnection()->connect(logger.getDbHost(), errmsg))
-  {
-    ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
-    return -1;
-  }
 
   // Server for dynamic_reconfigure callback
   dynamic_reconfigure::Server<MainConfig> server;
@@ -219,18 +108,14 @@ int main(int argc, char** argv)
 
   cb_type = boost::bind(&mainConfigurationCb, _1);
   server.setCallback(cb_type);
-
-  ros::Subscriber sub_raw = nh.subscribe(logger.getTopic(), 1, &imageCallback);
-  ros::Subscriber sub_compressed = nh.subscribe(logger.getTopic() + "/compressed", 1, &compressedImageCallback);
-  ros::Subscriber sub_theora = nh.subscribe(logger.getTopic() + "/theora", 1, &theoraCallback);
+  // ros::ServiceClient client = nh.serviceClient<iai_image_logging_msgs::UpdateRequest,
+  // iai_image_logging_msgs::UpdateResponse>("storage/update", true);
 
   // 60 enough, 30 is not
   ros::Rate hz_rate(60.0);
   while (nh.ok())
   {
-    logger.setTopic(g_cfg.topic);
-    logger.setCollection(g_cfg.collection);
-    logger.setMode(g_cfg.mode);
+    // client.call(g_req,g_res);
     ros::spinOnce();
     hz_rate.sleep();
   }

@@ -26,6 +26,13 @@ add_executable(image_logger
         src/image_logger.cpp
         )
 target_link_libraries(image_logger
+        ${catkin_LIBRARIES}
+        )
+
+add_executable(storage
+        src/storage.cpp
+        )
+target_link_libraries(storage
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         )
