@@ -5,3 +5,4 @@ optimize_for: 1
 keyframe_frequency: 64
 quality: 24
 topic: /camera/rgb/image_raw
+mode: 2

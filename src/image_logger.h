@@ -50,6 +50,7 @@ private:
   string topic;
   string dbHost;
   string collection;
+  int mode;
   mongo::DBClientConnection* clientConnection;
 
 public:
@@ -81,6 +82,16 @@ public:
   void setCollection(const string& collection)
   {
     ImageLogger::collection = collection;
+  }
+
+  int getMode() const
+  {
+    return mode;
+  }
+
+  void setMode(int mode)
+  {
+    ImageLogger::mode = mode;
   }
 
   mongo::DBClientConnection* getClientConnection() const
