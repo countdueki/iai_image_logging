@@ -9,6 +9,9 @@
 #include <string>
 #include <mongo/client/dbclient.h>
 #include <theora_image_transport/Packet.h>
+#include <image_transport/image_transport.h>
+#include <compressed_image_transport/compressed_subscriber.h>
+#include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <iai_image_logging_msgs/Update.h>
 
@@ -24,80 +27,8 @@ enum
 {
   RAW,
   COMPRESSED,
-  THEORA
+  THEORA,
+  DEPTH,
+  COMPRESSED_DEPTH
 };
-class Storage
-{
-public:
-  Storage()
-  {
-    clientConnection = new mongo::DBClientConnection(true);
-    dbHost = "localhost";
-    collection = "db.standard";
-    topic = "camera/rgb/image_raw";
-    mode = 1;
-  }
-
-private:
-  string topic;
-  string dbHost;
-  string collection;
-  int mode;
-
-public:
-  int getMode() const
-  {
-    return mode;
-  }
-
-  void setMode(int mode)
-  {
-    Storage::mode = mode;
-  }
-
-private:
-  mongo::DBClientConnection* clientConnection;
-
-public:
-  const string& getTopic() const
-  {
-    return topic;
-  }
-
-  void setTopic(const string& topic)
-  {
-    Storage::topic = topic;
-  }
-
-  const string& getDbHost() const
-  {
-    return dbHost;
-  }
-
-  void setDbHost(const string& dbHost)
-  {
-    Storage::dbHost = dbHost;
-  }
-
-  const string& getCollection() const
-  {
-    return collection;
-  }
-
-  void setCollection(const string& collection)
-  {
-    Storage::collection = collection;
-  }
-
-  mongo::DBClientConnection* getClientConnection() const
-  {
-    return clientConnection;
-  }
-
-  void setClientConnection(mongo::DBClientConnection* clientConnection)
-  {
-    Storage::clientConnection = clientConnection;
-  }
-};
-
 #endif  // IAI_IMAGE_LOGGING_STORAGE_H

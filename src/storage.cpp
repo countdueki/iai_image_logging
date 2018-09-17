@@ -4,9 +4,197 @@
 
 #include "storage.h"
 
-Storage storage;
+class Storage
+{
+public:
+  Storage()
+  {
+    dbHost = "localhost";
+    collection = "db.standard";
+    topic = "camera/rgb/image_raw";
+    mode = 1;
 
-void writeImage(const sensor_msgs::CompressedImageConstPtr& msg)
+    string errmsg;
+    if (!clientConnection->connect(dbHost, errmsg))
+    {
+      ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
+    }
+    mongo::client::initialize();
+
+    update_config = nh.advertiseService("storage/update", &Storage::update, this);
+  }
+
+private:
+  string topic;
+  string dbHost;
+  string collection;
+  int mode;
+
+  ros::NodeHandle nh;
+  ros::ServiceServer update_config;
+  ros::Subscriber sub_raw;
+  ros::Subscriber sub_compressed;
+  ros::Subscriber sub_theora;
+
+  mongo::DBClientConnection* clientConnection = new mongo::DBClientConnection(true);
+
+public:
+  void imageCallback(const sensor_msgs::ImageConstPtr& msg)
+  {  // matrixFunction(); // for building test entries
+
+    if (mode == RAW || mode == DEPTH)
+    {
+      // ROS_WARN_STREAM("msg format: " << msg->encoding);
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
+      mongo::BSONObjBuilder document;
+      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("encoding", msg->encoding);
+      document.append("width", msg->width);
+      document.append("height", msg->height);
+      document.append("is_bigendian", msg->is_bigendian);
+      document.append("step", msg->step);
+
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+      std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
+      clientConnection->insert(collection, document.obj());
+    }
+    else
+    {
+      ROS_DEBUG_STREAM("No compressed images will be logged");
+    }
+  }
+
+  void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
+  {
+    if (mode == COMPRESSED || mode == COMPRESSED_DEPTH)
+    {
+      ROS_WARN_STREAM("FORMAT: " << msg->format);
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
+      mongo::BSONObjBuilder document;
+      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("format", msg->format);
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+      std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
+      clientConnection->insert(collection, document.obj());
+    }
+    else
+    {
+      ROS_DEBUG_STREAM("No compressed images will be logged");
+    }
+  }
+
+  void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
+  {
+    if (mode == THEORA)
+    {
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
+      mongo::BSONObjBuilder document;
+
+      mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+      document.append("format", "theora");
+      document.append("start", msg->b_o_s);
+      document.append("end", msg->e_o_s);
+      document.append("position", (int)msg->granulepos);
+      document.append("packetno", (int)msg->packetno);
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+      string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
+      document.append("size", (int)msg->data.size());
+      document.append("type", type);
+      clientConnection->insert(collection, document.obj());
+    }
+    else
+    {
+      ROS_DEBUG_STREAM("no theora will be logged");
+    }
+  }
+
+  bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  {
+    collection = req.set.collection;
+    topic = req.set.topic;
+    dbHost = req.set.db_host;
+    mode = req.set.mode;
+
+    sub_raw = nh.subscribe(req.set.topic, 1, &Storage::imageCallback, this);
+    sub_compressed = nh.subscribe(req.set.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+    sub_theora = nh.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
+
+    res.success = true;
+    ROS_INFO_STREAM("UPDATE CALLED, MODE SET TO: " << mode);
+
+    return true;
+  }
+
+public:
+  int getMode() const
+  {
+    return mode;
+  }
+
+  void setMode(int mode)
+  {
+    Storage::mode = mode;
+  }
+
+  const string& getTopic() const
+  {
+    return topic;
+  }
+
+  void setTopic(const string& topic)
+  {
+    Storage::topic = topic;
+  }
+
+  const string& getDbHost() const
+  {
+    return dbHost;
+  }
+
+  void setDbHost(const string& dbHost)
+  {
+    Storage::dbHost = dbHost;
+  }
+
+  const string& getCollection() const
+  {
+    return collection;
+  }
+
+  void setCollection(const string& collection)
+  {
+    Storage::collection = collection;
+  }
+
+  mongo::DBClientConnection* getClientConnection() const
+  {
+    return clientConnection;
+  }
+
+  void setClientConnection(mongo::DBClientConnection* clientConnection)
+  {
+    Storage::clientConnection = clientConnection;
+  }
+  const ros::NodeHandle& getNh() const
+  {
+    return nh;
+  }
+};
+
+/*void writeImage(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   ROS_INFO_STREAM("Format: " << msg->format);
   std::vector<int> compression_params;
@@ -20,119 +208,28 @@ void writeImage(const sensor_msgs::CompressedImageConstPtr& msg)
   cv::imwrite("test.jpg", cv_image->image);
 }
 
-void imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{  // matrixFunction(); // for building test entries
-
-    // TODO: fix saving of raw images
-  if (storage.getMode() == RAW)
-  {
-    ROS_DEBUG_STREAM("storage TOPIC: " << storage.getTopic());
-    ROS_DEBUG_STREAM("storage COLLECTION: " << storage.getCollection());
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("encoding", msg->encoding);
-    document.append("width", msg->width);
-    document.append("height", msg->height);
-    document.append("is_bigendian", msg->is_bigendian);
-
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-    storage.getClientConnection()->insert(storage.getCollection(), document.obj());
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("No compressed images will be logged");
-  }
+const ros::NodeHandle &Storage::getNh() const {
+  return nh;
 }
 
-void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
-{  // matrixFunction(); // for building test entries
-
-  if (storage.getMode() == COMPRESSED)
-  {
-    ROS_DEBUG_STREAM("storage TOPIC: " << storage.getTopic());
-    ROS_DEBUG_STREAM("storage COLLECTION: " << storage.getCollection());
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("format", msg->format);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-    storage.getClientConnection()->insert(storage.getCollection(), document.obj());
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("No compressed images will be logged");
-  }
-}
-
-void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
+void compTest(const sensor_msgs::ImageConstPtr msg)
 {
-  if (storage.getMode() == THEORA)
-  {
-    ROS_DEBUG_STREAM("storage TOPIC: " << storage.getTopic());
-    ROS_DEBUG_STREAM("storage COLLECTION: " << storage.getCollection());
-    mongo::client::initialize();
-    mongo::BSONObjBuilder document;
-
-    mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header",
-                    BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-    document.append("format", "theora");
-    document.append("start", msg->b_o_s);
-    document.append("end", msg->e_o_s);
-    document.append("position", (int)msg->granulepos);
-    document.append("packetno", (int)msg->packetno);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
-    document.append("size", (int)msg->data.size());
-    document.append("type", type);
-    storage.getClientConnection()->insert(storage.getCollection(), document.obj());
-  }
-  else
-  {
-    ROS_DEBUG_STREAM("no theora will be logged");
-  }
+  //ROS_WARN_STREAM("Format: " << msg->format);
+    ROS_WARN_STREAM("Size of compressed Image: " << msg->data.size());
 }
 
-bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+void rawTest(const sensor_msgs::ImageConstPtr msg)
 {
-  storage.setCollection(req.set.collection);
-  storage.setTopic(req.set.topic);
-  storage.setDbHost(req.set.db_host);
-  storage.setMode(req.set.mode);
-  res.success = true;
-  ROS_INFO_STREAM("UPDATE CALLED, MODE SET TO: " << storage.getMode());
+  ROS_WARN_STREAM("Size of raw Image: " << msg->data.size());
+}*/
 
-  return true;
-}
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "storage");
-  ros::NodeHandle nh;
-
-  string errmsg;
-  if (!storage.getClientConnection()->connect(storage.getDbHost(), errmsg))
-  {
-    ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
-    return -1;
-  }
-
-  ros::Subscriber sub_raw = nh.subscribe(storage.getTopic(), 1, &imageCallback);
-  ros::Subscriber sub_compressed = nh.subscribe(storage.getTopic() + "/compressed", 1, &compressedImageCallback);
-  ros::Subscriber sub_theora = nh.subscribe(storage.getTopic() + "/theora", 1, &theoraCallback);
-
-  ros::ServiceServer update_config = nh.advertiseService("storage/update", &update);
+  Storage storage;
 
   ros::Rate hz_rate(60.0);
-  while (nh.ok())
+  while (storage.getNh().ok())
   {
     ros::spinOnce();
 

@@ -61,6 +61,30 @@ void setTheoraParameters(MainConfig& cfg)
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
+void setDepthCompressedParameters(MainConfig& cfg)
+{
+  dynamic_reconfigure::ReconfigureRequest req;
+  dynamic_reconfigure::ReconfigureResponse res;
+
+  IntParam png;
+  DoubleParam depth_max, depth_quantization;
+
+  png.name = "png_level";
+  png.value = cfg.png_level;
+
+  depth_max.name = "depth_max";
+  depth_max.value = cfg.depth_max;
+
+  depth_quantization.name = "depth_quantization";
+  depth_quantization.value = cfg.depth_quantization;
+
+  req.config.ints.push_back(png);
+  req.config.doubles.push_back(depth_max);
+  req.config.doubles.push_back(depth_quantization);
+
+  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ros::service::call(cfg.topic + "/compressedDepth/set_parameters", req, res);
+}
 void updateStorage(MainConfig& cfg)
 {
   iai_image_logging_msgs::UpdateRequest req;
@@ -86,6 +110,10 @@ void mainConfigurationCb(MainConfig& cfg)
   else if (cfg.mode == THEORA)
   {
     setTheoraParameters(cfg);
+  }
+  else if (cfg.mode == COMPRESSED_DEPTH)
+  {
+    setDepthCompressedParameters(cfg);
   }
 
   updateStorage(cfg);

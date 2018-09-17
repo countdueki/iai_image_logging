@@ -9,3 +9,5 @@
 ../yaml/matrix/rgb_image_raw_png_5.yaml
 ../yaml/matrix/rgb_image_raw_png_7.yaml
 ../yaml/matrix/rgb_image_raw_png_9.yaml
+../yaml/matrix/rgb_image_raw.yaml
+../yaml/matrix/rgb_image_color.yaml

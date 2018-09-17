@@ -27,7 +27,9 @@ enum
 {
   RAW,
   COMPRESSED,
-  THEORA
+  THEORA,
+  DEPTH,
+  COMPRESSED_DEPTH
 };
 
 class ImageLogger
