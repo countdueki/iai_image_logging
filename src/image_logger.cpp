@@ -93,6 +93,7 @@ void updateStorage(MainConfig& cfg)
   req.set.collection = cfg.collection;
   req.set.topic = cfg.topic;
   req.set.mode = cfg.mode;
+  req.set.cam_no = cfg.cam_no;
   ROS_WARN_STREAM("Call update storage");
   ros::service::call("storage/update", req, res);
   ROS_WARN_STREAM("Call us done");
@@ -119,6 +120,13 @@ void mainConfigurationCb(MainConfig& cfg)
   updateStorage(cfg);
 }
 
+void init()
+{
+  iai_image_logging_msgs::UpdateRequest req;
+  iai_image_logging_msgs::UpdateResponse res;
+  ros::service::call("storage/update", req, res);
+}
+
 /**
  * Main Image Logging node responsible for handling configuration
  * @param argc
@@ -139,8 +147,9 @@ int main(int argc, char** argv)
   // ros::ServiceClient client = nh.serviceClient<iai_image_logging_msgs::UpdateRequest,
   // iai_image_logging_msgs::UpdateResponse>("storage/update", true);
 
+  init();
   // 60 enough, 30 is not
-  ros::Rate hz_rate(60.0);
+  ros::Rate hz_rate(1.0);
   while (nh.ok())
   {
     // client.call(g_req,g_res);

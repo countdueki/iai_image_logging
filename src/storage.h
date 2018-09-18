@@ -21,6 +21,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <vector>
+#include "camera.h"
 
 using std::string;
 enum
