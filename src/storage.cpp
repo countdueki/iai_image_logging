@@ -3,7 +3,6 @@
 //
 
 #include "storage.h"
-
 class Storage
 {
 public:
@@ -13,8 +12,9 @@ public:
     collection = "db.standard";
     topic = "camera/rgb/image_raw";
     mode = 1;
-    cams.push_back(cam);
-
+    // maybe init cams here
+    Camera cam(0);
+    cams.add(&cam);
     string errmsg;
     if (!clientConnection->connect(dbHost, errmsg))
     {
@@ -23,6 +23,9 @@ public:
     mongo::client::initialize();
 
     update_config = nh.advertiseService("storage/update", &Storage::update, this);
+
+    add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
+    del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
   }
 
 private:
@@ -33,12 +36,13 @@ private:
 
   ros::NodeHandle nh;
   ros::ServiceServer update_config;
+  ros::ServiceServer add_service;
+  ros::ServiceServer del_service;
   ros::Subscriber sub_raw;
   ros::Subscriber sub_compressed;
   ros::Subscriber sub_theora;
 
-  Camera cam;
-  std::vector<Camera> cams;
+  CompositeCamera cams;
 
   mongo::DBClientConnection* clientConnection = new mongo::DBClientConnection(true);
 
@@ -48,7 +52,7 @@ public:
 
     if (mode == RAW || mode == DEPTH)
     {
-      // ROS_WARN_STREAM("msg format: " << msg->encoding);
+      ROS_DEBUG_STREAM("msg format: " << msg->encoding);
       ROS_DEBUG_STREAM("storage TOPIC: " << topic);
       ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
       mongo::BSONObjBuilder document;
@@ -85,7 +89,7 @@ public:
   {
     if (mode == COMPRESSED || mode == COMPRESSED_DEPTH)
     {
-      ROS_WARN_STREAM("FORMAT: " << msg->format);
+      ROS_DEBUG_STREAM("FORMAT: " << msg->format);
       ROS_DEBUG_STREAM("storage TOPIC: " << topic);
       ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
       mongo::BSONObjBuilder document;
@@ -118,7 +122,7 @@ public:
   {
     if (mode == THEORA)
     {
-      ROS_WARN_STREAM("Theora called: " << msg->packetno);
+      ROS_DEBUG_STREAM("Theora called: " << msg->packetno);
       ROS_DEBUG_STREAM("storage TOPIC: " << topic);
       ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
       mongo::BSONObjBuilder document;
@@ -146,35 +150,117 @@ public:
 
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    collection = req.set.collection;
-    topic = req.set.topic;
-    dbHost = req.set.db_host;
-    mode = req.set.mode;
+    collection = req.collection;
+    topic = req.topic;
+    dbHost = req.db_host;
+    mode = req.mode;
 
-    sub_raw = nh.subscribe(req.set.topic, 1, &Storage::imageCallback, this);
-    sub_compressed = nh.subscribe(req.set.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
-    sub_theora = nh.subscribe(req.set.topic + "/theora", 1, &Storage::theoraCallback, this);
+    if (req.cam_no > cams.size())
+    {
+      ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
+      ROS_ERROR_STREAM("Please add camera with index " << cams.size());
+    }
+    else
+    {
+      // TODO: Better existence and elements check
+      if (req.mode == RAW)
+      {
+        sub_raw = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
 
-    // TODO: Better existence and elements check
-    cams.push_back(cam);
+        for (int i = 0; i < cams.size(); i++)
+        {
+          if (cams.at(i)->getNo() == req.cam_no)
+          {
+            cams.at(req.cam_no)->updateRaw(sub_raw);
+          }
+          else
+          {
+            cams.add(new Camera(req.cam_no));
+            cams.at(req.cam_no)->updateRaw(sub_raw);
+          }
+        }
+      }
+      else if (req.mode == COMPRESSED)
+      {
+          ROS_ERROR_STREAM("1");
 
-    ROS_WARN_STREAM("the crucial part");
-    cams[req.set.cam_no].init(sub_raw, sub_compressed, sub_theora);
-    ROS_WARN_STREAM("all set");
+          sub_compressed = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
 
-    res.success = true;
-    ROS_INFO_STREAM("UPDATE CALLED, MODE SET TO: " << mode);
+        for (int i = 0; i < cams.size(); i++)
+        {
+            ROS_ERROR_STREAM("2");
 
-    return true;
+            if (cams.at(i)->getNo() == req.cam_no)
+          {
+              ROS_ERROR_STREAM("3");
+
+              cams.at(req.cam_no)->updateCompressed(sub_compressed);
+          }
+          else
+          {
+              ROS_ERROR_STREAM("4");
+
+              cams.add(new Camera(req.cam_no));
+            cams.at(req.cam_no)->updateCompressed(sub_compressed);
+          }
+        }
+      }
+      else if (req.mode == THEORA)
+      {
+        sub_theora = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
+
+        for (int i = 0; i < cams.size(); i++)
+        {
+          if (cams.at(i)->getNo() == req.cam_no)
+          {
+            cams.at(req.cam_no)->updateTheora(sub_theora);
+          }
+          else
+          {
+            cams.add(new Camera(req.cam_no));
+            cams.at(req.cam_no)->updateTheora(sub_theora);
+          }
+        }
+      }
+
+      res.success = true;
+
+      return true;
+    }
   }
 
   void init()
   {
-    sub_raw = nh.subscribe(topic, 1, &Storage::imageCallback, this);
-    sub_compressed = nh.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
-    sub_theora = nh.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
+          sub_raw = nh.subscribe(topic, 1, &Storage::imageCallback, this);
+          sub_compressed = nh.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+          sub_theora = nh.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
 
-    cams[0].init(sub_raw, sub_compressed, sub_theora);
+          cams.init(sub_raw, sub_compressed, sub_theora);
+
+  }
+
+  bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  {
+    if (cams.size() < req.cam_no)
+    {
+      ROS_ERROR_STREAM("Camera does not exist");
+    }
+    else
+    {
+      update(req, res);
+    }
+  }
+
+  bool delConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  {
+    if (cams.size() < req.cam_no)
+    {
+      ROS_ERROR_STREAM("Camera does not exist");
+    }
+    else
+    {
+      cams.at(req.cam_no)->del(req);
+    }
   }
 
 public:

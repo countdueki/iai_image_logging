@@ -21,8 +21,10 @@ typedef iai_image_logging_msgs::MainConfig MainConfig;
 typedef dynamic_reconfigure::StrParameter StrParam;
 typedef dynamic_reconfigure::IntParameter IntParam;
 typedef dynamic_reconfigure::DoubleParameter DoubleParam;
-
+using dynamic_reconfigure::ReconfigureRequest;
+using dynamic_reconfigure::ReconfigureResponse;
 using std::string;
+
 enum
 {
   RAW,

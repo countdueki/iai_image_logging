@@ -6,11 +6,8 @@
 
 #include "image_logger.h"
 
-void setCompressedParameters(MainConfig cfg)
+void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-
   StrParam format;
   IntParam jpeg, png;
 
@@ -28,15 +25,12 @@ void setCompressedParameters(MainConfig cfg)
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
 
-  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for compressed topic based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
-void setTheoraParameters(MainConfig& cfg)
+void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-
   IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
 
   optimize_for.name = "optimize_for";
@@ -57,15 +51,12 @@ void setTheoraParameters(MainConfig& cfg)
   req.config.ints.push_back(quality);
   req.config.ints.push_back(target_bitrate);
 
-  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for theora topic based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
-void setDepthCompressedParameters(MainConfig& cfg)
+void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
-  dynamic_reconfigure::ReconfigureRequest req;
-  dynamic_reconfigure::ReconfigureResponse res;
-
   IntParam png;
   DoubleParam depth_max, depth_quantization;
 
@@ -82,21 +73,30 @@ void setDepthCompressedParameters(MainConfig& cfg)
   req.config.doubles.push_back(depth_max);
   req.config.doubles.push_back(depth_quantization);
 
-  ROS_WARN_STREAM("Called Topic: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for compresseDepth topic based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressedDepth/set_parameters", req, res);
 }
-void updateStorage(MainConfig& cfg)
+int updateStorage(MainConfig& cfg)
 {
-  iai_image_logging_msgs::UpdateRequest req;
-  iai_image_logging_msgs::UpdateResponse res;
-  req.set.db_host = cfg.db_host;
-  req.set.collection = cfg.collection;
-  req.set.topic = cfg.topic;
-  req.set.mode = cfg.mode;
-  req.set.cam_no = cfg.cam_no;
-  ROS_WARN_STREAM("Call update storage");
-  ros::service::call("storage/update", req, res);
-  ROS_WARN_STREAM("Call us done");
+  try
+  {
+    iai_image_logging_msgs::UpdateRequest req;
+    iai_image_logging_msgs::UpdateResponse res;
+    req.db_host = cfg.db_host;
+    req.collection = cfg.collection;
+    req.topic = cfg.topic;
+    req.mode = cfg.mode;
+    req.cam_no = cfg.cam_no;
+
+    ROS_DEBUG_STREAM("Calling update storage");
+    ros::service::call("storage/update", req, res);
+    return 0;
+  }
+  catch (ros::Exception e)
+  {
+    ROS_ERROR_STREAM(e.what());
+    return -1;
+  }
 }
 /**
  * Callback for dynamic reconfiguration
@@ -104,38 +104,49 @@ void updateStorage(MainConfig& cfg)
  */
 void mainConfigurationCb(MainConfig& cfg)
 {
+  ReconfigureRequest req;
+  ReconfigureResponse res;
   if (cfg.mode == COMPRESSED)
   {
-    setCompressedParameters(cfg);
+    setCompressedParameters(cfg, req, res);
   }
   else if (cfg.mode == THEORA)
   {
-    setTheoraParameters(cfg);
+    setTheoraParameters(cfg, req, res);
   }
   else if (cfg.mode == COMPRESSED_DEPTH)
   {
-    setDepthCompressedParameters(cfg);
+    setDepthCompressedParameters(cfg, req, res);
+  }
+  else if (cfg.mode == RAW)
+  {
+    ROS_DEBUG_STREAM("Setting parameters for raw topic: " << cfg.topic);
   }
 
-  updateStorage(cfg);
+  if (updateStorage(cfg) != 0)
+  {
+    ROS_ERROR_STREAM("Could not update Storage node");
+  }
 }
 
-void init()
+void initStorage()
 {
-  iai_image_logging_msgs::UpdateRequest req;
-  iai_image_logging_msgs::UpdateResponse res;
-  ros::service::call("storage/update", req, res);
+  try
+  {
+    iai_image_logging_msgs::UpdateRequest req;
+    iai_image_logging_msgs::UpdateResponse res;
+    ros::service::call("storage/update", req, res);
+  }
+  catch (ros::Exception e)
+  {
+    ROS_ERROR_STREAM(e.what());
+  }
 }
 
-/**
- * Main Image Logging node responsible for handling configuration
- * @param argc
- * @param argv
- * @return
- */
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "image_logger");
+  string node_name = "image_logger";
+  ros::init(argc, argv, node_name);
   ros::NodeHandle nh;
 
   // Server for dynamic_reconfigure callback
@@ -144,15 +155,14 @@ int main(int argc, char** argv)
 
   cb_type = boost::bind(&mainConfigurationCb, _1);
   server.setCallback(cb_type);
-  // ros::ServiceClient client = nh.serviceClient<iai_image_logging_msgs::UpdateRequest,
-  // iai_image_logging_msgs::UpdateResponse>("storage/update", true);
 
-  init();
+  // initialize storage node with subscribers // TODO: Fix fail on empty storage node (i.e. when initStorage not used)
+  initStorage();
+
   // 60 enough, 30 is not
   ros::Rate hz_rate(1.0);
   while (nh.ok())
   {
-    // client.call(g_req,g_res);
     ros::spinOnce();
     hz_rate.sleep();
   }

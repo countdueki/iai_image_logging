@@ -24,12 +24,5 @@
 #include "camera.h"
 
 using std::string;
-enum
-{
-  RAW,
-  COMPRESSED,
-  THEORA,
-  DEPTH,
-  COMPRESSED_DEPTH
-};
+
 #endif  // IAI_IMAGE_LOGGING_STORAGE_H

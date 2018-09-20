@@ -3,6 +3,7 @@ project(iai_image_logging)
 
 add_compile_options(-std=c++11)
 
+# OpenCV needs to be packaged seperately
 find_package(OpenCV 2 REQUIRED)
 find_package(catkin REQUIRED
         roscpp
@@ -30,12 +31,20 @@ target_link_libraries(image_logger
         )
 
 add_library(camera src/camera.h src/camera.cpp)
+
 add_executable(storage
         src/storage.cpp
-
         )
 target_link_libraries(storage
         camera
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
+        )
+
+# -- INSTALL -- #
+
+# add python scripts
+install(PROGRAMS
+        scripts/config_client.py
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )

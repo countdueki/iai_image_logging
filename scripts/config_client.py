@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import rospy
 import time
-import yaml
+
 import dynamic_reconfigure.client
 import iai_image_logging_msgs.cfg.MainConfig
+import rospy
+
+import yaml
 
 
 def callback(config):
