@@ -83,21 +83,27 @@ int updateStorage(MainConfig& cfg)
     iai_image_logging_msgs::UpdateRequest req;
     iai_image_logging_msgs::UpdateResponse res;
     string collection = "";
-      switch(cfg.mode)
-      {
-          case (RAW): collection = cfg.collection + "_raw" + "_cam" + std::to_string(cfg.cam_no);
-              break;
-          case (COMPRESSED) : collection = cfg.collection + "_compressed" + "_cam" + std::to_string(cfg.cam_no);
-              break;
-          case (THEORA): collection = cfg.collection + "_theora" + "_cam" + std::to_string(cfg.cam_no);
-              break;
-          case (DEPTH): collection = cfg.collection + "_depth" + "_cam" + std::to_string(cfg.cam_no);
-              break;
-          case (COMPRESSED_DEPTH) : collection = cfg.collection + "_compressedDepth" + "_cam" + std::to_string(cfg.cam_no);
-              break;
-          default: collection = cfg.collection;
-              break;
-      }
+    switch (cfg.mode)
+    {
+      case (RAW):
+        collection = cfg.collection + "_raw" + "_cam" + std::to_string(cfg.cam_no);
+        break;
+      case (COMPRESSED):
+        collection = cfg.collection + "_compressed" + "_cam" + std::to_string(cfg.cam_no);
+        break;
+      case (THEORA):
+        collection = cfg.collection + "_theora" + "_cam" + std::to_string(cfg.cam_no);
+        break;
+      case (DEPTH):
+        collection = cfg.collection + "_depth" + "_cam" + std::to_string(cfg.cam_no);
+        break;
+      case (COMPRESSED_DEPTH):
+        collection = cfg.collection + "_compressedDepth" + "_cam" + std::to_string(cfg.cam_no);
+        break;
+      default:
+        collection = cfg.collection;
+        break;
+    }
     req.db_host = cfg.db_host;
     req.collection = collection;
     req.topic = cfg.topic;

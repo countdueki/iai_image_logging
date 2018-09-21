@@ -85,7 +85,6 @@ public:
   }
   void updateCompressed(Subscriber new_sub)
   {
-
     ROS_WARN_STREAM("got to update compressed");
     bool found = false;
     ROS_WARN_STREAM("Size of list " << sub_compressed_list.size());
