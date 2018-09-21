@@ -193,18 +193,20 @@ public:
 
         if (index == req.cam_no && !camera_list.at(index).empty())
         {
-          ROS_INFO_STREAM("Required Topic: " << req.topic);
-          ROS_INFO_STREAM("Topic in List: " << camera_list.at(index).at(index).getTopic());
-          if (camera_list.at(index).at(index).getTopic().find(req.topic) != std::string::npos)
+           for (int sub_index = 0; sub_index < camera_list.at(index).size(); sub_index++){
+               ROS_INFO_STREAM("Required Topic: " << req.topic);
+               ROS_INFO_STREAM("Topic in List: " << camera_list.at(index).at(sub_index).getTopic());
+
+               if (camera_list.at(index).at(sub_index).getTopic().find(req.topic) != std::string::npos)
           {
             ROS_WARN_STREAM("Updating Subscriber");
-            camera_list.at(index).at(index) = sub_;
-          } else
-          {
-            ROS_WARN_STREAM("Adding new Subscriber");
-            vector<Subscriber> sub_vector;
-            sub_vector.push_back(sub_);
-            camera_list.at(index) = sub_vector;
+            camera_list.at(index).at(sub_index) = sub_;
+          } else {
+              ROS_WARN_STREAM("Adding new Subscriber");
+              vector<Subscriber> sub_vector;
+              sub_vector.push_back(sub_);
+              camera_list.at(index) = sub_vector;
+          }
 
           }
         }
