@@ -6,29 +6,38 @@
 class Storage
 {
 public:
-  Storage()
+  static Storage &Instance()
   {
-    dbHost = "localhost";
-    collection = "db.standard";
-    topic = "camera/rgb/image_raw";
-    mode = 1;
-    // maybe init cams here
-    Camera cam(0);
-    cams.add(&cam);
-    string errmsg;
-    if (!clientConnection->connect(dbHost, errmsg))
-    {
-      ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
-    }
-    mongo::client::initialize();
+      static boost::shared_ptr<Storage> instance (new Storage);
+      return *instance;
+  }
+private:
 
-    update_config = nh.advertiseService("storage/update", &Storage::update, this);
+    Storage(){
+        dbHost = "localhost";
+        collection = "db.standard";
+        topic = "camera/rgb/image_raw";
 
-    add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
-    del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
+        mode = 1;
+        // maybe init cams here
+        cams.add(new Camera());
+        string errmsg;
+        if (!clientConnection->connect(dbHost, errmsg))
+        {
+            ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
+        }
+        mongo::client::initialize();
+
+        update_config = nh.advertiseService("storage/update", &Storage::update, this);
+
+        add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
+        del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
   }
 
-private:
+  Storage(const Storage &old);
+  const Storage &operator=(const Storage &old);
+ // ~Storage(){}
+
   string topic;
   string dbHost;
   string collection;
@@ -155,6 +164,8 @@ public:
     dbHost = req.db_host;
     mode = req.mode;
 
+
+    //TODO better existence check for cams
     if (req.cam_no > cams.size())
     {
       ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
@@ -162,65 +173,67 @@ public:
     }
     else
     {
-      // TODO: Better existence and elements check
-      if (req.mode == RAW)
-      {
-        sub_raw = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
+      switch(mode){
+          case (RAW):
+            sub_raw = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
 
-        for (int i = 0; i < cams.size(); i++)
-        {
-          if (cams.at(i)->getNo() == req.cam_no)
-          {
-            cams.at(req.cam_no)->updateRaw(sub_raw);
-          }
-          else
-          {
-            cams.add(new Camera(req.cam_no));
-            cams.at(req.cam_no)->updateRaw(sub_raw);
-          }
-        }
-      }
-      else if (req.mode == COMPRESSED)
-      {
-          ROS_ERROR_STREAM("1");
+              for (int i = 0; i < cams.size(); i++)
+              {
+                if (cams.at(i)->getNo() == req.cam_no)
+                {
+                  cams.at(req.cam_no)->updateRaw(sub_raw);
+                }
+                else
+                {
+                  cams.add(new Camera(req.cam_no));
+                  cams.at(req.cam_no)->updateRaw(sub_raw);
+                }
+              }
+              break;
+          case (COMPRESSED):
+            ROS_ERROR_STREAM("1");
 
-          sub_compressed = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+              sub_compressed = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
 
-        for (int i = 0; i < cams.size(); i++)
-        {
-            ROS_ERROR_STREAM("2");
+              for (int i = 0; i < cams.size(); i++)
+              {
+                ROS_ERROR_STREAM("2");
+                ROS_WARN_STREAM("CAMS SIZE: " << cams.size());
 
-            if (cams.at(i)->getNo() == req.cam_no)
-          {
-              ROS_ERROR_STREAM("3");
+                if (cams.at(i)->getNo() == req.cam_no)
+                {
+                  ROS_ERROR_STREAM("3");
 
-              cams.at(req.cam_no)->updateCompressed(sub_compressed);
-          }
-          else
-          {
-              ROS_ERROR_STREAM("4");
+                  cams.at(req.cam_no)->updateCompressed(sub_compressed);
+                }
+                else
+                {
+                  ROS_ERROR_STREAM("4");
 
-              cams.add(new Camera(req.cam_no));
-            cams.at(req.cam_no)->updateCompressed(sub_compressed);
-          }
-        }
-      }
-      else if (req.mode == THEORA)
-      {
-        sub_theora = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
+                  cams.add(new Camera(req.cam_no));
+                  cams.at(req.cam_no)->updateCompressed(sub_compressed);
+                }
+              }
+              break;
+          case (THEORA):
+            sub_theora = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
 
-        for (int i = 0; i < cams.size(); i++)
-        {
-          if (cams.at(i)->getNo() == req.cam_no)
-          {
-            cams.at(req.cam_no)->updateTheora(sub_theora);
-          }
-          else
-          {
-            cams.add(new Camera(req.cam_no));
-            cams.at(req.cam_no)->updateTheora(sub_theora);
-          }
-        }
+              for (int i = 0; i < cams.size(); i++)
+              {
+                if (cams.at(i)->getNo() == req.cam_no)
+                {
+                  cams.at(req.cam_no)->updateTheora(sub_theora);
+                }
+                else
+                {
+                  cams.add(new Camera(req.cam_no));
+                  cams.at(req.cam_no)->updateTheora(sub_theora);
+                }
+              }
+              break;
+        default:
+          break;
+
       }
 
       res.success = true;
@@ -322,11 +335,11 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "storage");
-  Storage storage;
+  Storage* storage = &Storage::Instance();
 
-  storage.init();
+  storage->init();
   ros::Rate hz_rate(60.0);
-  while (storage.getNh().ok())
+  while (storage->getNh().ok())
   {
     ros::spinOnce();
 

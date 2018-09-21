@@ -37,9 +37,9 @@ public:
   }
 
 private:
-  std::vector<Subscriber> sub_raw_list;
-  std::vector<Subscriber> sub_compressed_list;
-  std::vector<Subscriber> sub_theora_list;
+  std::set<Subscriber> sub_raw_list;
+  std::set<Subscriber> sub_compressed_list;
+  std::set<Subscriber> sub_theora_list;
   bool is_empty;
   int cam_no_;
 
@@ -52,16 +52,16 @@ public:
 public:
   void init(Subscriber sub_raw, Subscriber sub_compressed, Subscriber sub_theora)
   {
-    sub_raw_list.push_back(sub_raw);
-    sub_compressed_list.push_back(sub_compressed);
-    sub_theora_list.push_back(sub_theora);
+    sub_raw_list.insert(sub_raw);
+    sub_compressed_list.insert(sub_compressed);
+    sub_theora_list.insert(sub_theora);
   }
 
   /*  void update(Subscriber sub_raw, Subscriber sub_compressed, Subscriber sub_theora)
     {
-      sub_raw_list.push_back(sub_raw);
-      sub_compressed_list.push_back(sub_compressed);
-      sub_theora_list.push_back(sub_theora);
+      sub_raw_list.insert(sub_raw);
+      sub_compressed_list.insert(sub_compressed);
+      sub_theora_list.insert(sub_theora);
     }*/
 
   void updateRaw(Subscriber new_sub)
@@ -72,53 +72,52 @@ public:
     {
       if (sub.getTopic() == new_sub.getTopic())
       {
-        sub_raw_list.at(index) = new_sub;
+        sub_raw_list.erase(sub);
+        sub_raw_list.insert(new_sub);
         found = true;
       }
       index++;
     }
     if (!found)
     {
-      sub_raw_list.push_back(new_sub);
+      sub_raw_list.insert(new_sub);
     }
   }
   void updateCompressed(Subscriber new_sub)
   {
     //TODO fix call. Fix access of vector with subscriber list.
+      // TODO switch to set datatype
     ROS_WARN_STREAM("got to update compressed");
     bool found = false;
     ROS_WARN_STREAM("Size of list " << sub_compressed_list.size());
-/*
-      for(auto it = sub_compressed_list.begin(); it != sub_compressed_list.end(); ++it) {
+      if (!sub_compressed_list.empty()) {
+          ROS_WARN_STREAM("compressed list not empty");
+
+      for(const Subscriber &sub : sub_compressed_list) {
           ROS_WARN_STREAM("Got in loop");
 
-          if (!sub_compressed_list.empty()) {
-              ROS_WARN_STREAM("compressed list not empty");
+          ROS_WARN_STREAM("New sub: " << new_sub.getTopic());
+          ROS_WARN_STREAM("Sub: " << sub.getTopic());
 
-              ROS_WARN("Number of publishers: ");
-              ROS_WARN_STREAM(it->getNumPublishers());
-              if (it->getTopic() == new_sub.getTopic()) {
+              if (sub.getTopic() == new_sub.getTopic()) {
 
                   ROS_WARN_STREAM("in if in loop");
-                  ROS_WARN_STREAM("New sub: " << new_sub.getTopic());
-                  ROS_WARN_STREAM("Sub: " << it->getTopic());
 
                   ROS_WARN_STREAM("got to update new sub");
 
-                  //it = &new_sub;
+                  sub_compressed_list.erase(sub);
+                  sub_compressed_list.insert(new_sub);
                   found = true;
               }
 
           }
 
       }
-*/
-
     if (!found)
     {
         ROS_WARN_STREAM("landed in adding new sub");
 
-        sub_compressed_list.push_back(new_sub);
+        sub_compressed_list.insert(new_sub);
     }
   }
   void updateTheora(Subscriber new_sub)
@@ -129,14 +128,15 @@ public:
     {
       if (sub.getTopic() == new_sub.getTopic())
       {
-        sub_theora_list.at(index) = new_sub;
+        sub_theora_list.erase(sub);
+        sub_theora_list.insert(new_sub);
         found = true;
       }
       index++;
     }
     if (!found)
     {
-      sub_theora_list.push_back(new_sub);
+      sub_theora_list.insert(new_sub);
     }
   }
 
@@ -168,7 +168,7 @@ public:
         }
         if (!found)
         {
-          sub_raw_list.push_back(new_sub);
+          sub_raw_list.insert(new_sub);
         }
       }
       else if (req.mode == COMPRESSED || req.mode == COMPRESSED_DEPTH)
@@ -186,7 +186,7 @@ public:
         }
         if (!found)
         {
-          sub_compressed_list.push_back(new_sub);
+          sub_compressed_list.insert(new_sub);
         }
 
       }
@@ -203,7 +203,7 @@ public:
         }
         if (!found)
         {
-          sub_theora_list.push_back(new_sub);
+          sub_theora_list.insert(new_sub);
         }
       }
     }*/
@@ -218,7 +218,7 @@ public:
       {
         if (sub.getTopic() == req.topic)
         {
-          sub_raw_list.erase(sub_raw_list.begin() + index);
+          sub_raw_list.erase(sub);
           found = true;
         }
         index++;
@@ -234,7 +234,7 @@ public:
       {
         if (sub.getTopic() == req.topic)
         {
-          sub_compressed_list.erase(sub_compressed_list.begin() + index);
+          sub_compressed_list.erase(sub);
           found = true;
         }
         index++;
@@ -250,7 +250,7 @@ public:
       {
         if (sub.getTopic() == req.topic)
         {
-          sub_theora_list.erase(sub_theora_list.begin() + index);
+          sub_theora_list.erase(sub);
           found = true;
         }
         index++;
@@ -276,8 +276,9 @@ public:
 
   void add(Camera* cam)
   {
-    camera_list_.push_back(cam);
-    size_++;
+    camera_list_.insert(cam);
+      size_++;
+      ROS_WARN_STREAM("CAMERA ADDED!");
   }
   size_t size()
   {
@@ -294,7 +295,7 @@ public:
   }
 
 private:
-  vector<Camera*> camera_list_;
+  std::set<Camera*> camera_list_;
   size_t size_ = 0;
 };
 
