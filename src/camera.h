@@ -57,11 +57,11 @@ public:
     sub_theora_list.insert(sub_theora);
   }
 
-  /*  void update(Subscriber sub_raw, Subscriber sub_compressed, Subscriber sub_theora)
+  /*  void update(Subscriber sub_, Subscriber sub_, Subscriber sub_)
     {
-      sub_raw_list.insert(sub_raw);
-      sub_compressed_list.insert(sub_compressed);
-      sub_theora_list.insert(sub_theora);
+      sub_raw_list.insert(sub_);
+      sub_compressed_list.insert(sub_);
+      sub_theora_list.insert(sub_);
     }*/
 
   void updateRaw(Subscriber new_sub)
@@ -85,39 +85,39 @@ public:
   }
   void updateCompressed(Subscriber new_sub)
   {
-    //TODO fix call. Fix access of vector with subscriber list.
-      // TODO switch to set datatype
+    // TODO fix call. Fix access of vector with subscriber list.
+    // TODO switch to set datatype
     ROS_WARN_STREAM("got to update compressed");
     bool found = false;
     ROS_WARN_STREAM("Size of list " << sub_compressed_list.size());
-      if (!sub_compressed_list.empty()) {
-          ROS_WARN_STREAM("compressed list not empty");
+    if (!sub_compressed_list.empty())
+    {
+      ROS_WARN_STREAM("compressed list not empty");
 
-      for(const Subscriber &sub : sub_compressed_list) {
-          ROS_WARN_STREAM("Got in loop");
+      for (const Subscriber& sub : sub_compressed_list)
+      {
+        ROS_WARN_STREAM("Got in loop");
 
-          ROS_WARN_STREAM("New sub: " << new_sub.getTopic());
-          ROS_WARN_STREAM("Sub: " << sub.getTopic());
+        ROS_WARN_STREAM("New sub: " << new_sub.getTopic());
+        ROS_WARN_STREAM("Sub: " << sub.getTopic());
 
-              if (sub.getTopic() == new_sub.getTopic()) {
+        if (sub.getTopic() == new_sub.getTopic())
+        {
+          ROS_WARN_STREAM("in if in loop");
 
-                  ROS_WARN_STREAM("in if in loop");
+          ROS_WARN_STREAM("got to update new sub");
 
-                  ROS_WARN_STREAM("got to update new sub");
-
-                  sub_compressed_list.erase(sub);
-                  sub_compressed_list.insert(new_sub);
-                  found = true;
-              }
-
-          }
-
+          sub_compressed_list.erase(sub);
+          sub_compressed_list.insert(new_sub);
+          found = true;
+        }
       }
+    }
     if (!found)
     {
-        ROS_WARN_STREAM("landed in adding new sub");
+      ROS_WARN_STREAM("landed in adding new sub");
 
-        sub_compressed_list.insert(new_sub);
+      sub_compressed_list.insert(new_sub);
     }
   }
   void updateTheora(Subscriber new_sub)
@@ -277,8 +277,8 @@ public:
   void add(Camera* cam)
   {
     camera_list_.insert(cam);
-      size_++;
-      ROS_WARN_STREAM("CAMERA ADDED!");
+    size_++;
+    ROS_WARN_STREAM("CAMERA ADDED!");
   }
   size_t size()
   {

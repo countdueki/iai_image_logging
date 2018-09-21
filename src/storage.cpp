@@ -6,37 +6,37 @@
 class Storage
 {
 public:
-  static Storage &Instance()
+  static Storage& Instance()
   {
-      static boost::shared_ptr<Storage> instance (new Storage);
-      return *instance;
+    static boost::shared_ptr<Storage> instance(new Storage);
+    return *instance;
   }
+
 private:
+  Storage()
+  {
+    dbHost = "localhost";
+    collection = "db.standard";
+    topic = "camera/rgb/image_raw";
 
-    Storage(){
-        dbHost = "localhost";
-        collection = "db.standard";
-        topic = "camera/rgb/image_raw";
+    mode = 1;
+    // maybe init camera_list here
+    string errmsg;
+    if (!clientConnection->connect(dbHost, errmsg))
+    {
+      ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
+    }
+    mongo::client::initialize();
 
-        mode = 1;
-        // maybe init cams here
-        cams.add(new Camera());
-        string errmsg;
-        if (!clientConnection->connect(dbHost, errmsg))
-        {
-            ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
-        }
-        mongo::client::initialize();
+    update_config = nh.advertiseService("storage/update", &Storage::update, this);
 
-        update_config = nh.advertiseService("storage/update", &Storage::update, this);
-
-        add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
-        del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
+    add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
+    del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
   }
 
-  Storage(const Storage &old);
-  const Storage &operator=(const Storage &old);
- // ~Storage(){}
+  Storage(const Storage& old);
+  const Storage& operator=(const Storage& old);
+  // ~Storage(){}
 
   string topic;
   string dbHost;
@@ -47,12 +47,9 @@ private:
   ros::ServiceServer update_config;
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
-  ros::Subscriber sub_raw;
-  ros::Subscriber sub_compressed;
-  ros::Subscriber sub_theora;
-
-  CompositeCamera cams;
-
+  ros::Subscriber sub_;
+  vector<Subscriber> sub_list_;
+  vector<vector<Subscriber>> camera_list;
   mongo::DBClientConnection* clientConnection = new mongo::DBClientConnection(true);
 
 public:
@@ -164,97 +161,80 @@ public:
     dbHost = req.db_host;
     mode = req.mode;
 
-
-    //TODO better existence check for cams
-    if (req.cam_no > cams.size())
+    // TODO better existence check for camera_list
+    if (req.cam_no > camera_list.size())
     {
       ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
-      ROS_ERROR_STREAM("Please add camera with index " << cams.size());
+      ROS_ERROR_STREAM("Please add camera with index " << camera_list.size());
     }
     else
     {
-      switch(mode){
-          case (RAW):
-            sub_raw = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
+      switch (mode)
+      {
+        case (RAW):
+          sub_ = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
+          break;
+        case (COMPRESSED):
 
-              for (int i = 0; i < cams.size(); i++)
-              {
-                if (cams.at(i)->getNo() == req.cam_no)
-                {
-                  cams.at(req.cam_no)->updateRaw(sub_raw);
-                }
-                else
-                {
-                  cams.add(new Camera(req.cam_no));
-                  cams.at(req.cam_no)->updateRaw(sub_raw);
-                }
-              }
-              break;
-          case (COMPRESSED):
-            ROS_ERROR_STREAM("1");
+          sub_ = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
 
-              sub_compressed = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
-
-              for (int i = 0; i < cams.size(); i++)
-              {
-                ROS_ERROR_STREAM("2");
-                ROS_WARN_STREAM("CAMS SIZE: " << cams.size());
-
-                if (cams.at(i)->getNo() == req.cam_no)
-                {
-                  ROS_ERROR_STREAM("3");
-
-                  cams.at(req.cam_no)->updateCompressed(sub_compressed);
-                }
-                else
-                {
-                  ROS_ERROR_STREAM("4");
-
-                  cams.add(new Camera(req.cam_no));
-                  cams.at(req.cam_no)->updateCompressed(sub_compressed);
-                }
-              }
-              break;
-          case (THEORA):
-            sub_theora = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
-
-              for (int i = 0; i < cams.size(); i++)
-              {
-                if (cams.at(i)->getNo() == req.cam_no)
-                {
-                  cams.at(req.cam_no)->updateTheora(sub_theora);
-                }
-                else
-                {
-                  cams.add(new Camera(req.cam_no));
-                  cams.at(req.cam_no)->updateTheora(sub_theora);
-                }
-              }
-              break;
+          break;
+        case (THEORA):
+          sub_ = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
+          break;
         default:
           break;
-
       }
 
-      res.success = true;
 
-      return true;
+      for (int index = 0; index < camera_list.size(); index++)
+      {
+        ROS_INFO_STREAM("INDEX START: " << index);
+
+        if (index == req.cam_no && !camera_list.at(index).empty())
+        {
+          ROS_INFO_STREAM("Required Topic: " << req.topic);
+          ROS_INFO_STREAM("Topic in List: " << camera_list.at(index).at(index).getTopic());
+          if (camera_list.at(index).at(index).getTopic().find(req.topic) != std::string::npos)
+          {
+            ROS_WARN_STREAM("Updating Subscriber");
+            camera_list.at(index).at(index) = sub_;
+          } else
+          {
+            ROS_WARN_STREAM("Adding new Subscriber");
+            vector<Subscriber> sub_vector;
+            sub_vector.push_back(sub_);
+            camera_list.at(index) = sub_vector;
+
+          }
+        }
+        else if (req.cam_no == camera_list.size())
+        {
+          ROS_WARN_STREAM("Adding new Camera");
+          vector<Subscriber> sub_vector;
+          sub_vector.push_back(sub_);
+          camera_list.push_back(sub_vector);
+
+        }
+        ROS_INFO_STREAM("INDEX: " << index);
+
+      }
     }
+    res.success = true;
+
+    return true;
   }
 
   void init()
   {
-          sub_raw = nh.subscribe(topic, 1, &Storage::imageCallback, this);
-          sub_compressed = nh.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
-          sub_theora = nh.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
-
-          cams.init(sub_raw, sub_compressed, sub_theora);
-
+    sub_ = nh.subscribe(topic, 1, &Storage::imageCallback, this);
+    sub_list_.push_back(sub_);
+    camera_list.push_back(sub_list_);
   }
 
   bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    if (cams.size() < req.cam_no)
+    if (camera_list.size() < req.cam_no)
     {
       ROS_ERROR_STREAM("Camera does not exist");
     }
@@ -266,13 +246,13 @@ public:
 
   bool delConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    if (cams.size() < req.cam_no)
+    if (camera_list.size() < req.cam_no)
     {
       ROS_ERROR_STREAM("Camera does not exist");
     }
     else
     {
-      cams.at(req.cam_no)->del(req);
+      // camera_list.at(req.cam_no)->del(req);
     }
   }
 
