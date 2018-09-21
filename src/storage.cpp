@@ -161,7 +161,7 @@ public:
     dbHost = req.db_host;
     mode = req.mode;
 
-    // TODO better existence check for camera_list
+    // TODO remap topics, so they won't be overwritten
     if (req.cam_no > camera_list.size())
     {
       ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
@@ -189,8 +189,6 @@ public:
 
       for (int index = 0; index < camera_list.size(); index++)
       {
-        ROS_INFO_STREAM("INDEX START: " << index);
-
         if (index == req.cam_no && !camera_list.at(index).empty())
         {
            for (int sub_index = 0; sub_index < camera_list.at(index).size(); sub_index++){
@@ -218,7 +216,6 @@ public:
           camera_list.push_back(sub_vector);
 
         }
-        ROS_INFO_STREAM("INDEX: " << index);
 
       }
     }
