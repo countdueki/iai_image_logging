@@ -25,7 +25,7 @@ void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, Reconfigure
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
 
-  ROS_DEBUG_STREAM("Setting parameters for compressed topic based on: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
@@ -51,7 +51,7 @@ void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureRes
   req.config.ints.push_back(quality);
   req.config.ints.push_back(target_bitrate);
 
-  ROS_DEBUG_STREAM("Setting parameters for theora topic based on: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
@@ -73,7 +73,7 @@ void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, Recon
   req.config.doubles.push_back(depth_max);
   req.config.doubles.push_back(depth_quantization);
 
-  ROS_DEBUG_STREAM("Setting parameters for compresseDepth topic based on: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for compresseDepth topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressedDepth/set_parameters", req, res);
 }
 int updateStorage(MainConfig& cfg)
@@ -142,7 +142,7 @@ void mainConfigurationCb(MainConfig& cfg)
   }
   else if (cfg.mode == RAW)
   {
-    ROS_DEBUG_STREAM("Setting parameters for raw topic: " << cfg.topic);
+    ROS_DEBUG_STREAM("Setting parameters for raw topic_: " << cfg.topic);
   }
 
   if (updateStorage(cfg) != 0)

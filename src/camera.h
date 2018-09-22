@@ -153,7 +153,7 @@ public:
 
       int index = 0;
       bool found;
-      if (req.mode == RAW)
+      if (req.mode_ == RAW)
       {
         for (Subscriber sub : sub_raw_list)
         {
@@ -169,7 +169,7 @@ public:
           sub_raw_list.insert(new_sub);
         }
       }
-      else if (req.mode == COMPRESSED || req.mode == COMPRESSED_DEPTH)
+      else if (req.mode_ == COMPRESSED || req.mode_ == COMPRESSED_DEPTH)
       {
         for (Subscriber sub : sub_compressed_list)
         {
@@ -188,7 +188,7 @@ public:
         }
 
       }
-      else if ( req.mode == THEORA)
+      else if ( req.mode_ == THEORA)
       {
         for (Subscriber sub : sub_theora_list)
         {

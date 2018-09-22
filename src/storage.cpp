@@ -15,206 +15,227 @@ public:
 private:
   Storage()
   {
-    dbHost = "localhost";
-    collection = "db.standard";
-    topic = "camera/rgb/image_raw";
+    db_host_ = "localhost";
+    collection_ = "db.standard";
+    topic_ = "camera/rgb/image_raw";
 
-    mode = 1;
-    // maybe init camera_list here
+    mode_ = 1;
+    // maybe init camera_list_ here
     string errmsg;
-    if (!clientConnection->connect(dbHost, errmsg))
+    if (!client_connection_->connect(db_host_, errmsg))
     {
       ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
     }
     mongo::client::initialize();
 
-    update_config = nh.advertiseService("storage/update", &Storage::update, this);
+    update_config_ = nh_.advertiseService("storage/update", &Storage::update, this);
 
-    add_service = nh.advertiseService("storage/add", &Storage::addConfig, this);
-    del_service = nh.advertiseService("storage/del", &Storage::delConfig, this);
+    add_service_ = nh_.advertiseService("storage/add", &Storage::addConfig, this);
+    del_service_ = nh_.advertiseService("storage/del", &Storage::delConfig, this);
   }
 
   Storage(const Storage& old);
   const Storage& operator=(const Storage& old);
   // ~Storage(){}
 
-  string topic;
-  string dbHost;
-  string collection;
-  int mode;
+  string topic_;
+  string db_host_;
+  string collection_;
+  int mode_;
 
-  ros::NodeHandle nh;
-  ros::ServiceServer update_config;
-  ros::ServiceServer add_service;
-  ros::ServiceServer del_service;
+  ros::NodeHandle nh_;
+  ros::ServiceServer update_config_;
+  ros::ServiceServer add_service_;
+  ros::ServiceServer del_service_;
   ros::Subscriber sub_;
   vector<Subscriber> sub_list_;
-  vector<vector<Subscriber>> camera_list;
-  mongo::DBClientConnection* clientConnection = new mongo::DBClientConnection(true);
+  vector<vector<Subscriber>> camera_list_;
+  mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
 public:
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {  // matrixFunction(); // for building test entries
 
-    if (mode == RAW || mode == DEPTH)
-    {
-      ROS_DEBUG_STREAM("msg format: " << msg->encoding);
-      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
-      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
-      mongo::BSONObjBuilder document;
-      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-      document.append("header",
-                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-      document.append("encoding", msg->encoding);
-      document.append("width", msg->width);
-      document.append("height", msg->height);
-      document.append("is_bigendian", msg->is_bigendian);
-      document.append("step", msg->step);
+    ROS_DEBUG_STREAM("msg format: " << msg->encoding);
+    ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+    ROS_DEBUG_STREAM("storage COLLECTION: " << collection_);
+    mongo::BSONObjBuilder document;
+    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+    document.append("encoding", msg->encoding);
+    document.append("width", msg->width);
+    document.append("height", msg->height);
+    document.append("is_bigendian", msg->is_bigendian);
+    document.append("step", msg->step);
 
-      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-      std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
-      document.append("type", type);
-      document.append("size", (int)msg->data.size());
-      if (mode == RAW)
-      {
-        document.append("mode", "raw");
-      }
-      else if (mode == DEPTH)
-      {
-        document.append("mode", "depth");
-      }
-      clientConnection->insert(collection, document.obj());
-    }
-    else
+    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+    std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+    document.append("type", type);
+    document.append("size", (int)msg->data.size());
+    if (mode_ == RAW)
     {
-      ROS_DEBUG_STREAM("No compressed images will be logged");
+      document.append("mode_", "raw");
     }
+    else if (mode_ == DEPTH)
+    {
+      document.append("mode_", "depth");
+    }
+    client_connection_->insert(collection_, document.obj());
   }
 
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    if (mode == COMPRESSED || mode == COMPRESSED_DEPTH)
-    {
-      ROS_DEBUG_STREAM("FORMAT: " << msg->format);
-      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
-      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
-      mongo::BSONObjBuilder document;
-      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-      document.append("header",
-                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-      document.append("format", msg->format);
-      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-      std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-      document.append("type", type);
-      document.append("size", (int)msg->data.size());
+    ROS_DEBUG_STREAM("FORMAT: " << msg->format);
+    ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+    ROS_DEBUG_STREAM("storage COLLECTION: " << collection_);
+    mongo::BSONObjBuilder document;
+    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+    document.append("format", msg->format);
+    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+    document.append("type", type);
+    document.append("size", (int)msg->data.size());
 
-      if (mode == COMPRESSED)
-      {
-        document.append("mode", "compressed");
-      }
-      else if (mode == COMPRESSED_DEPTH)
-      {
-        document.append("mode", "compressed_depth");
-      }
-      clientConnection->insert(collection, document.obj());
-    }
-    else
+    if (mode_ == COMPRESSED)
     {
-      ROS_DEBUG_STREAM("No compressed images will be logged");
+      document.append("mode_", "compressed");
     }
+    else if (mode_ == COMPRESSED_DEPTH)
+    {
+      document.append("mode_", "compressed_depth");
+    }
+    client_connection_->insert(collection_, document.obj());
   }
 
   void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
   {
-    if (mode == THEORA)
-    {
-      ROS_DEBUG_STREAM("Theora called: " << msg->packetno);
-      ROS_DEBUG_STREAM("storage TOPIC: " << topic);
-      ROS_DEBUG_STREAM("storage COLLECTION: " << collection);
-      mongo::BSONObjBuilder document;
+    ROS_DEBUG_STREAM("Theora called: " << msg->packetno);
+    ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+    ROS_DEBUG_STREAM("storage COLLECTION: " << collection_);
+    mongo::BSONObjBuilder document;
 
-      mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-      document.append("header",
-                      BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-      document.append("format", "theora");
-      document.append("start", msg->b_o_s);
-      document.append("end", msg->e_o_s);
-      document.append("position", (int)msg->granulepos);
-      document.append("packetno", (int)msg->packetno);
-      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-      string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
-      document.append("size", (int)msg->data.size());
-      document.append("type", type);
-      document.append("mode", "theora");
-      clientConnection->insert(collection, document.obj());
-    }
-    else
-    {
-      ROS_DEBUG_STREAM("no theora will be logged");
-    }
+    mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header",
+                    BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+    document.append("format", "theora");
+    document.append("start", msg->b_o_s);
+    document.append("end", msg->e_o_s);
+    document.append("position", (int)msg->granulepos);
+    document.append("packetno", (int)msg->packetno);
+    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+    string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
+    document.append("size", (int)msg->data.size());
+    document.append("type", type);
+    document.append("mode_", "theora");
+    client_connection_->insert(collection_, document.obj());
   }
-
-  bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
-  {
-    collection = req.collection;
-    topic = req.topic;
-    dbHost = req.db_host;
-    mode = req.mode;
-
-    // TODO remap topics, so they won't be overwritten
-    if (req.cam_no > camera_list.size())
-    {
-      ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
-      ROS_ERROR_STREAM("Please add camera with index " << camera_list.size());
-    }
-    else
-    {
-      switch (mode)
-      {
+    void createSubscriber(string topic, int mode) {
+      switch (mode) {
         case (RAW):
-          sub_ = nh.subscribe(req.topic, 1, &Storage::imageCallback, this);
-          break;
+          sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+              break;
         case (COMPRESSED):
 
-          sub_ = nh.subscribe(req.topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+          sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
 
-          break;
+              break;
         case (THEORA):
-          sub_ = nh.subscribe(req.topic + "/theora", 1, &Storage::theoraCallback, this);
-          break;
+          sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
+              break;
+        case (DEPTH):
+          sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+
+              break;
+        case (COMPRESSED_DEPTH):
+          sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+              break;
         default:
           break;
       }
+    }
 
-      for (int index = 0; index < camera_list.size(); index++)
+
+    bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  {
+    collection_ = req.collection;
+    topic_ = req.topic;
+    db_host_ = req.db_host;
+    mode_ = req.mode;
+
+    bool allow_new_cam = false;
+    bool allow_new_sub = false;
+
+    if (req.cam_no > camera_list_.size())
+    {
+      ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
+      ROS_ERROR_STREAM("Please add camera with index " << camera_list_.size());
+    }
+    else
+    {
+      // assigns sub_ to required callback
+      createSubscriber(req.topic, req.mode);
+
+
+      // Loop camera list for existing entries
+      for (int index = 0; index < camera_list_.size(); index++)
       {
-        if (index == req.cam_no && !camera_list.at(index).empty())
+        // search camera
+        if (index == req.cam_no && !camera_list_.at(index).empty())
         {
-          for (int sub_index = 0; sub_index < camera_list.at(index).size(); sub_index++)
+          // search topic_ in existing camera
+          for (int sub_index = 0; sub_index < camera_list_.at(index).size(); sub_index++)
           {
-            ROS_INFO_STREAM("Required Topic: " << req.topic);
-            ROS_INFO_STREAM("Topic in List: " << camera_list.at(index).at(sub_index).getTopic());
+            string current_topic = camera_list_.at(index).at(sub_index).getTopic();
 
-            if (camera_list.at(index).at(sub_index).getTopic().find(req.topic) != std::string::npos)
+            // update existing topic_ in existing camera
+            if (current_topic.find(req.topic) != std::string::npos)
             {
               ROS_WARN_STREAM("Updating Subscriber");
-              camera_list.at(index).at(sub_index) = sub_;
+              camera_list_.at(index).at(sub_index) = sub_;
             }
             else
             {
-              ROS_WARN_STREAM("Adding new Subscriber");
-              vector<Subscriber> sub_vector;
-              sub_vector.push_back(sub_);
-              camera_list.at(index) = sub_vector;
+              allow_new_sub = true;
             }
           }
         }
-        else if (req.cam_no == camera_list.size())
+        // camera has to be added sequentially
+        else if (req.cam_no == camera_list_.size())
         {
-          ROS_WARN_STREAM("Adding new Camera");
-          vector<Subscriber> sub_vector;
-          sub_vector.push_back(sub_);
-          camera_list.push_back(sub_vector);
+            // search for topic_ in every camera
+          for (int sub_idx = 0; sub_idx < camera_list_.size(); sub_idx++)
+          {
+            string current_topic = camera_list_.at(index).at(sub_idx).getTopic();
+            if (current_topic.find(sub_.getTopic()) != std::string::npos)
+            {
+              ROS_ERROR_STREAM("Topic is already subscribed to by camera: " << index);
+              allow_new_cam = false;
+            }
+            else
+            {
+              allow_new_cam = true;
+            }
+          }
+          /* requested topic_ not found in any camera
+             and requested camera not found
+             add new camera and subscriber */
+          if (allow_new_cam && allow_new_sub)
+          {
+            ROS_WARN_STREAM("Adding new Camera");
+            vector<Subscriber> sub_vector;
+            sub_vector.push_back(sub_);
+            camera_list_.push_back(sub_vector);
+          }
+          /* requested topic_ not found in any camera.
+             add new subscriber */
+          else
+          {
+            ROS_WARN_STREAM("Adding new Subscriber");
+            vector<Subscriber> sub_vector;
+            sub_vector.push_back(sub_);
+            camera_list_.at(index) = sub_vector;
+          }
         }
       }
     }
@@ -225,14 +246,14 @@ public:
 
   void init()
   {
-    sub_ = nh.subscribe(topic, 1, &Storage::imageCallback, this);
+    sub_ = nh_.subscribe("", 1, &Storage::imageCallback, this);
     sub_list_.push_back(sub_);
-    camera_list.push_back(sub_list_);
+    camera_list_.push_back(sub_list_);
   }
 
   bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    if (camera_list.size() < req.cam_no)
+    if (camera_list_.size() < req.cam_no)
     {
       ROS_ERROR_STREAM("Camera does not exist");
     }
@@ -244,69 +265,19 @@ public:
 
   bool delConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    if (camera_list.size() < req.cam_no)
+    if (camera_list_.size() < req.cam_no)
     {
       ROS_ERROR_STREAM("Camera does not exist");
     }
     else
     {
-      // camera_list.at(req.cam_no)->del(req);
+      createSubscriber(req.topic,req.mode);
     }
   }
 
-public:
-  int getMode() const
+  const ros::NodeHandle& getNodeHandle() const
   {
-    return mode;
-  }
-
-  void setMode(int mode)
-  {
-    Storage::mode = mode;
-  }
-
-  const string& getTopic() const
-  {
-    return topic;
-  }
-
-  void setTopic(const string& topic)
-  {
-    Storage::topic = topic;
-  }
-
-  const string& getDbHost() const
-  {
-    return dbHost;
-  }
-
-  void setDbHost(const string& dbHost)
-  {
-    Storage::dbHost = dbHost;
-  }
-
-  const string& getCollection() const
-  {
-    return collection;
-  }
-
-  void setCollection(const string& collection)
-  {
-    Storage::collection = collection;
-  }
-
-  mongo::DBClientConnection* getClientConnection() const
-  {
-    return clientConnection;
-  }
-
-  void setClientConnection(mongo::DBClientConnection* clientConnection)
-  {
-    Storage::clientConnection = clientConnection;
-  }
-  const ros::NodeHandle& getNh() const
-  {
-    return nh;
+    return nh_;
   }
 };
 
@@ -317,7 +288,7 @@ int main(int argc, char** argv)
 
   storage->init();
   ros::Rate hz_rate(60.0);
-  while (storage->getNh().ok())
+  while (storage->getNodeHandle().ok())
   {
     ros::spinOnce();
 
