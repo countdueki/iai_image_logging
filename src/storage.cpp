@@ -130,41 +130,44 @@ public:
     document.append("mode_", "theora");
     client_connection_->insert(collection_, document.obj());
   }
-    void createSubscriber(string topic, int mode) {
-      switch (mode) {
-        case (RAW):
-          sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
-              break;
-        case (COMPRESSED):
+  void createSubscriber(string topic, int mode)
+  {
+    switch (mode)
+    {
+      case (RAW):
+        sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+        break;
+      case (COMPRESSED):
 
-          sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+        sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
 
-              break;
-        case (THEORA):
-          sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
-              break;
-        case (DEPTH):
-          sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+        break;
+      case (THEORA):
+        sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
+        break;
+      case (DEPTH):
+        sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
 
-              break;
-        case (COMPRESSED_DEPTH):
-          sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
-              break;
-        default:
-          break;
-      }
+        break;
+      case (COMPRESSED_DEPTH):
+        sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+        break;
+      default:
+        break;
     }
+  }
 
-
-    bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
     collection_ = req.collection;
     topic_ = req.topic;
     db_host_ = req.db_host;
     mode_ = req.mode;
 
-    bool allow_new_cam = false;
-    bool allow_new_sub = false;
+    bool found_sub = false;
+    bool found_cam = false;
+    int found_cam_no = 0;
+    string current_topic = "";
 
     if (req.cam_no > camera_list_.size())
     {
@@ -176,69 +179,54 @@ public:
       // assigns sub_ to required callback
       createSubscriber(req.topic, req.mode);
 
-
       // Loop camera list for existing entries
-      for (int index = 0; index < camera_list_.size(); index++)
+      for (int idx = 0; idx < camera_list_.size(); idx++)
       {
-        // search camera
-        if (index == req.cam_no && !camera_list_.at(index).empty())
+        if (idx == req.cam_no)
         {
-          // search topic_ in existing camera
-          for (int sub_index = 0; sub_index < camera_list_.at(index).size(); sub_index++)
-          {
-            string current_topic = camera_list_.at(index).at(sub_index).getTopic();
+          ROS_WARN_STREAM("found cam");
 
-            // update existing topic_ in existing camera
-            if (current_topic.find(req.topic) != std::string::npos)
-            {
-              ROS_WARN_STREAM("Updating Subscriber");
-              camera_list_.at(index).at(sub_index) = sub_;
-            }
-            else
-            {
-              allow_new_sub = true;
-            }
-          }
+          found_cam = true;
+          found_cam_no = idx;
         }
-        // camera has to be added sequentially
-        else if (req.cam_no == camera_list_.size())
+
+        for (int sub_idx = 0; sub_idx < camera_list_.at(idx).size(); sub_idx++)
         {
-            // search for topic_ in every camera
-          for (int sub_idx = 0; sub_idx < camera_list_.size(); sub_idx++)
+          current_topic = camera_list_.at(idx).at(sub_idx).getTopic();
+          if (current_topic.find(req.topic) != string::npos)
           {
-            string current_topic = camera_list_.at(index).at(sub_idx).getTopic();
-            if (current_topic.find(sub_.getTopic()) != std::string::npos)
-            {
-              ROS_ERROR_STREAM("Topic is already subscribed to by camera: " << index);
-              allow_new_cam = false;
-            }
-            else
-            {
-              allow_new_cam = true;
-            }
-          }
-          /* requested topic_ not found in any camera
-             and requested camera not found
-             add new camera and subscriber */
-          if (allow_new_cam && allow_new_sub)
-          {
-            ROS_WARN_STREAM("Adding new Camera");
-            vector<Subscriber> sub_vector;
-            sub_vector.push_back(sub_);
-            camera_list_.push_back(sub_vector);
-          }
-          /* requested topic_ not found in any camera.
-             add new subscriber */
-          else
-          {
-            ROS_WARN_STREAM("Adding new Subscriber");
-            vector<Subscriber> sub_vector;
-            sub_vector.push_back(sub_);
-            camera_list_.at(index) = sub_vector;
+            ROS_WARN_STREAM("found topic");
+
+            // update subscriber
+            camera_list_.at(idx).at(sub_idx) = sub_;
+            found_sub = true;
           }
         }
       }
+
+      if (!found_sub)
+      {
+        if (!found_cam)
+        {
+          // add new cam
+          ROS_WARN_STREAM("Adding new Camera");
+          vector<Subscriber> sub_vector;
+          sub_vector.push_back(sub_);
+          camera_list_.push_back(sub_vector);
+        }
+        else
+        {
+          // add new subscriber
+          ROS_WARN_STREAM("Adding new Subscriber");
+          vector<Subscriber> sub_vector;
+          sub_vector.push_back(sub_);
+          camera_list_.at(req.cam_no) = sub_vector;
+        }
+      }
     }
+
+    ROS_WARN_STREAM("done");
+
     res.success = true;
 
     return true;
@@ -271,7 +259,17 @@ public:
     }
     else
     {
-      createSubscriber(req.topic,req.mode);
+      createSubscriber(req.topic, req.mode);
+      for (auto it = camera_list_.at(req.cam_no).begin(); it < camera_list_.at(req.cam_no).end(); it++)
+      {
+        if (it->getTopic() == sub_.getTopic())
+        {
+          camera_list_.at(req.cam_no).erase(it);
+          ROS_INFO("Subscriber erased");
+        }
+        if (camera_list_.at(req.cam_no).empty())
+          ROS_INFO_STREAM("Camera " << req.cam_no << " is now empty");
+      }
     }
   }
 

@@ -110,7 +110,7 @@ int updateStorage(MainConfig& cfg)
     req.mode = cfg.mode;
     req.cam_no = cfg.cam_no;
 
-    ROS_DEBUG_STREAM("Calling update storage");
+    ROS_WARN_STREAM("Calling update storage");
     ros::service::call("storage/update", req, res);
     return 0;
   }
@@ -144,7 +144,6 @@ void mainConfigurationCb(MainConfig& cfg)
   {
     ROS_DEBUG_STREAM("Setting parameters for raw topic_: " << cfg.topic);
   }
-
   if (updateStorage(cfg) != 0)
   {
     ROS_ERROR_STREAM("Could not update Storage node");
