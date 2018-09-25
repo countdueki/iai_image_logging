@@ -1,0 +1,7 @@
+<library path="lib/libiai_nodelets">
+    <class name="iai_nodelets/RawNodelet" type="iai_nodelets::RawNodelet" base_class_type="nodelet::Nodelet">
+        <description>
+            This is my compressed nodelet.
+        </description>
+    </class>
+</library>

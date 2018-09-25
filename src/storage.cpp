@@ -385,6 +385,8 @@ public:
     camera_list_.push_back(sub_list_);
   }
 };
+
+
 /**
  * Start storage node
  * @param argc
