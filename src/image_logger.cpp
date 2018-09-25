@@ -6,6 +6,12 @@
 
 #include "image_logger.h"
 
+/**
+ * Set parameters for compression
+ * @param cfg
+ * @param req
+ * @param res
+ */
 void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   StrParam format;
@@ -29,6 +35,12 @@ void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, Reconfigure
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
+/**
+ * Set parameters for theora video
+ * @param cfg
+ * @param req
+ * @param res
+ */
 void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
@@ -55,6 +67,12 @@ void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureRes
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
+/**
+ * set Parameters for depth compression
+ * @param cfg
+ * @param req
+ * @param res
+ */
 void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam png;
@@ -76,6 +94,12 @@ void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, Recon
   ROS_DEBUG_STREAM("Setting parameters for compresseDepth topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressedDepth/set_parameters", req, res);
 }
+
+/**
+ * adds cam and compression suffixes to topics and calls storage::update function to add a new Subscriber
+ * @param cfg information for new subscriber and mongoDB info
+ * @return 0 if success, false otherwise
+ */
 int updateStorage(MainConfig& cfg)
 {
   try
@@ -150,6 +174,9 @@ void mainConfigurationCb(MainConfig& cfg)
   }
 }
 
+/**
+ * initialize storage node
+ */
 void initStorage()
 {
   try

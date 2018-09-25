@@ -30,13 +30,10 @@ target_link_libraries(image_logger
         ${catkin_LIBRARIES}
         )
 
-add_library(camera src/camera.h src/camera.cpp)
-
 add_executable(storage
         src/storage.cpp
         )
 target_link_libraries(storage
-        camera
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         )

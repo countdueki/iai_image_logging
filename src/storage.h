@@ -21,8 +21,19 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <vector>
-#include "camera.h"
 
 using std::string;
+using ros::Subscriber;
+using std::vector;
+typedef std::multimap<Subscriber, int> ModeSubscriber;
+
+enum
+{
+  RAW,
+  COMPRESSED,
+  THEORA,
+  DEPTH,
+  COMPRESSED_DEPTH
+};
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_H
