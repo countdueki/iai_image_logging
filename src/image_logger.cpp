@@ -110,19 +110,19 @@ int updateStorage(MainConfig& cfg)
     switch (cfg.mode)
     {
       case (RAW):
-        collection = cfg.collection + "_raw" + "_cam" + std::to_string(cfg.cam_no);
+        collection = cfg.collection + "_raw" + "_cam_" + std::to_string(cfg.cam_no);
         break;
       case (COMPRESSED):
-        collection = cfg.collection + "_compressed" + "_cam" + std::to_string(cfg.cam_no);
+        collection = cfg.collection + "_compressed" + "_cam_" + std::to_string(cfg.cam_no);
         break;
       case (THEORA):
-        collection = cfg.collection + "_theora" + "_cam" + std::to_string(cfg.cam_no);
+        collection = cfg.collection + "_theora" + "_cam_" + std::to_string(cfg.cam_no);
         break;
       case (DEPTH):
-        collection = cfg.collection + "_depth" + "_cam" + std::to_string(cfg.cam_no);
+        collection = cfg.collection + "_depth" + "_cam_" + std::to_string(cfg.cam_no);
         break;
       case (COMPRESSED_DEPTH):
-        collection = cfg.collection + "_compressedDepth" + "_cam" + std::to_string(cfg.cam_no);
+        collection = cfg.collection + "_compressedDepth" + "_cam_" + std::to_string(cfg.cam_no);
         break;
       default:
         collection = cfg.collection;

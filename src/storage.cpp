@@ -182,7 +182,6 @@ public:
     db_host_ = req.db_host;
     mode_ = req.mode;
 
-    bool found_sub = false;
     bool found_cam = false;
     int found_cam_no = 0;
     string current_topic = "";
@@ -203,7 +202,7 @@ public:
       {
         if (idx == req.cam_no)
         {
-          ROS_WARN_STREAM("found cam");
+          ROS_DEBUG_STREAM("Updating camera");
 
           found_cam = true;
 
@@ -214,7 +213,7 @@ public:
             requested_topic = req.topic + getModeString(req.mode);
             if (current_topic.find(requested_topic) != string::npos && found_cam)
             {
-              ROS_WARN_STREAM("found topic");
+              ROS_DEBUG_STREAM("Updating topic");
 
               // shutdown and delete old subscriber
               auto pos = camera_list_.at(idx).begin();
@@ -225,14 +224,13 @@ public:
               camera_list_.at(idx).erase(pos);
               // add updated Subscriber
               camera_list_.at(idx).insert(std::make_pair(sub_, req.mode));
-              found_sub = true;
+                return true;
+
             }
           }
         }
       }
 
-      if (!found_sub)
-      {
         if (!found_cam)
         {
           // add new cam
@@ -240,21 +238,18 @@ public:
           ModeSubscriber sub_map;
           sub_map.insert(std::make_pair(sub_, req.mode));
           camera_list_.push_back(sub_map);
-        }
-        else
-        {
+            return true;
+
+        } else {
           // add new subscriber
           ROS_WARN_STREAM("Adding new Subscriber");
           camera_list_.at(req.cam_no).insert(std::make_pair(sub_, req.mode));
-        }
+          return true;
+
       }
     }
 
-    ROS_WARN_STREAM("done");
-
-    res.success = true;
-
-    return true;
+    return false;
   }
 
   /**
