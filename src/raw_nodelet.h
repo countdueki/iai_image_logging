@@ -7,14 +7,13 @@
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
-namespace iai_nodelets {
-
-    class RawNodelet : public nodelet::Nodelet {
-
-    public:
-        virtual void onInit();
-
-    };
+namespace iai_nodelets
+{
+class RawNodelet : public nodelet::Nodelet
+{
+public:
+  virtual void onInit();
+};
 }
 
-#endif //IAI_IMAGE_LOGGING_RAW_NODELET_H
+#endif  // IAI_IMAGE_LOGGING_RAW_NODELET_H

@@ -19,9 +19,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
+
 #include <sensor_msgs/image_encodings.h>
 #include <vector>
-
+#include "nodelet/loader.h"
 using std::string;
 using ros::Subscriber;
 using std::vector;

@@ -2,6 +2,7 @@
 // Created by tammo on 13.09.18.
 //
 
+#include <nodelet/nodelet.h>
 #include "storage.h"
 class Storage
 {
@@ -26,8 +27,7 @@ private:
     {
       ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
     }
-      mongo::client::initialize();
-
+    mongo::client::initialize();
 
     // start storage services
     update_config = nh_.advertiseService("storage/update", &Storage::update, this);
@@ -54,11 +54,10 @@ private:
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
 public:
-
-    /**
-     * image callback to save raw and depth images
-     * @param msg raw and depth images
-     */
+  /**
+   * image callback to save raw and depth images
+   * @param msg raw and depth images
+   */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {  // matrixFunction(); // for building test entries
 
@@ -224,28 +223,27 @@ public:
               camera_list_.at(idx).erase(pos);
               // add updated Subscriber
               camera_list_.at(idx).insert(std::make_pair(sub_, req.mode));
-                return true;
-
+              return true;
             }
           }
         }
       }
 
-        if (!found_cam)
-        {
-          // add new cam
-          ROS_WARN_STREAM("Adding new Camera");
-          ModeSubscriber sub_map;
-          sub_map.insert(std::make_pair(sub_, req.mode));
-          camera_list_.push_back(sub_map);
-            return true;
-
-        } else {
-          // add new subscriber
-          ROS_WARN_STREAM("Adding new Subscriber");
-          camera_list_.at(req.cam_no).insert(std::make_pair(sub_, req.mode));
-          return true;
-
+      if (!found_cam)
+      {
+        // add new cam
+        ROS_WARN_STREAM("Adding new Camera");
+        ModeSubscriber sub_map;
+        sub_map.insert(std::make_pair(sub_, req.mode));
+        camera_list_.push_back(sub_map);
+        return true;
+      }
+      else
+      {
+        // add new subscriber
+        ROS_WARN_STREAM("Adding new Subscriber");
+        camera_list_.at(req.cam_no).insert(std::make_pair(sub_, req.mode));
+        return true;
       }
     }
 
@@ -385,7 +383,6 @@ public:
     camera_list_.push_back(sub_list_);
   }
 };
-
 
 /**
  * Start storage node

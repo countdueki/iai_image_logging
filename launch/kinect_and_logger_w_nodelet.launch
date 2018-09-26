@@ -2,11 +2,20 @@
         <include file="/opt/ros/kinetic/share/freenect_launch/launch/examples/freenect-registered-xyzrgb.launch"/>
         <node name="image_logger" pkg="iai_image_logging" type="image_logger" output="screen"/>
         <node name="storage" pkg="iai_image_logging" type="storage" output="screen"/>
-        <node pkg="nodelet" type="nodelet" name="manager_nodelet"  args="manager" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="manager_nodelet_raw"  args="manager" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="manager_nodelet_compressed"  args="manager" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="manager_nodelet_theora"  args="manager" output="screen"/>
 
-        <node pkg="nodelet" type="nodelet" name="RawNodelet" args="load iai_nodelets/RawNodelet manager_nodelet" output="screen"/>
-        <node pkg="nodelet" type="nodelet" name="CompressedNodelet" args="load iai_nodelets/CompressedNodelet manager_nodelet" output="screen"/>
-        <node pkg="nodelet" type="nodelet" name="TheoraNodelet" args="load iai_nodelets/TheoraNodelet manager_nodelet" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="RawNodelet" args="load iai_nodelets/RawNodelet manager_nodelet_raw" output="screen">
+                <remap from="/RawNodelet" to="/storage/raw_nodelet"/>
+        </node>
+        <node pkg="nodelet" type="nodelet" name="CompressedNodelet" args="load iai_nodelets/CompressedNodelet manager_nodelet_compressed" output="screen">
+                <remap from="/CompressedNodelet" to="/storage/compressed_nodelet"/>
+        </node>
+        <node pkg="nodelet" type="nodelet" name="TheoraNodelet" args="load iai_nodelets/TheoraNodelet manager_nodelet_theora" output="screen">
+                <remap from="/TheoraNodelet" to="/storage/theora_nodelet"/>
+
+        </node>
 
 
 

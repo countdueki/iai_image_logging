@@ -8,15 +8,13 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <ros/ros.h>
-namespace iai_nodelets {
-
-    class TheoraNodelet : public nodelet::Nodelet {
-
-    public:
-        virtual void onInit();
-
-    };
-
+namespace iai_nodelets
+{
+class TheoraNodelet : public nodelet::Nodelet
+{
+public:
+  virtual void onInit();
+};
 }
 
-#endif //IAI_IMAGE_LOGGING_THEORA_NODELET_H
+#endif  // IAI_IMAGE_LOGGING_THEORA_NODELET_H

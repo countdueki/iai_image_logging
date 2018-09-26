@@ -7,29 +7,25 @@
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
-namespace iai_nodelets {
+namespace iai_nodelets
+{
+class CompressedNodelet : public nodelet::Nodelet
+{
+public:
+  virtual void onInit();
+};
 
-    class CompressedNodelet : public nodelet::Nodelet {
+class RawNodelet : public nodelet::Nodelet
+{
+public:
+  virtual void onInit();
+};
 
-    public:
-        virtual void onInit();
-
-    };
-
-    class RawNodelet : public nodelet::Nodelet {
-
-    public:
-        virtual void onInit();
-
-    };
-
-    class TheoraNodelet : public nodelet::Nodelet {
-
-    public:
-        virtual void onInit();
-
-    };
-
+class TheoraNodelet : public nodelet::Nodelet
+{
+public:
+  virtual void onInit();
+};
 }
 
-#endif //IAI_IMAGE_LOGGING_COMPRESSED_NODELET_H
+#endif  // IAI_IMAGE_LOGGING_COMPRESSED_NODELET_H
