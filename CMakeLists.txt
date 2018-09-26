@@ -31,6 +31,7 @@ if(catkin_EXPORTED_LIBRARIES)
     add_dependencies(iai_nodelets ${catkin_EXPORTED_LIBRARIES})
 endif()
 add_executable(image_logger
+
         src/image_logger.cpp
         )
 target_link_libraries(image_logger
@@ -41,6 +42,7 @@ add_executable(storage
         src/storage.cpp
         )
 target_link_libraries(storage
+        iai_nodelets
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         )
