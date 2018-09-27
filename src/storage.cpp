@@ -3,7 +3,8 @@
 //
 
 #include "storage.h"
-
+#include "iai_sub.h"
+#include "iai_raw_sub.h"
 class Storage
 {
 public:
@@ -34,9 +35,7 @@ private:
     add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
     del_service = nh_.advertiseService("storage/del", &Storage::delConfig, this);
 
-    raw_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
-    compressed_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
-    theora_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
+    raw_nodelet_.create(topic_,collection_,db_host_,mode_,client_connection_);
   }
 
   Storage(const Storage& old);
@@ -53,13 +52,11 @@ private:
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   ros::Subscriber sub_;
-  vector<iai_nodelets::IAINodelet> nodelet_list_;
-  vector<vector<iai_nodelets::IAINodelet>> camera_list_;
+  vector<IAISub> nodelet_list_;
+  vector<vector<IAISub>> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
-  iai_nodelets::RawNodelet raw_nodelet_;
-  iai_nodelets::CompressedNodelet compressed_nodelet_;
-  iai_nodelets::TheoraNodelet theora_nodelet_;
+  RawSub raw_nodelet_;
 
 public:
   void updateNodelet(iai_image_logging_msgs::UpdateRequest req)
@@ -69,29 +66,10 @@ public:
     db_host_ = req.db_host;
     mode_ = req.mode;
 
+    raw_nodelet_.create(topic_,collection_,db_host_,mode_,client_connection_);
 
-    switch (req.mode)
-    {
-      case (RAW):
-        raw_nodelet_.setParameters(topic_, collection_, db_host_, mode_);
-        break;
-      case (COMPRESSED):
-        compressed_nodelet_.setParameters(topic_, collection_, db_host_, mode_);
-        break;
-      case (THEORA):
-        theora_nodelet_.setParameters(topic_, collection_, db_host_, mode_);
 
-        break;
-      case (DEPTH):
-        raw_nodelet_.setParameters(topic_, collection_, db_host_, mode_);
 
-        break;
-      case (COMPRESSED_DEPTH):
-        compressed_nodelet_.setParameters(topic_, collection_, db_host_, mode_);
-        break;
-      default:
-        break;
-    }
   }
   /**
    * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a mmap<Subscriber,mode>)
@@ -109,7 +87,7 @@ public:
     int found_cam_no = 0;
     string current_topic = "";
     string requested_topic = "";
-      std::vector<iai_nodelets::IAINodelet> nodelets;
+      std::vector<RawSub> nodelets;
       nodelets.push_back(raw_nodelet_);
     if (req.cam_no > camera_list_.size())
     {
@@ -147,28 +125,9 @@ public:
               temp_sub.shutdown();
               camera_list_.at(idx).erase(pos);
               // add updated Subscriber
-             switch (req.mode)
-              {
-                case (RAW):
-                  camera_list_.at(idx).push_back(raw_nodelet_);
-                  break;
-                case (COMPRESSED):
-                  camera_list_.at(idx).push_back(compressed_nodelet_);
-                  break;
-                case (THEORA):
-                  camera_list_.at(idx).push_back(theora_nodelet_);
 
-                  break;
-                case (DEPTH):
                   camera_list_.at(idx).push_back(raw_nodelet_);
 
-                  break;
-                case (COMPRESSED_DEPTH):
-                  camera_list_.at(idx).push_back(compressed_nodelet_);
-                  break;
-                default:
-                  break;
-              }
               return true;
             }
           }
@@ -179,58 +138,18 @@ public:
       {
         // add new cam
         ROS_WARN_STREAM("Adding new Camera");
-        std::vector<iai_nodelets::IAINodelet> nodelet_vector;
-          switch (req.mode)
-          {
-              case (RAW):
-                  nodelet_vector.push_back(raw_nodelet_);
-                  break;
-              case (COMPRESSED):
-                  nodelet_vector.push_back(compressed_nodelet_);
-                  break;
-              case (THEORA):
-                  nodelet_vector.push_back(theora_nodelet_);
+        std::vector<RawSub> nodelet_vector;
 
-                  break;
-              case (DEPTH):
                   nodelet_vector.push_back(raw_nodelet_);
-
-                  break;
-              case (COMPRESSED_DEPTH):
-                  nodelet_vector.push_back(compressed_nodelet_);
-                  break;
-              default:
-                  break;
-          }
-        camera_list_.push_back(nodelet_vector);
         return true;
       }
       else
       {
         // add new subscriber
         ROS_WARN_STREAM("Adding new Subscriber");
-          switch (req.mode)
-          {
-              case (RAW):
-                  camera_list_.at(req.cam_no).push_back(raw_nodelet_);
-                  break;
-              case (COMPRESSED):
-                  camera_list_.at(req.cam_no).push_back(compressed_nodelet_);
-                  break;
-              case (THEORA):
-                  camera_list_.at(req.cam_no).push_back(theora_nodelet_);
 
-                  break;
-              case (DEPTH):
-                  camera_list_.at(req.cam_no).push_back(raw_nodelet_);
+                               camera_list_.at(req.cam_no).push_back(raw_nodelet_);
 
-                  break;
-              case (COMPRESSED_DEPTH):
-                  camera_list_.at(req.cam_no).push_back(compressed_nodelet_);
-                  break;
-              default:
-                  break;
-          }
         return true;
       }
     }
@@ -301,30 +220,8 @@ public:
    */
   void createSubscriber(string topic, int mode,iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    // TODO move subscription to nodelets for accurate spinning
-    switch (mode)
-    {
-      case (RAW):
-        //raw_nodelet_.createSubscriber(topic);
-        ros::service::call("storage/raw",req,res);
-          break;
-      case (COMPRESSED):
-        compressed_nodelet_.createSubscriber(topic);
-        break;
-      case (THEORA):
-        theora_nodelet_.createSubscriber(topic);
-        break;
-      case (DEPTH):
-        raw_nodelet_.createSubscriber(topic);
-        ;
-        break;
-      case (COMPRESSED_DEPTH):
-        compressed_nodelet_.createSubscriber(topic);
 
-        break;
-      default:
-        break;
-    }
+       raw_nodelet_.createSubscriber(topic);
   }
 
   /**

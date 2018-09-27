@@ -17,8 +17,6 @@
   <build_depend>driver_base</build_depend>
   <build_depend>mongodb_store</build_depend>
   <build_depend>mongodb_log</build_depend>
-  <build_depend>nodelet</build_depend>
-  <exec_depend>nodelet</exec_depend>
 
   <exec_depend>iai_image_logging_msgs</exec_depend>
   <exec_depend>OpenCV</exec_depend>
