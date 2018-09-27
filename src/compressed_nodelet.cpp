@@ -8,6 +8,11 @@ PLUGINLIB_EXPORT_CLASS(iai_nodelets::CompressedNodelet, nodelet::Nodelet)
 
 namespace iai_nodelets
 {
+void CompressedNodelet::createSubscriber(string topic)
+{
+  sub_ = nh_.subscribe(topic + "/compressed", 1, &CompressedNodelet::compressedImageCallback, this);
+}
+
 void CompressedNodelet::create(ros::NodeHandle nh, int mode, string topic, string collection,
                                mongo::DBClientConnection* client_connection)
 {
@@ -73,10 +78,5 @@ void CompressedNodelet::onInit()
     ros::spinOnce();
     hz_rate.sleep();
   }
-}
-
-void CompressedNodelet::setMode(int mode_)
-{
-  CompressedNodelet::mode_ = mode_;
 }
 }

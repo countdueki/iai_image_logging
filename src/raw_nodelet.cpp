@@ -8,6 +8,11 @@ PLUGINLIB_EXPORT_CLASS(iai_nodelets::RawNodelet, nodelet::Nodelet)
 
 namespace iai_nodelets
 {
+void RawNodelet::createSubscriber(string topic)
+{
+  topic_ = topic;
+  // sub_ = nh_.subscribe(topic, 1, &RawNodelet::imageCallback, this);
+}
 void RawNodelet::create(ros::NodeHandle nh, int mode, string topic, string collection,
                         mongo::DBClientConnection* client_connection)
 {
@@ -28,8 +33,7 @@ void RawNodelet::setParameters(string topic, string collection, string db_host, 
 * @param msg raw and depth images
 */
 void RawNodelet::imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{  // matrixFunction(); // for building test entries
-
+{
   NODELET_WARN("RAW_NODELET: INSIDE CALLBACK");
   NODELET_WARN_STREAM("RAW_NODELET_MODE: " << mode_);
   if (mode_ == RAW || mode_ == DEPTH)
@@ -41,26 +45,27 @@ void RawNodelet::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     ROS_DEBUG_STREAM("storage COLLECTION: " << collection_);
     mongo::BSONObjBuilder document;
     mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("encoding", msg->encoding);
-    document.append("width", msg->width);
-    document.append("height", msg->height);
-    document.append("is_bigendian", msg->is_bigendian);
-    document.append("step", msg->step);
+      document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("encoding", msg->encoding);
+      document.append("width", msg->width);
+      document.append("height", msg->height);
+      document.append("is_bigendian", msg->is_bigendian);
+      document.append("step", msg->step);
 
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
-    std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-    if (mode_ == RAW)
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data);
+      std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
+      if (mode_ == RAW)
     {
-      document.append("mode_", "raw");
+        document.append("mode_", "raw");
     }
     else if (mode_ == DEPTH)
     {
-      document.append("mode_", "depth");
+        document.append("mode_", "depth");
     }
-    client_connection_->insert(collection_, document.obj());
+      client_connection_->insert(collection_, document.obj());
+
   }
   else
   {
@@ -69,16 +74,21 @@ void RawNodelet::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 }
 
 // TODO remove fake callback
-void fakeCallback(const sensor_msgs::ImageConstPtr& msg)
+bool RawNodelet::fakeCallback(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
 {
-  ROS_WARN_STREAM("I AM SO FAAAAAAAAAAAAAAAAAAAAAAAAAKE!");
+
+    ROS_WARN_STREAM("I AM SO SERVICE!");
+    sub_ = nh_.subscribe(req.topic, 1, &RawNodelet::imageCallback, this);
+
+    return true;
 }
 
 void RawNodelet::onInit()
 {
   ros::Rate hz_rate(60.0);
   NODELET_INFO("Initializing raw nodelet...");
-Subscriber subbi = nh_.subscribe("camera/rgb/image_raw",1,&fakeCallback);
+  topic_ = "camera/rgb/image_raw";
+  raw_service = nh_.advertiseService("storage/raw",&RawNodelet::fakeCallback, this);
   while (nh_.ok())
   {
     NODELET_DEBUG("and raw again...");
@@ -87,13 +97,4 @@ Subscriber subbi = nh_.subscribe("camera/rgb/image_raw",1,&fakeCallback);
     hz_rate.sleep();
   }
 }
-
-void RawNodelet::setMode(int mode_)
-{
-  RawNodelet::mode_ = mode_;
-}
-
-    const ros::NodeHandle &RawNodelet::getNh_() const {
-      return nh_;
-    }
 }

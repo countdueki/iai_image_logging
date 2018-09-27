@@ -2,7 +2,6 @@
 // Created by tammo on 13.09.18.
 //
 
-#include <nodelet/nodelet.h>
 #include "storage.h"
 
 class Storage
@@ -35,7 +34,6 @@ private:
     add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
     del_service = nh_.advertiseService("storage/del", &Storage::delConfig, this);
 
-    // TODO: fix initialization
     raw_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
     compressed_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
     theora_nodelet_.create(nh_, mode_, topic_, collection_, client_connection_);
@@ -55,8 +53,8 @@ private:
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   ros::Subscriber sub_;
-  ModeSubscriber sub_list_;
-  vector<ModeSubscriber> camera_list_;
+  vector<iai_nodelets::IAINodelet> nodelet_list_;
+  vector<vector<iai_nodelets::IAINodelet>> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
   iai_nodelets::RawNodelet raw_nodelet_;
@@ -70,6 +68,7 @@ public:
     topic_ = req.topic;
     db_host_ = req.db_host;
     mode_ = req.mode;
+
 
     switch (req.mode)
     {
@@ -110,7 +109,8 @@ public:
     int found_cam_no = 0;
     string current_topic = "";
     string requested_topic = "";
-
+      std::vector<iai_nodelets::IAINodelet> nodelets;
+      nodelets.push_back(raw_nodelet_);
     if (req.cam_no > camera_list_.size())
     {
       ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
@@ -119,7 +119,7 @@ public:
     else
     {
       // assigns sub_ to required callback
-      createSubscriber(req.topic, req.mode);
+      createSubscriber(req.topic, req.mode,req,res);
 
       // iterate over camera list for existing entries
       for (int idx = 0; idx < camera_list_.size(); idx++)
@@ -133,7 +133,7 @@ public:
           // iterate over list of Subscribers in camera
           for (auto it = camera_list_.at(idx).begin(); it != camera_list_.at(idx).end(); it++)
           {
-            current_topic = it->first.getTopic() + getModeString(it->second);
+            current_topic = it->getTopic_() + getModeString(it->getMode_());
             requested_topic = req.topic + getModeString(req.mode);
             if (current_topic.find(requested_topic) != string::npos && found_cam)
             {
@@ -141,13 +141,34 @@ public:
 
               // shutdown and delete old subscriber
               auto pos = camera_list_.at(idx).begin();
-              while (pos->second != req.mode && pos != camera_list_.at(idx).end())
+              while (pos->getMode_() != req.mode && pos != camera_list_.at(idx).end())
                 ++pos;
-              ros::Subscriber temp_sub = pos->first;
+              ros::Subscriber temp_sub = pos->getSub_();
               temp_sub.shutdown();
               camera_list_.at(idx).erase(pos);
               // add updated Subscriber
-              camera_list_.at(idx).insert(std::make_pair(sub_, req.mode));
+             switch (req.mode)
+              {
+                case (RAW):
+                  camera_list_.at(idx).push_back(raw_nodelet_);
+                  break;
+                case (COMPRESSED):
+                  camera_list_.at(idx).push_back(compressed_nodelet_);
+                  break;
+                case (THEORA):
+                  camera_list_.at(idx).push_back(theora_nodelet_);
+
+                  break;
+                case (DEPTH):
+                  camera_list_.at(idx).push_back(raw_nodelet_);
+
+                  break;
+                case (COMPRESSED_DEPTH):
+                  camera_list_.at(idx).push_back(compressed_nodelet_);
+                  break;
+                default:
+                  break;
+              }
               return true;
             }
           }
@@ -158,16 +179,58 @@ public:
       {
         // add new cam
         ROS_WARN_STREAM("Adding new Camera");
-        ModeSubscriber sub_map;
-        sub_map.insert(std::make_pair(sub_, req.mode));
-        camera_list_.push_back(sub_map);
+        std::vector<iai_nodelets::IAINodelet> nodelet_vector;
+          switch (req.mode)
+          {
+              case (RAW):
+                  nodelet_vector.push_back(raw_nodelet_);
+                  break;
+              case (COMPRESSED):
+                  nodelet_vector.push_back(compressed_nodelet_);
+                  break;
+              case (THEORA):
+                  nodelet_vector.push_back(theora_nodelet_);
+
+                  break;
+              case (DEPTH):
+                  nodelet_vector.push_back(raw_nodelet_);
+
+                  break;
+              case (COMPRESSED_DEPTH):
+                  nodelet_vector.push_back(compressed_nodelet_);
+                  break;
+              default:
+                  break;
+          }
+        camera_list_.push_back(nodelet_vector);
         return true;
       }
       else
       {
         // add new subscriber
         ROS_WARN_STREAM("Adding new Subscriber");
-        camera_list_.at(req.cam_no).insert(std::make_pair(sub_, req.mode));
+          switch (req.mode)
+          {
+              case (RAW):
+                  camera_list_.at(req.cam_no).push_back(raw_nodelet_);
+                  break;
+              case (COMPRESSED):
+                  camera_list_.at(req.cam_no).push_back(compressed_nodelet_);
+                  break;
+              case (THEORA):
+                  camera_list_.at(req.cam_no).push_back(theora_nodelet_);
+
+                  break;
+              case (DEPTH):
+                  camera_list_.at(req.cam_no).push_back(raw_nodelet_);
+
+                  break;
+              case (COMPRESSED_DEPTH):
+                  camera_list_.at(req.cam_no).push_back(compressed_nodelet_);
+                  break;
+              default:
+                  break;
+          }
         return true;
       }
     }
@@ -212,10 +275,10 @@ public:
     {
       for (auto it = camera_list_.at(req.cam_no).begin(); it != camera_list_.at(req.cam_no).end(); it++)
       {
-        if (it->first.getTopic().find(req.topic) != string::npos && it->second == req.mode)
+        if (it->getTopic_().find(req.topic) != string::npos && it->getMode_() == req.mode)
         {
           ROS_WARN_STREAM("Shutting down sub");
-          Subscriber temp_sub = it->first;
+          Subscriber temp_sub = it->getSub_();
           temp_sub.shutdown();
           ROS_WARN_STREAM("Found fitting topic and mode, erasing...");
           camera_list_.at(req.cam_no).erase(it);
@@ -236,32 +299,27 @@ public:
    * @param topic images to subscribe to
    * @param mode compression method / raw method
    */
-  void createSubscriber(string topic, int mode)
+  void createSubscriber(string topic, int mode,iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
     // TODO move subscription to nodelets for accurate spinning
     switch (mode)
     {
       case (RAW):
-        sub_ = nh_.subscribe(topic, 1, &iai_nodelets::RawNodelet::imageCallback, &raw_nodelet_);
-        raw_nodelet_.setMode(mode);
-        break;
+        //raw_nodelet_.createSubscriber(topic);
+        ros::service::call("storage/raw",req,res);
+          break;
       case (COMPRESSED):
-        sub_ = nh_.subscribe(topic + "/compressed", 1, &iai_nodelets::CompressedNodelet::compressedImageCallback,
-                             &compressed_nodelet_);
-        compressed_nodelet_.setMode(mode);
+        compressed_nodelet_.createSubscriber(topic);
         break;
       case (THEORA):
-        sub_ = nh_.subscribe(topic + "/theora", 1, &iai_nodelets::TheoraNodelet::theoraCallback, &theora_nodelet_);
-        theora_nodelet_.setMode(mode);
+        theora_nodelet_.createSubscriber(topic);
         break;
       case (DEPTH):
-        sub_ = nh_.subscribe(topic, 1, &iai_nodelets::RawNodelet::imageCallback, &raw_nodelet_);
-        raw_nodelet_.setMode(mode);
+        raw_nodelet_.createSubscriber(topic);
+        ;
         break;
       case (COMPRESSED_DEPTH):
-        sub_ = nh_.subscribe(topic + "/compressed", 1, &iai_nodelets::CompressedNodelet::compressedImageCallback,
-                             &compressed_nodelet_);
-        compressed_nodelet_.setMode(mode);
+        compressed_nodelet_.createSubscriber(topic);
 
         break;
       default:
@@ -307,9 +365,9 @@ public:
    */
   void init()
   {
-    sub_ = nh_.subscribe(topic_, 1, &iai_nodelets::RawNodelet::imageCallback, &raw_nodelet_);
-    sub_list_.insert(std::make_pair(sub_, RAW));
-    camera_list_.push_back(sub_list_);
+    raw_nodelet_.createSubscriber(topic_);
+   nodelet_list_.push_back(raw_nodelet_);
+    camera_list_.push_back(nodelet_list_);
   }
 };
 

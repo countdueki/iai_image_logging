@@ -30,6 +30,7 @@
   <exec_depend>mongodb_store</exec_depend>
   <exec_depend>mongodb_log</exec_depend>
   <export>
+    <nodelet plugin="${prefix}/iai_nodelet.xml" />
     <nodelet plugin="${prefix}/raw_nodelet.xml" />
     <nodelet plugin="${prefix}/compressed_nodelet.xml" />
     <nodelet plugin="${prefix}/theora_nodelet.xml" />

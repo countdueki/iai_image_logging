@@ -25,7 +25,7 @@ catkin_package(CATKIN_DEPENDS
 include_directories(${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS})
 
-add_library(iai_nodelets src/raw_nodelet.cpp src/compressed_nodelet.cpp src/theora_nodelet.cpp)
+add_library(iai_nodelets src/iai_nodelet.cpp src/raw_nodelet.cpp src/compressed_nodelet.cpp src/theora_nodelet.cpp)
 target_link_libraries(iai_nodelets ${catkin_LIBRARIES})
 if(catkin_EXPORTED_LIBRARIES)
     add_dependencies(iai_nodelets ${catkin_EXPORTED_LIBRARIES})

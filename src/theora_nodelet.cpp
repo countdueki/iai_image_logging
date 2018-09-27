@@ -8,6 +8,10 @@ PLUGINLIB_EXPORT_CLASS(iai_nodelets::TheoraNodelet, nodelet::Nodelet)
 
 namespace iai_nodelets
 {
+void TheoraNodelet::createSubscriber(string topic)
+{
+  sub_ = nh_.subscribe(topic + "/theora", 1, &TheoraNodelet::theoraCallback, this);
+}
 void TheoraNodelet::setParameters(string topic, string collection, string db_host, int mode)
 {
   mode_ = mode;
@@ -70,10 +74,5 @@ void TheoraNodelet::onInit()
     ros::spinOnce();
     hz_rate.sleep();
   }
-}
-
-void TheoraNodelet::setMode(int mode_)
-{
-  TheoraNodelet::mode_ = mode_;
 }
 }
