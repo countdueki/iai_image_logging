@@ -24,7 +24,6 @@ include_directories(${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS})
 
 add_executable(image_logger
-
         src/image_logger.cpp
         )
 target_link_libraries(image_logger
@@ -38,13 +37,7 @@ target_link_libraries(storage
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         )
-add_executable(raw_sub
-        src/iai_raw_sub.cpp
-        )
-target_link_libraries(raw_sub
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
-        )
+
 # -- INSTALL -- #
 
 # add python scripts

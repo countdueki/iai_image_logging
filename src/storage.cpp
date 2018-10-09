@@ -3,8 +3,6 @@
 //
 
 #include "storage.h"
-#include "iai_sub.h"
-#include "iai_raw_sub.h"
 class Storage
 {
 public:
@@ -18,7 +16,8 @@ private:
   Storage()
   {
     db_host_ = "localhost";
-    collection_ = "db.standard";
+
+    collection_.emplace_back("db.standard");
     topic_ = "camera/rgb/image_raw";
     mode_ = 1;
 
@@ -34,8 +33,6 @@ private:
     update_config = nh_.advertiseService("storage/update", &Storage::update, this);
     add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
     del_service = nh_.advertiseService("storage/del", &Storage::delConfig, this);
-
-    raw_nodelet_.create(topic_,collection_,db_host_,mode_,client_connection_);
   }
 
   Storage(const Storage& old);
@@ -44,7 +41,7 @@ private:
 
   string topic_;
   string db_host_;
-  string collection_;
+  vector<string> collection_, collection_compressed_, collection_theora_;
   int mode_;
 
   ros::NodeHandle nh_;
@@ -52,25 +49,117 @@ private:
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   ros::Subscriber sub_;
-  vector<IAISub> nodelet_list_;
-  vector<vector<IAISub>> camera_list_;
+  ModeSubscriber sub_list_;
+  vector<ModeSubscriber> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
-  RawSub raw_nodelet_;
-
 public:
-  void updateNodelet(iai_image_logging_msgs::UpdateRequest req)
-  {
-    collection_ = req.collection;
-    topic_ = req.topic;
-    db_host_ = req.db_host;
-    mode_ = req.mode;
+  /**
+   * image callback to save raw and depth images
+   * @param msg raw and depth images
+   */
+  void imageCallback(const sensor_msgs::ImageConstPtr& msg)
+  {  // matrixFunction(); // for building test entries
+    mongo::BSONObjBuilder document;
 
-    raw_nodelet_.create(topic_,collection_,db_host_,mode_,client_connection_);
+    ROS_DEBUG_STREAM("raw collection size " << collection_.size());
+    for (int i = 0; i < collection_.size(); i++)
+    {
+      ROS_DEBUG_STREAM("msg format: " << msg->encoding);
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
+      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("encoding", msg->encoding);
+      document.append("width", msg->width);
+      document.append("height", msg->height);
+      document.append("is_bigendian", msg->is_bigendian);
+      document.append("step", msg->step);
 
-
-
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+      std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
+      if (mode_ == RAW)
+      {
+        document.append("mode_", "raw");
+      }
+      else if (mode_ == DEPTH)
+      {
+        document.append("mode_", "depth");
+      }
+      client_connection_->insert(collection_.at(i), document.obj());
+    }
   }
+
+  /**
+   * CompressedImage callback to save compressed images and compressed depth images
+   * @param msg compressed image
+   */
+  void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
+  {
+    ROS_DEBUG_STREAM("compressed collection size " << collection_compressed_.size());
+
+    for (int i = 0; i < collection_compressed_.size(); i++)
+    {
+      ROS_DEBUG_STREAM("FORMAT: " << msg->format);
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
+      mongo::BSONObjBuilder document;
+      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("format", msg->format);
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+      std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
+
+      if (mode_ == COMPRESSED)
+      {
+        document.append("mode_", "compressed");
+      }
+      else if (mode_ == COMPRESSED_DEPTH)
+      {
+        document.append("mode_", "compressed_depth");
+      }
+      client_connection_->insert(collection_compressed_.at(i), document.obj());
+    }
+  }
+
+  /**
+   * Theora Callback to save video packets
+   * @param msg theora video
+   */
+  void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
+  {
+    ROS_DEBUG_STREAM("theora collection size " << collection_theora_.size());
+
+    for (int i = 0; i < collection_theora_.size(); i++)
+    {
+      ROS_DEBUG_STREAM("Theora called: " << msg->packetno);
+      ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+      ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
+      mongo::BSONObjBuilder document;
+
+      mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+      document.append("format", "theora");
+      document.append("start", msg->b_o_s);
+      document.append("end", msg->e_o_s);
+      document.append("position", (int)msg->granulepos);
+      document.append("packetno", (int)msg->packetno);
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+      string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
+      document.append("size", (int)msg->data.size());
+      document.append("type", type);
+      document.append("mode_", "theora");
+      client_connection_->insert(collection_theora_.at(i), document.obj());
+    }
+  }
+
   /**
    * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a mmap<Subscriber,mode>)
    * If the requested topic is not found, it is added. If the camera isn't found, it is added
@@ -80,15 +169,17 @@ public:
    */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    ROS_WARN_STREAM("EXECUTING UPDATE");
-    updateNodelet(req);
+    ROS_WARN_STREAM("in update");
+
+    topic_ = req.topic;
+    db_host_ = req.db_host;
+    mode_ = req.mode;
 
     bool found_cam = false;
     int found_cam_no = 0;
     string current_topic = "";
     string requested_topic = "";
-      std::vector<RawSub> nodelets;
-      nodelets.push_back(raw_nodelet_);
+
     if (req.cam_no > camera_list_.size())
     {
       ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
@@ -96,8 +187,67 @@ public:
     }
     else
     {
+      ROS_WARN_STREAM("starting collection naming");
+      // set collection name
+      switch (req.mode)
+      {
+        case (RAW):
+          if (collection_.empty() || collection_.size() <= req.cam_no)
+          {
+            collection_.push_back(req.collection);
+          }
+          else
+          {
+            collection_.at(req.cam_no) = req.collection;
+          }
+          break;
+        case (COMPRESSED):
+          if (collection_compressed_.empty() || collection_compressed_.size() <= req.cam_no)
+          {
+            collection_compressed_.push_back(req.collection);
+          }
+          else
+          {
+            collection_compressed_.at(req.cam_no) = req.collection;
+          }
+          break;
+        case (THEORA):
+          if (collection_theora_.empty() || collection_theora_.size() <= req.cam_no)
+          {
+            collection_theora_.push_back(req.collection);
+          }
+          else
+          {
+            collection_theora_.at(req.cam_no) = req.collection;
+          }
+          break;
+        case (DEPTH):
+          if (collection_.empty() || collection_.size() <= req.cam_no)
+          {
+            collection_.push_back(req.collection);
+          }
+          else
+          {
+            collection_.at(req.cam_no) = req.collection;
+          }
+          break;
+        case (COMPRESSED_DEPTH):
+          if (collection_compressed_.empty() || collection_compressed_.size() <= req.cam_no)
+          {
+            collection_compressed_.push_back(req.collection);
+          }
+          else
+          {
+            collection_compressed_.at(req.cam_no) = req.collection;
+          }
+          break;
+        default:
+          break;
+      }
+      ROS_WARN_STREAM("done collection naming");
+
       // assigns sub_ to required callback
-      createSubscriber(req.topic, req.mode,req,res);
+      createSubscriber(req.topic, req.mode);
 
       // iterate over camera list for existing entries
       for (int idx = 0; idx < camera_list_.size(); idx++)
@@ -111,7 +261,7 @@ public:
           // iterate over list of Subscribers in camera
           for (auto it = camera_list_.at(idx).begin(); it != camera_list_.at(idx).end(); it++)
           {
-            current_topic = it->getTopic_() + getModeString(it->getMode_());
+            current_topic = it->first.getTopic() + getModeString(it->second);
             requested_topic = req.topic + getModeString(req.mode);
             if (current_topic.find(requested_topic) != string::npos && found_cam)
             {
@@ -119,15 +269,13 @@ public:
 
               // shutdown and delete old subscriber
               auto pos = camera_list_.at(idx).begin();
-              while (pos->getMode_() != req.mode && pos != camera_list_.at(idx).end())
+              while (pos->second != req.mode && pos != camera_list_.at(idx).end())
                 ++pos;
-              ros::Subscriber temp_sub = pos->getSub_();
+              ros::Subscriber temp_sub = pos->first;
               temp_sub.shutdown();
               camera_list_.at(idx).erase(pos);
               // add updated Subscriber
-
-                  camera_list_.at(idx).push_back(raw_nodelet_);
-
+              camera_list_.at(idx).insert(std::make_pair(sub_, req.mode));
               return true;
             }
           }
@@ -138,18 +286,16 @@ public:
       {
         // add new cam
         ROS_WARN_STREAM("Adding new Camera");
-        std::vector<RawSub> nodelet_vector;
-
-                  nodelet_vector.push_back(raw_nodelet_);
+        ModeSubscriber sub_map;
+        sub_map.insert(std::make_pair(sub_, req.mode));
+        camera_list_.push_back(sub_map);
         return true;
       }
       else
       {
         // add new subscriber
         ROS_WARN_STREAM("Adding new Subscriber");
-
-                               camera_list_.at(req.cam_no).push_back(raw_nodelet_);
-
+        camera_list_.at(req.cam_no).insert(std::make_pair(sub_, req.mode));
         return true;
       }
     }
@@ -194,10 +340,10 @@ public:
     {
       for (auto it = camera_list_.at(req.cam_no).begin(); it != camera_list_.at(req.cam_no).end(); it++)
       {
-        if (it->getTopic_().find(req.topic) != string::npos && it->getMode_() == req.mode)
+        if (it->first.getTopic().find(req.topic) != string::npos && it->second == req.mode)
         {
           ROS_WARN_STREAM("Shutting down sub");
-          Subscriber temp_sub = it->getSub_();
+          Subscriber temp_sub = it->first;
           temp_sub.shutdown();
           ROS_WARN_STREAM("Found fitting topic and mode, erasing...");
           camera_list_.at(req.cam_no).erase(it);
@@ -218,10 +364,28 @@ public:
    * @param topic images to subscribe to
    * @param mode compression method / raw method
    */
-  void createSubscriber(string topic, int mode,iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  void createSubscriber(string topic, int mode)
   {
-
-       raw_nodelet_.createSubscriber(topic);
+    switch (mode)
+    {
+      case (RAW):
+        sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+        break;
+      case (COMPRESSED):
+        sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+        break;
+      case (THEORA):
+        sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
+        break;
+      case (DEPTH):
+        sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
+        break;
+      case (COMPRESSED_DEPTH):
+        sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+        break;
+      default:
+        break;
+    }
   }
 
   /**
@@ -235,14 +399,19 @@ public:
     {
       case (RAW):
         return "";
+        break;
       case (COMPRESSED):
         return "/compressed";
+        break;
       case (THEORA):
         return "/theora";
+        break;
       case (DEPTH):
         return "";
+        break;
       case (COMPRESSED_DEPTH):
         return "/compressed";
+        break;
       default:
         break;
     }
@@ -262,12 +431,13 @@ public:
    */
   void init()
   {
-    raw_nodelet_.createSubscriber(topic_);
-   nodelet_list_.push_back(raw_nodelet_);
-    camera_list_.push_back(nodelet_list_);
+    ROS_WARN_STREAM("initialize...");
+    sub_ = nh_.subscribe(topic_, 1, &Storage::imageCallback, this);
+    sub_list_.insert(std::make_pair(sub_, RAW));
+    camera_list_.push_back(sub_list_);
+    ROS_WARN_STREAM("initilization done");
   }
 };
-
 /**
  * Start storage node
  * @param argc
@@ -282,7 +452,7 @@ int main(int argc, char** argv)
   Storage* storage = &Storage::Instance();
   storage->init();
 
-  ros::Rate hz_rate(1.0);
+  ros::Rate hz_rate(60.0);
   while (storage->getNh().ok())
   {
     ros::spinOnce();
