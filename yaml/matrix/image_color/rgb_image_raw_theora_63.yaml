@@ -1,0 +1,8 @@
+collection: db.rgb_image_color_theora_63
+db_host: localhost
+target_bitrate: 800000
+optimize_for: 1
+keyframe_frequency: 64
+quality: 63
+topic: /camera/rgb/image_color
+mode: 2

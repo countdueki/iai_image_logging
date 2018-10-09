@@ -1,0 +1,4 @@
+collection: db.rgb_image_color
+db_host: localhost
+topic: /camera/rgb/image_color
+mode: 0

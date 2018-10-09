@@ -1,0 +1,7 @@
+collection: db.depth_registered_compressed_depth_png_9
+db_host: localhost
+png_level: 9
+depth_max: 10.0
+depth_quantization: 100.0
+topic: /camera/depth_registered/image/compressedDepth
+mode: 4

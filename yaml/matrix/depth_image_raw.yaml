@@ -1,0 +1,4 @@
+collection: db.depth_image_raw_compressed_depth
+db_host: localhost
+topic: /camera/depth/image_raw/compressedDepth
+mode: 3

@@ -1,0 +1,4 @@
+collection: db.depth_registered
+db_host: localhost
+topic: /camera/depth_registered/image
+mode: 3

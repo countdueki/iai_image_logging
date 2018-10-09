@@ -43,5 +43,7 @@ target_link_libraries(storage
 # add python scripts
 install(PROGRAMS
         scripts/config_client.py
+        scripts/setup.py
+        scripts/setup_yaml.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )

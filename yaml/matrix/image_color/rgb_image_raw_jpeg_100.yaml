@@ -1,0 +1,7 @@
+collection: db.rgb_image_color_jpeg_100
+db_host: localhost
+format: jpeg
+jpeg_quality: 100
+png_level: 9
+topic: /camera/rgb/image_color
+mode: 1
