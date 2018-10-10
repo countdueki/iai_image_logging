@@ -169,8 +169,6 @@ public:
    */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    ROS_WARN_STREAM("in update");
-
     topic_ = req.topic;
     db_host_ = req.db_host;
     mode_ = req.mode;
@@ -187,7 +185,6 @@ public:
     }
     else
     {
-      ROS_WARN_STREAM("starting collection naming");
       // set collection name
       switch (req.mode)
       {
@@ -244,7 +241,6 @@ public:
         default:
           break;
       }
-      ROS_WARN_STREAM("done collection naming");
 
       // assigns sub_ to required callback
       createSubscriber(req.topic, req.mode);
@@ -330,7 +326,7 @@ public:
 * @param res success bool
 * @return true if success, false else
 */
-  bool delConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+  bool delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
   {
     if (camera_list_.size() < req.cam_no)
     {
@@ -351,7 +347,7 @@ public:
         if (camera_list_.at(req.cam_no).empty())
         {
           // TODO delete camera
-          ROS_ERROR_STREAM("Camera has to be deleted!");
+          ROS_WARN_STREAM("Camera order may be broken. be careful!");
         }
       }
       res.success = true;

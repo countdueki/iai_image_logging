@@ -27,20 +27,14 @@ if __name__ == "__main__":
         exit(0)
     yaml_config = sys.argv[1]
 
+    with open(yaml_config, 'r') as conf_txt:
+        try:
+            yaml_data = yaml.load(conf_txt)
+            config = iai_image_logging_msgs.cfg.MainConfig.defaults
+            client.update_configuration(yaml_data)
+            rate.sleep()
+
+        except yaml.YAMLError as exc:
+            print(exc)
 
     tsleep_rate = 30;
-
-while not rospy.is_shutdown():
-
-    with open(yaml_config, 'r') as conf_txt:
-        for line in conf_txt:
-            with open(line.rstrip("\n"), 'r') as stream:
-                try:
-                    yaml_data = yaml.load(stream)
-                    config = iai_image_logging_msgs.cfg.MainConfig.defaults
-                    client.update_configuration(yaml_data)
-                    time.sleep(tsleep_rate)
-                    rate.sleep()
-
-                except yaml.YAMLError as exc:
-                    print(exc)

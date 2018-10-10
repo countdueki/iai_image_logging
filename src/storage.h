@@ -14,6 +14,7 @@
 #include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <iai_image_logging_msgs/Update.h>
+#include <iai_image_logging_msgs/Delete.h>
 
 // opencv
 #include <opencv2/imgproc/imgproc.hpp>
