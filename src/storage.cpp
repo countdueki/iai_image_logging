@@ -3,6 +3,8 @@
 //
 
 #include "storage.h"
+int g_count = 0;
+int g_count_comp = 0;
 class Storage
 {
 public:
@@ -44,88 +46,114 @@ private:
   vector<string> collection_, collection_compressed_, collection_theora_;
   int mode_;
 
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_,nh_r_,nh_c_,nh_t_;
   ros::ServiceServer update_config;
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   ros::Subscriber sub_;
   ModeSubscriber sub_list_;
+  ros::SubscribeOptions ops_;
   vector<ModeSubscriber> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
 public:
+
+    void saveImage(const sensor_msgs::ImageConstPtr& msg)
+    {
+
+        mongo::BSONObjBuilder document;
+
+        ROS_DEBUG_STREAM("raw collection size " << collection_.size());
+        for (int i = 0; i < collection_.size(); i++)
+        {
+            ROS_DEBUG_STREAM("msg format: " << msg->encoding);
+            ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+            ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
+            mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+            document.append("header",
+                            BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+            document.append("encoding", msg->encoding);
+            document.append("width", msg->width);
+            document.append("height", msg->height);
+            document.append("is_bigendian", msg->is_bigendian);
+            document.append("step", msg->step);
+
+            document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+            std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+            document.append("type", type);
+            document.append("size", (int)msg->data.size());
+            if (mode_ == RAW)
+            {
+                document.append("mode_", "raw");
+            }
+            else if (mode_ == DEPTH)
+            {
+                document.append("mode_", "depth");
+            }
+            client_connection_->insert(collection_.at(i), document.obj());
+        }
+    }
   /**
    * image callback to save raw and depth images
    * @param msg raw and depth images
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
-  {  // matrixFunction(); // for building test entries
-    mongo::BSONObjBuilder document;
+  {
+          ROS_WARN_STREAM("we welcome our G #" << g_count);
+          saveImage(msg);
+          g_count++;
+            sleep(1);
 
-    ROS_DEBUG_STREAM("raw collection size " << collection_.size());
-    for (int i = 0; i < collection_.size(); i++)
-    {
-      ROS_DEBUG_STREAM("msg format: " << msg->encoding);
-      ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
-      ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
-      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-      document.append("header",
-                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-      document.append("encoding", msg->encoding);
-      document.append("width", msg->width);
-      document.append("height", msg->height);
-      document.append("is_bigendian", msg->is_bigendian);
-      document.append("step", msg->step);
 
-      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-      std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
-      document.append("type", type);
-      document.append("size", (int)msg->data.size());
-      if (mode_ == RAW)
-      {
-        document.append("mode_", "raw");
-      }
-      else if (mode_ == DEPTH)
-      {
-        document.append("mode_", "depth");
-      }
-      client_connection_->insert(collection_.at(i), document.obj());
-    }
   }
 
+  void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
+  {
+      ROS_DEBUG_STREAM("compressed collection size " << collection_compressed_.size());
+
+      for (int i = 0; i < collection_compressed_.size(); i++)
+      {
+          ROS_DEBUG_STREAM("FORMAT: " << msg->format);
+          ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
+          ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
+          mongo::BSONObjBuilder document;
+          mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+          document.append("header",
+                          BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+          document.append("format", msg->format);
+          document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+          std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+          document.append("type", type);
+          document.append("size", (int)msg->data.size());
+
+          if (mode_ == COMPRESSED)
+          {
+              document.append("mode_", "compressed");
+          }
+          else if (mode_ == COMPRESSED_DEPTH)
+          {
+              document.append("mode_", "compressed_depth");
+          }
+          client_connection_->insert(collection_compressed_.at(i), document.obj());
+      }
+  }
   /**
    * CompressedImage callback to save compressed images and compressed depth images
    * @param msg compressed image
    */
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    ROS_DEBUG_STREAM("compressed collection size " << collection_compressed_.size());
 
-    for (int i = 0; i < collection_compressed_.size(); i++)
-    {
-      ROS_DEBUG_STREAM("FORMAT: " << msg->format);
-      ROS_DEBUG_STREAM("storage TOPIC: " << topic_);
-      ROS_DEBUG_STREAM("storage COLLECTION: " << collection_.at(i));
-      mongo::BSONObjBuilder document;
-      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-      document.append("header",
-                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-      document.append("format", msg->format);
-      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-      std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-      document.append("type", type);
-      document.append("size", (int)msg->data.size());
+      saveCompressedImage(msg);
+      ROS_WARN_STREAM("we welcome our compressed G #" << g_count_comp);
+      ros::AsyncSpinner async_spinner_c(12);
 
-      if (mode_ == COMPRESSED)
-      {
-        document.append("mode_", "compressed");
+      ros::Rate r(10.0);
+      while (nh_c_.ok()) {
+          g_count_comp++;
+          async_spinner_c.start();
+          r.sleep(); // 10 hertz
       }
-      else if (mode_ == COMPRESSED_DEPTH)
-      {
-        document.append("mode_", "compressed_depth");
-      }
-      client_connection_->insert(collection_compressed_.at(i), document.obj());
-    }
   }
 
   /**
@@ -336,8 +364,19 @@ public:
     {
       for (auto it = camera_list_.at(req.cam_no).begin(); it != camera_list_.at(req.cam_no).end(); it++)
       {
+        ROS_WARN_STREAM("requested topic: " << req.topic);
+        ROS_WARN_STREAM("requested mode: " << req.mode);
+        ROS_WARN_STREAM("requested cam: " << req.cam_no);
+
+
+        ROS_WARN_STREAM("Current topic: " << it->first.getTopic());
+        ROS_WARN_STREAM("Current mode: " << it->second);
+        ROS_WARN_STREAM("Current cam: " << req.cam_no);
+
+
         if (it->first.getTopic().find(req.topic) != string::npos && it->second == req.mode)
         {
+          // TODO: Check for integrity of subscriber list in camera
           ROS_WARN_STREAM("Shutting down sub");
           Subscriber temp_sub = it->first;
           temp_sub.shutdown();
@@ -365,8 +404,8 @@ public:
     switch (mode)
     {
       case (RAW):
-        sub_ = nh_.subscribe(topic, 1, &Storage::imageCallback, this);
-        break;
+          sub_ = nh_.subscribe(topic , 1, &Storage::imageCallback, this);
+            break;
       case (COMPRESSED):
         sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
         break;
@@ -428,8 +467,12 @@ public:
   void init()
   {
     ROS_WARN_STREAM("initialize...");
-    sub_ = nh_.subscribe(topic_, 1, &Storage::imageCallback, this);
-    sub_list_.insert(std::make_pair(sub_, RAW));
+      ops_.template init<sensor_msgs::Image>(topic_, 1,boost::bind(&Storage::imageCallback, this, _1));
+      ops_.transport_hints = ros::TransportHints();
+      ops_.allow_concurrent_callbacks = true;
+      sub_ = nh_.subscribe(ops_);
+
+      sub_list_.insert(std::make_pair(sub_, RAW));
     camera_list_.push_back(sub_list_);
     ROS_WARN_STREAM("initilization done");
   }
@@ -447,14 +490,12 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
+    ros::AsyncSpinner async_spinner(4);
 
-  ros::Rate hz_rate(60.0);
-  while (storage->getNh().ok())
-  {
-    ros::spinOnce();
+      async_spinner.start();
+      while (ros::ok()){
+          ROS_DEBUG_STREAM("Spinning!");
 
-    hz_rate.sleep();
-  }
-
+      }
   return 0;
 }

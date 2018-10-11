@@ -207,12 +207,7 @@ int main(int argc, char** argv)
   // initialize storage node with subscribers // TODO: Fix fail on empty storage node (i.e. when initStorage not used)
   initStorage();
 
-  // 60 enough, 30 is not
-  ros::Rate hz_rate(1.0);
-  while (nh.ok())
-  {
-    ros::spinOnce();
-    hz_rate.sleep();
-  }
+  ros::spin();
+
   return 0;
 }

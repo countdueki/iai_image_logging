@@ -57,13 +57,7 @@ if __name__ == "__main__":
 
     if sys.argv[4] == "compressed_depth":
         mode = 4
-        format = "jpeg"
-        if sys.argv[5] == "jpeg":
-            format = "jpeg"
-            if sys.argv[6] == "high":
-                jpeg_quality = 100
-            if sys.argv[6] == "low":
-                jpeg_quality = 20
+        format = "png"
         if sys.argv[5] == "png":
             format = "png"
 
