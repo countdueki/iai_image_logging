@@ -5,6 +5,8 @@
 #include "storage.h"
 int g_count = 0;
 int g_count_comp = 0;
+ros::CallbackQueue cb_queue_r_, cb_queue_c_, cb_queue_t_;
+
 class Storage
 {
 public:
@@ -59,7 +61,6 @@ private:
   ros::SubscribeOptions ops_r_, ops_c_;
   vector<ModeSubscriber> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
-  ros::CallbackQueue cb_queue_r_, cb_queue_c_, cb_queue_t_;
 
     ros::Spinner* async_spinner_r;
 public:
@@ -104,10 +105,10 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
-
-    ROS_WARN_STREAM("we welcome our G #" << g_count);
-    saveImage(msg);
-    g_count++;
+      ROS_WARN_STREAM("we welcome our G #" << g_count);
+      saveImage(msg);
+      g_count++;
+      sleep(1);
 
 
 
@@ -495,6 +496,12 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
+  ros::AsyncSpinner a_r(1,&cb_queue_r_);
+  ros::AsyncSpinner a_c(1,&cb_queue_c_);
+  a_r.start();
+  a_c.start();
+  //cb_queue_r_.callAvailable();
+
   ros::spin();
   return 0;
 }
