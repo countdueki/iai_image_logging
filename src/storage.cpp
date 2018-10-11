@@ -56,11 +56,11 @@ private:
   vector<ModeSubscriber> camera_list_;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
+    ros::Spinner* async_spinner_r;
 public:
 
     void saveImage(const sensor_msgs::ImageConstPtr& msg)
     {
-
         mongo::BSONObjBuilder document;
 
         ROS_DEBUG_STREAM("raw collection size " << collection_.size());
@@ -99,11 +99,14 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
+      ros::Rate r(1.0);
+while(nh_r_.ok()) {
+    ROS_WARN_STREAM("we welcome our G #" << g_count);
+    saveImage(msg);
+    g_count++;
+    r.sleep();
 
-          ROS_WARN_STREAM("we welcome our G #" << g_count);
-          saveImage(msg);
-          g_count++;
-
+}
 
   }
 
@@ -141,12 +144,12 @@ public:
    * CompressedImage callback to save compressed images and compressed depth images
    * @param msg compressed image
    */
-  void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
-  {
-
-      ROS_WARN_STREAM("we welcome our compressed G #" << g_count_comp);
+  void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg) {
+      while (nh_c_.ok()){
+          ROS_WARN_STREAM("we welcome our compressed G #" << g_count_comp);
       saveCompressedImage(msg);
       g_count_comp++;
+  }
   }
 
   /**
@@ -397,13 +400,16 @@ public:
     switch (mode)
     {
       case (RAW):
-          sub_ = nh_.subscribe(topic , 1, &Storage::imageCallback, this);
+          ops_.template init<sensor_msgs::Image>(topic_, 1,boost::bind(&Storage::imageCallback, this, _1));
+            ops_.transport_hints = ros::TransportHints();
+            ops_.allow_concurrent_callbacks = true;
+            sub_ = nh_r_.subscribe(ops_);
             break;
       case (COMPRESSED):
           ops_.template init<sensor_msgs::CompressedImage>(topic_+ "/compressed", 1,boost::bind(&Storage::compressedImageCallback, this, _1));
             ops_.transport_hints = ros::TransportHints();
             ops_.allow_concurrent_callbacks = true;
-            sub_ = nh_.subscribe(ops_);
+            sub_ = nh_c_.subscribe(ops_);
         break;
       case (THEORA):
         sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
@@ -466,7 +472,7 @@ public:
       ops_.template init<sensor_msgs::Image>(topic_, 1,boost::bind(&Storage::imageCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
-      sub_ = nh_.subscribe(ops_);
+      sub_ = nh_r_.subscribe(ops_);
 
       sub_list_.insert(std::make_pair(sub_, RAW));
     camera_list_.push_back(sub_list_);
