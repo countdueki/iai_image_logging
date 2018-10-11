@@ -6,7 +6,8 @@
 #define IAI_IMAGE_LOGGING_STORAGE_H
 
 #include <ros/ros.h>
-#include "ros/subscribe_options.h"
+#include <ros/subscribe_options.h>
+#include <ros/callback_queue.h>
 #include <string>
 #include <mongo/client/dbclient.h>
 #include <theora_image_transport/Packet.h>
