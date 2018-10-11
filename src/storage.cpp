@@ -99,10 +99,10 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
+
           ROS_WARN_STREAM("we welcome our G #" << g_count);
           saveImage(msg);
           g_count++;
-            sleep(1);
 
 
   }
@@ -144,16 +144,9 @@ public:
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
 
-      saveCompressedImage(msg);
       ROS_WARN_STREAM("we welcome our compressed G #" << g_count_comp);
-      ros::AsyncSpinner async_spinner_c(12);
-
-      ros::Rate r(10.0);
-      while (nh_c_.ok()) {
-          g_count_comp++;
-          async_spinner_c.start();
-          r.sleep(); // 10 hertz
-      }
+      saveCompressedImage(msg);
+      g_count_comp++;
   }
 
   /**
@@ -407,7 +400,10 @@ public:
           sub_ = nh_.subscribe(topic , 1, &Storage::imageCallback, this);
             break;
       case (COMPRESSED):
-        sub_ = nh_.subscribe(topic + "/compressed", 1, &Storage::compressedImageCallback, this);
+          ops_.template init<sensor_msgs::CompressedImage>(topic_+ "/compressed", 1,boost::bind(&Storage::compressedImageCallback, this, _1));
+            ops_.transport_hints = ros::TransportHints();
+            ops_.allow_concurrent_callbacks = true;
+            sub_ = nh_.subscribe(ops_);
         break;
       case (THEORA):
         sub_ = nh_.subscribe(topic + "/theora", 1, &Storage::theoraCallback, this);
@@ -490,11 +486,10 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
-    ros::AsyncSpinner async_spinner(4);
 
-      async_spinner.start();
       while (ros::ok()){
           ROS_DEBUG_STREAM("Spinning!");
+          ros::spin();
 
       }
   return 0;
