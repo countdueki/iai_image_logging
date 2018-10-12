@@ -22,10 +22,12 @@ catkin_package(CATKIN_DEPENDS
 
 include_directories(${catkin_INCLUDE_DIRS}
 #        ${OpenCV_INCLUDE_DIRS}
+        include
         )
 
 add_executable(image_logger
         src/image_logger.cpp
+
         )
 target_link_libraries(image_logger
         ${catkin_LIBRARIES}
@@ -33,6 +35,7 @@ target_link_libraries(image_logger
 
 add_executable(storage
         src/storage.cpp
+
         )
 target_link_libraries(storage
 #        ${OpenCV_LIBRARIES}

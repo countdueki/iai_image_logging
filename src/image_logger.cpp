@@ -106,30 +106,9 @@ int updateStorage(MainConfig& cfg)
   {
     iai_image_logging_msgs::UpdateRequest req;
     iai_image_logging_msgs::UpdateResponse res;
-    string collection = "";
-    switch (cfg.mode)
-    {
-      case (RAW):
-        collection = cfg.collection + "_raw" + "_cam_" + std::to_string(cfg.cam_no);
-        break;
-      case (COMPRESSED):
-        collection = cfg.collection + "_compressed" + "_cam_" + std::to_string(cfg.cam_no);
-        break;
-      case (THEORA):
-        collection = cfg.collection + "_theora" + "_cam_" + std::to_string(cfg.cam_no);
-        break;
-      case (DEPTH):
-        collection = cfg.collection + "_depth" + "_cam_" + std::to_string(cfg.cam_no);
-        break;
-      case (COMPRESSED_DEPTH):
-        collection = cfg.collection + "_compressedDepth" + "_cam_" + std::to_string(cfg.cam_no);
-        break;
-      default:
-        collection = cfg.collection;
-        break;
-    }
+
     req.db_host = cfg.db_host;
-    req.collection = collection;
+    req.collection = cfg.collection;
     req.topic = cfg.topic;
     req.mode = cfg.mode;
     req.cam_no = cfg.cam_no;
