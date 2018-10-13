@@ -66,7 +66,13 @@ private:
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   StorageSubVector subs_;
-  DBClientConnection*  client_connection_ = new DBClientConnection(true);
+public:
+    const StorageSubVector &getSubs() const {
+        return subs_;
+    }
+
+private:
+    DBClientConnection*  client_connection_ = new DBClientConnection(true);
 
     int cams_size;
 
@@ -238,7 +244,6 @@ public:
       ROS_WARN_STREAM("initialize...");
       StorageSub* sub = new StorageSub(*client_connection_);
       subs_.push_back(sub);
-      subs_.at(0)->start();
       cams_size++;
       ROS_WARN_STREAM("initilization done");
     } catch (ros::Exception e){
@@ -260,8 +265,15 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
-  while (storage->getNodeHandle().ok()){
-    ros::spinOnce();
+  while (ros::ok()) {
+      for (auto s : storage->getSubs()) {
+          ROS_WARN_STREAM("Starting " << s->getTopic());
+          s->start();
+
+      }
+
+      ROS_WARN_STREAM(" i spin ");
+      ros::spin();
   }
   return 0;
 }

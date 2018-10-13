@@ -113,13 +113,11 @@ public:
   }
 
   void start(){
+    ros::Rate r(1.0);
     spinner_->start();
-    while (nh_.ok()){
       ROS_WARN_STREAM("...and I'm a spinner. I play my music in the sun!");
-      queue_.callAvailable();
-      ros::spin();
 
-    }
+
 
     }
   void destroy()
@@ -127,7 +125,6 @@ public:
     sub_.shutdown();
   }
 
-  ~StorageSub(){};
 private:
   NodeHandle nh_;
   CallbackQueue queue_;
