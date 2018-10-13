@@ -5,8 +5,6 @@
 #ifndef IAI_IMAGE_LOGGING_STORAGE_H
 #define IAI_IMAGE_LOGGING_STORAGE_H
 
-#include "storage_sub.cpp"
-
 /*// opencv
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>

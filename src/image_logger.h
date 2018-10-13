@@ -6,8 +6,6 @@
 #ifndef IAI_IMAGE_LOGGING_IMAGE_LOGGER_H
 #define IAI_IMAGE_LOGGING_IMAGE_LOGGER_H
 
-#include "storage.h"
-
 class ImageLogger
 {
 public:

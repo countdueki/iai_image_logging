@@ -6,6 +6,32 @@
 
 #include "image_logger.h"
 
+#include <ros/ros.h>
+#include <dynamic_reconfigure/server.h>
+
+#include <iai_image_logging_msgs/MainConfig.h>
+#include <iai_image_logging_msgs/Update.h>
+
+using std::string;
+
+using dynamic_reconfigure::ReconfigureRequest;
+using dynamic_reconfigure::ReconfigureResponse;
+
+typedef iai_image_logging_msgs::MainConfig MainConfig;
+
+typedef dynamic_reconfigure::StrParameter StrParam;
+typedef dynamic_reconfigure::IntParameter IntParam;
+typedef dynamic_reconfigure::DoubleParameter DoubleParam;
+
+enum
+{
+  RAW,
+  COMPRESSED,
+  THEORA,
+  DEPTH,
+  COMPRESSED_DEPTH
+};
+
 /**
  * Set parameters for compression
  * @param cfg

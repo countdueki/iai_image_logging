@@ -35,11 +35,14 @@ target_link_libraries(image_logger
 
 add_executable(storage
         src/storage.cpp
+        src/storage_sub.h
+
 
         )
 target_link_libraries(storage
 #        ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
+
         )
 
 # -- INSTALL -- #
