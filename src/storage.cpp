@@ -265,9 +265,12 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
-    ROS_WARN_STREAM("spin done");
-
-    ros::spin();
-
+while (ros::ok()) {
+    for (auto s : storage->getSubs()){
+        s->start();
+    }
+    ROS_DEBUG_STREAM("spin done");
+    ros::spinOnce();
+}
   return 0;
 }

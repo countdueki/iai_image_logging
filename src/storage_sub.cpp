@@ -48,7 +48,7 @@ public:
       mode_ = 0;
       id_ = "00_ID";
       collection_ = "db.standard";  // adds mode and cam# as suffix
-      rate_ = 30;
+      rate_ = 1.0;
       motion_ = false;
       blur_ = false;
       similar_ = false;
@@ -61,7 +61,7 @@ public:
       sub_ = nh_.subscribe(ops_);
 
     }
-  explicit StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, int rate = 30, bool motion = false, bool blur = false,
+  explicit StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 30.0, bool motion = false, bool blur = false,
              bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
@@ -115,7 +115,6 @@ public:
   void start(){
     ros::Rate r(1.0);
     spinner_->start();
-      ROS_WARN_STREAM("...and I'm a spinner. I play my music in the sun!");
 
 
 
@@ -139,7 +138,8 @@ public:
 private:
     DBClientConnection* client_connection_;
   string topic_, collection_, id_;
-  int cam_, mode_, rate_;
+  int cam_, mode_;
+  double rate_;
 public:
     int getCam() const {
       return cam_;
@@ -192,6 +192,8 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
+    ROS_WARN_STREAM("...and I'm a spinner. I play my music in the sun!");
+
     saveImage(msg);
     sleep(rate_);
   }
