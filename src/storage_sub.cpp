@@ -131,7 +131,13 @@ private:
   Subscriber sub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
-  DBClientConnection* client_connection_;
+public:
+    AsyncSpinner *getSpinner_() const {
+        return spinner_;
+    }
+
+private:
+    DBClientConnection* client_connection_;
   string topic_, collection_, id_;
   int cam_, mode_, rate_;
 public:
