@@ -11,7 +11,8 @@
 #include <mongo/client/dbclient.h>
 #include <iai_image_logging_msgs/Update.h>
 #include <iai_image_logging_msgs/Delete.h>
-#include "storage_sub.h"
+#include "connector.h"
+#include "storage_sub.cpp"
 
 using std::string;
 using std::vector;
@@ -20,6 +21,7 @@ using std::map;
 using mongo::DBClientConnection;
 typedef vector<StorageSub*> StorageSubVector;
 
+DBClientConnection* client_connection_;
 class Storage
 {
 public:
@@ -35,6 +37,7 @@ private:
     db_host_ = "localhost";
     // establish MongoDB connection
     string errmsg;
+    client_connection_ = new DBClientConnection(true);
     if (!client_connection_->connect(db_host_, errmsg))
     {
       ROS_ERROR("Failed to connect to MongoDB: %s", errmsg.c_str());
@@ -67,7 +70,6 @@ private:
   ros::ServiceServer del_service;
   StorageSubVector subs_;
   int cams_size;
-  mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
 public:
   /**
@@ -79,7 +81,7 @@ public:
    */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-      /*
+
    try {
         ROS_ERROR_STREAM("ERROR NOT HERE");
 
@@ -97,7 +99,9 @@ public:
 
             // assigns sub_ to required callback
             // createSubscriber(req.topic, req.mode);
-            StorageSub storage_sub(req, res, *client_connection_, "_ID_STRING");
+            StorageSub* storage_sub = new StorageSub(req);
+            ROS_WARN_STREAM("Created Subscriber Class");
+
             // iterate over camera list for existing entries
             for (int idx = 0; idx < subs_.size(); idx++) {
                 if (subs_.at(idx)->getCam() == req.cam_no) {
@@ -115,17 +119,18 @@ public:
                         subs_.at(idx)->destroy();
 
                         // add updated Subscriber
-                        subs_.push_back(&storage_sub);
+                        subs_.push_back(storage_sub);
                         return true;
                     }
                 }
-
-                // add new subscriber
+// add new subscriber
                 ROS_WARN_STREAM("Adding new Subscriber");
-                subs_.push_back(&storage_sub);
+                subs_.push_back(storage_sub);
                 cams_size++;
-                return true;
+
             }
+            return true;
+
         }
     }
     catch (ros::Exception e){
@@ -133,7 +138,7 @@ public:
       return false;
 
     }
-*/
+
   }
 
   /**
@@ -230,8 +235,8 @@ public:
     try {
 
       ROS_WARN_STREAM("initialize...");
-      StorageSub sub(*client_connection_);
-      subs_.push_back(&sub);
+      StorageSub* sub;
+      subs_.push_back(sub);
       cams_size++;
       ROS_WARN_STREAM("initilization done");
     } catch (ros::Exception e){

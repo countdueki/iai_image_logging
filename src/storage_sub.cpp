@@ -14,7 +14,7 @@
 #include <sensor_msgs/Image.h>
 
 #include <iai_image_logging_msgs/Update.h>
-
+#include "connector.h"
 #include <mongo/client/dbclient.h>
 
 #include <string>
@@ -40,31 +40,46 @@ enum
 class StorageSub
 {
 public:
-    StorageSub(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
-    {
-        // stuff;
+    StorageSub() {
+      nh_.setCallbackQueue(&queue_);
+      spinner_ = new AsyncSpinner(1, &queue_);
+
+      topic_ = "camera/rgb/image_raw";
+      cam_ = 0;
+      mode_ = 0;
+      id_ = "00_ID";
+      collection_ = "db.standard";  // adds mode and cam# as suffix
+      rate_ = 30;
+      motion_ = false;
+      blur_ = false;
+      similar_ = false;
+
+      // create actual subscriber
+
+      ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
+      ops_.transport_hints = ros::TransportHints();
+      ops_.allow_concurrent_callbacks = true;
+      sub_ = nh_.subscribe(ops_);
+      if (spinner_->canStart()) spinner_->start();
     }
-  StorageSub(DBClientConnection& client_connection, string topic, string collection, int cam = 0, int mode = 0,
-             string id_string = "_standard", int rate = 30, bool motion = false, bool blur = false,
+  explicit StorageSub(iai_image_logging_msgs::UpdateRequest& req, int rate = 30, bool motion = false, bool blur = false,
              bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
 
-    client_connection_ = &client_connection;
-
-    topic_ = topic;
-    cam_ = cam;
-    mode_ = mode;
-    id_ = std::to_string(cam) + std::to_string(mode) + "_" + id_string;
-    collection_ = addIdentifier(collection);  // adds mode and cam# as suffix
+    topic_ = req.topic;
+    cam_ = req.cam_no;
+    mode_ = req.mode;
+    id_ = std::to_string(req.cam_no) + std::to_string(req.mode) + "_" + "_ID";
+    collection_ = addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = rate;
     motion_ = motion;
     blur_ = blur;
     similar_ = similar;
 
     // create actual subscriber
-    switch (mode)
+    switch (req.mode)
     {
       case (RAW):
       case (DEPTH):
@@ -95,15 +110,7 @@ public:
         break;
     }
     if (spinner_->canStart()) spinner_->start();
-  }
-  StorageSub(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res,
-             DBClientConnection& client_connection, string id_string)
-  {
-    StorageSub(client_connection, req.topic, req.collection, req.cam_no, req.mode, id_string);
-  }
-  StorageSub(DBClientConnection& client_connection)
-  {
-    StorageSub(client_connection, "camera/rgb/image_raw", "db.standard");
+
   }
 
   void destroy()
@@ -118,7 +125,6 @@ private:
   Subscriber sub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
-  DBClientConnection* client_connection_;
   string topic_, collection_, id_;
   int cam_, mode_, rate_;
 public:

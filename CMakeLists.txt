@@ -6,7 +6,6 @@ add_compile_options(-std=c++11)
 # OpenCV needs to be packaged seperately
 #find_package(OpenCV 2 REQUIRED)
 find_package(catkin REQUIRED
-
         roscpp
         image_geometry
         cv_bridge
@@ -24,7 +23,10 @@ catkin_package(CATKIN_DEPENDS
 include_directories(${catkin_INCLUDE_DIRS}
 #        ${OpenCV_INCLUDE_DIRS}
         )
-
+add_library(storage_sub
+        src/storage_sub.cpp
+        src/global_vars.h
+        src/connector.cpp src/connector.h)
 add_executable(image_logger
         src/image_logger.cpp
 
@@ -35,14 +37,13 @@ target_link_libraries(image_logger
 
 add_executable(storage
         src/storage.cpp
-        src/storage_sub.h
-
-
 
         )
 target_link_libraries(storage
 #        ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
+        storage_sub
+
         )
 
 # -- INSTALL -- #
