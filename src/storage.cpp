@@ -28,7 +28,7 @@ public:
     static boost::shared_ptr<Storage> instance(new Storage);
     return *instance;
   }
-
+// TODO: change vector to cams
 private:
   Storage()
   {

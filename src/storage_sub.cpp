@@ -59,7 +59,8 @@ public:
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
       sub_ = nh_.subscribe(ops_);
-      if (spinner_->canStart()) spinner_->start();
+      spinner_->start();
+      ROS_WARN_STREAM("...and I'm a spinner. I play my music in the sun!");
     }
   explicit StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, int rate = 30, bool motion = false, bool blur = false,
              bool similar = false)
