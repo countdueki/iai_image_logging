@@ -238,6 +238,7 @@ public:
       ROS_WARN_STREAM("initialize...");
       StorageSub* sub = new StorageSub(*client_connection_);
       subs_.push_back(sub);
+      subs_.at(0)->start();
       cams_size++;
       ROS_WARN_STREAM("initilization done");
     } catch (ros::Exception e){
