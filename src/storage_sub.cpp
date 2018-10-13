@@ -14,7 +14,6 @@
 #include <sensor_msgs/Image.h>
 
 #include <iai_image_logging_msgs/Update.h>
-#include "connector.h"
 #include <mongo/client/dbclient.h>
 
 #include <string>
@@ -40,10 +39,10 @@ enum
 class StorageSub
 {
 public:
-    StorageSub() {
+    StorageSub(DBClientConnection& connection) {
       nh_.setCallbackQueue(&queue_);
       spinner_ = new AsyncSpinner(1, &queue_);
-
+      client_connection_ = &connection;
       topic_ = "camera/rgb/image_raw";
       cam_ = 0;
       mode_ = 0;
@@ -62,12 +61,12 @@ public:
       sub_ = nh_.subscribe(ops_);
       if (spinner_->canStart()) spinner_->start();
     }
-  explicit StorageSub(iai_image_logging_msgs::UpdateRequest& req, int rate = 30, bool motion = false, bool blur = false,
+  explicit StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, int rate = 30, bool motion = false, bool blur = false,
              bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
-
+    client_connection_ = &connection;
     topic_ = req.topic;
     cam_ = req.cam_no;
     mode_ = req.mode;
@@ -125,6 +124,7 @@ private:
   Subscriber sub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
+  DBClientConnection* client_connection_;
   string topic_, collection_, id_;
   int cam_, mode_, rate_;
 public:
