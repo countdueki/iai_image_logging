@@ -19,14 +19,13 @@ using std::map;
 
 using mongo::DBClientConnection;
 typedef vector<StorageSub*> StorageSubVector;
-typedef vector<StorageSubVector*> CameraVector;
 
 class Storage
 {
 public:
   static Storage& Instance()
   {
-    static std::shared_ptr<Storage> instance(new Storage);
+    static boost::shared_ptr<Storage> instance(new Storage);
     return *instance;
   }
 
@@ -42,8 +41,8 @@ private:
     }
     mongo::client::initialize();
 
-    cams_.push_back(new StorageSubVector);
 
+cams_size = 0;
     // start storage services
     update_config = nh_.advertiseService("storage/update", &Storage::update, this);
     add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
@@ -57,11 +56,17 @@ private:
   string db_host_;
 
   ros::NodeHandle nh_;
-  ros::ServiceServer update_config;
+public:
+    const NodeHandle &getNodeHandle() const {
+      return nh_;
+    }
+
+private:
+    ros::ServiceServer update_config;
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   StorageSubVector subs_;
-  CameraVector cams_;
+  int cams_size;
   mongo::DBClientConnection* client_connection_ = new mongo::DBClientConnection(true);
 
 public:
@@ -74,76 +79,61 @@ public:
    */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    try {
+      /*
+   try {
+        ROS_ERROR_STREAM("ERROR NOT HERE");
 
-      db_host_ = req.db_host;
-      bool found_cam = false;
-      int found_cam_no = 0;
-      string cur_topic = "";
-      string req_topic = "";
+        db_host_ = req.db_host;
+        bool found_cam = false;
+        int found_cam_no = 0;
+        string cur_topic = "";
+        string req_topic = "";
 
-      if (req.cam_no > cams_.size())
-      {
-        ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
-        ROS_ERROR_STREAM("Please add camera with index " << cams_.size());
-      }
-      else
-      {
-        // assigns sub_ to required callback
-        // createSubscriber(req.topic, req.mode);
-        StorageSub storage_sub(req, res, client_connection_, "_ID_STRING");
-        // iterate over camera list for existing entries
-        for (int idx = 0; idx < cams_.size(); idx++)
-        {
-          if (idx == req.cam_no)
-          {
-            ROS_DEBUG_STREAM("Updating camera");
-            found_cam = true;
-            // iterate over list of Subscribers in camera
-            for (int cam_idx = 0; cam_idx < cams_.at(idx)->size(); cam_idx++)
-            {
-              // neater topic names
-              cur_topic = cams_.at(idx)->at(cam_idx)->getTopic() + getModeString(cams_.at(idx)->at(cam_idx)->getMode());
-              req_topic = req.topic + getModeString(req.mode);
+        if (req.cam_no > cams_size) {
+            ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
+            ROS_ERROR_STREAM("Please add camera with index " << cams_size);
+        } else {
+            ROS_WARN_STREAM("Create Subscriber Class");
 
-              // if we find topic, then update
-              if (cur_topic.find(req_topic) != string::npos && found_cam)
-              {
-                ROS_DEBUG_STREAM("Updating topic");
+            // assigns sub_ to required callback
+            // createSubscriber(req.topic, req.mode);
+            StorageSub storage_sub(req, res, *client_connection_, "_ID_STRING");
+            // iterate over camera list for existing entries
+            for (int idx = 0; idx < subs_.size(); idx++) {
+                if (subs_.at(idx)->getCam() == req.cam_no) {
+                    ROS_WARN_STREAM("Found Camera");
 
-                // shutdown and delete old subscriber
-                cams_.at(idx)->at(cam_idx)->destroy();
-                // TODO delete sub from camera list
+                    // neater topic names
+                    cur_topic = subs_.at(idx)->getTopic() + getModeString(subs_.at(idx)->getMode());
+                    req_topic = req.topic + getModeString(req.mode);
 
-                // add updated Subscriber
-                cams_.at(req.cam_no)->push_back(&storage_sub);
+                    // if we find topic, then update
+                    if (cur_topic.find(req_topic) != string::npos) {
+                        ROS_WARN_STREAM("Found topic. update...");
+
+                        // shutdown and delete old subscriber
+                        subs_.at(idx)->destroy();
+
+                        // add updated Subscriber
+                        subs_.push_back(&storage_sub);
+                        return true;
+                    }
+                }
+
+                // add new subscriber
+                ROS_WARN_STREAM("Adding new Subscriber");
+                subs_.push_back(&storage_sub);
+                cams_size++;
                 return true;
-              }
             }
-          }
         }
-
-        if (!found_cam)
-        {
-          // add new cam
-          ROS_WARN_STREAM("Adding new Camera");
-          cams_.push_back(new StorageSubVector);
-          return true;
-        }
-        else
-        {
-          // add new subscriber
-          ROS_WARN_STREAM("Adding new Subscriber");
-          cams_.at(req.cam_no)->push_back(&storage_sub);
-          return true;
-        }
-      }
-    } catch (ros::Exception e){
+    }
+    catch (ros::Exception e){
       ROS_ERROR_STREAM(e.what());
       return false;
 
     }
-
+*/
   }
 
   /**
@@ -154,7 +144,7 @@ public:
    */
   bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    if (cams_.size() < req.cam_no)
+  /*  if (cams_size < req.cam_no)
     {
       ROS_ERROR_STREAM("Camera does not exist");
     }
@@ -164,7 +154,7 @@ public:
       update(req, res);
       res.success = true;
       return true;
-    }
+    }*/
   }
 
   /**
@@ -175,7 +165,7 @@ public:
   */
   bool delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
   {
-    if (cams_.size() < req.cam_no)
+   /* if (cams_size < req.cam_no)
      {
        ROS_ERROR_STREAM("Camera does not exist");
      }
@@ -204,7 +194,7 @@ public:
        }
        res.success = true;
        return true;
-     }
+     }*/
   }
 
   /**
@@ -231,14 +221,6 @@ public:
     }
   }
 
-  /**
-  * Get the storage ros::Nodehandle
-  *@return Nodehandle
-  */
-  const ros::NodeHandle& getNh() const
-  {
-    return nh_;
-  }
 
   /**
    * initialize storage node. Now needed for startup not to break.
@@ -248,10 +230,9 @@ public:
     try {
 
       ROS_WARN_STREAM("initialize...");
-      StorageSub sub(client_connection_);
-      StorageSubVector sub_vect;
-      sub_vect.push_back(&sub);
-      cams_.push_back(&sub_vect);
+      StorageSub sub(*client_connection_);
+      subs_.push_back(&sub);
+      cams_size++;
       ROS_WARN_STREAM("initilization done");
     } catch (ros::Exception e){
       ROS_ERROR_STREAM(e.what());
@@ -271,9 +252,9 @@ int main(int argc, char** argv)
 
   // create storage and initialize
   Storage* storage = &Storage::Instance();
-  ROS_ERROR_STREAM("ERROR NOT HERE");
-
   storage->init();
-  ros::spin();
+  while (storage->getNodeHandle().ok()){
+    ros::spinOnce();
+  }
   return 0;
 }
