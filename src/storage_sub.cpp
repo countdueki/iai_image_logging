@@ -26,7 +26,6 @@ using ros::AsyncSpinner;
 using std::string;
 using mongo::DBClientConnection;
 
-
 enum
 {
   RAW,
@@ -39,35 +38,35 @@ enum
 class StorageSub
 {
 public:
-    StorageSub(DBClientConnection& connection) {
-      nh_.setCallbackQueue(&queue_);
-      spinner_ = new AsyncSpinner(1, &queue_);
-      client_connection_ = &connection;
-      topic_ = "camera/rgb/image_raw";
-      cam_ = 0;
-      mode_ = 0;
-      id_ = "00_ID";
-      collection_ = "db.standard";  // adds mode and cam# as suffix
-      rate_ = 1.0;
-      motion_ = false;
-      blur_ = false;
-      similar_ = false;
-
-      // create actual subscriber
-
-      ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
-      ops_.transport_hints = ros::TransportHints();
-      ops_.allow_concurrent_callbacks = true;
-      sub_ = nh_.subscribe(ops_);
-
-    }
-  explicit StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 30.0, bool motion = false, bool blur = false,
-             bool similar = false)
+  explicit StorageSub(DBClientConnection& connection)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
-    topic_ = req.topic;
+    topic_ = "/camera/rgb/image_raw";
+    cam_ = 0;
+    mode_ = 0;
+    id_ = "00_ID";
+    collection_ = "db.standard";  // adds mode and cam# as suffix
+    rate_ = 1.0;
+    motion_ = false;
+    blur_ = false;
+    similar_ = false;
+
+    // create actual subscriber
+
+    ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
+    ops_.transport_hints = ros::TransportHints();
+    ops_.allow_concurrent_callbacks = true;
+    sub_ = nh_.subscribe(ops_);
+  }
+  StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 30.0,
+             bool motion = false, bool blur = false, bool similar = false)
+  {
+    nh_.setCallbackQueue(&queue_);
+    spinner_ = new AsyncSpinner(1, &queue_);
+    client_connection_ = &connection;
+    topic_ = req.topic + getModeString(req.mode);
     cam_ = req.cam_no;
     mode_ = req.mode;
     id_ = std::to_string(req.cam_no) + std::to_string(req.mode) + "_" + "_ID";
@@ -95,6 +94,7 @@ public:
         ops_.transport_hints = ros::TransportHints();
         ops_.allow_concurrent_callbacks = true;
         sub_ = nh_.subscribe(ops_);
+        ROS_WARN_STREAM("created compressed callback");
         break;
 
       case (THEORA):
@@ -108,20 +108,18 @@ public:
       default:
         break;
     }
-    if (spinner_->canStart()) spinner_->start();
-
+    ROS_WARN_STREAM("created new Subscriber successfully");
   }
+  ~StorageSub(){};
 
-  void start(){
-    ros::Rate r(1.0);
+  void start()
+  {
     spinner_->start();
-
-
-
-    }
+  }
   void destroy()
   {
     sub_.shutdown();
+    delete client_connection_;
   }
 
 private:
@@ -130,23 +128,27 @@ private:
   Subscriber sub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
+
 public:
-    AsyncSpinner *getSpinner_() const {
-        return spinner_;
-    }
+  AsyncSpinner* getSpinner_() const
+  {
+    return spinner_;
+  }
 
 private:
-    DBClientConnection* client_connection_;
+  DBClientConnection* client_connection_;
   string topic_, collection_, id_;
   int cam_, mode_;
   double rate_;
+
 public:
-    int getCam() const {
-      return cam_;
-    }
+  int getCam() const
+  {
+    return cam_;
+  }
 
 private:
-    bool motion_, blur_, similar_;
+  bool motion_, blur_, similar_;
 
 public:
   int getMode() const
@@ -183,6 +185,7 @@ public:
     {
       document.append("mode_", "depth");
     }
+    // TODO check failure on second raw connection
     client_connection_->insert(collection_, document.obj());
   }
 
@@ -226,6 +229,8 @@ public:
    */
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
+    ROS_WARN_STREAM("...and I'm a compressed spinner. I play my music on the run!");
+
     saveCompressedImage(msg);
     sleep(rate_);
   }
@@ -281,6 +286,24 @@ public:
         break;
       default:
         collection = collection;
+        break;
+    }
+  }
+  string getModeString(int mode)
+  {
+    switch (mode)
+    {
+      case (RAW):
+        return "";
+      case (COMPRESSED):
+        return "/compressed";
+      case (THEORA):
+        return "/theora";
+      case (DEPTH):
+        return "";
+      case (COMPRESSED_DEPTH):
+        return "/compressedDepth";
+      default:
         break;
     }
   }

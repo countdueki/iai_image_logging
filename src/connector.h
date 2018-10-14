@@ -9,7 +9,4 @@
 
 extern mongo::DBClientConnection* client_connection_;
 
-
-
-
-#endif //IAI_IMAGE_LOGGING_CONNECTOR_H
+#endif  // IAI_IMAGE_LOGGING_CONNECTOR_H
