@@ -100,18 +100,17 @@ private:
   SimilarityDetector sim_detector;
 
 public:
+  void start()
+  {
+    spinner_->start();
+    // queue_.callAvailable();
+  }
+  void destroy()
+  {
+    sub_.shutdown();
+  }
 
-    void start()
-    {
-        spinner_->start();
-        // queue_.callAvailable();
-    }
-    void destroy()
-    {
-        sub_.shutdown();
-    }
-
-    void saveImage(const sensor_msgs::ImageConstPtr& msg)
+  void saveImage(const sensor_msgs::ImageConstPtr& msg)
   {
     mongo::BSONObjBuilder document;
     mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
@@ -147,36 +146,40 @@ public:
     ros::Rate r(rate_);
 
     // Similarity Detector test
-      //if (similar_){
-          if (count == 0){
-              prev = msg;
-              saveImage(msg);
-              count++;
-              ROS_ERROR_STREAM("added prev");
+    // if (similar_){
+    if (count == 0)
+    {
+      prev = msg;
+      saveImage(msg);
+      count++;
+      ROS_ERROR_STREAM("added prev");
+    }
+    else if (count == 1)
+    {
+      curr = msg;
+      ROS_ERROR_STREAM("added curr");
 
-          } else if (count == 1){
-
-              curr = msg;
-            ROS_ERROR_STREAM("added curr");
-
-            if (sim_detector.detect(prev, curr)){
-                  count = 0;
-              } else {
-                  prev = curr;
-                  saveImage(msg);
-                  count = 1;
-              };
-          }
-      //}
-
-      // Blur detector test
- /*     if (!blur_detector.detectBlur(msg)){
-        ROS_WARN_STREAM("saving raw image");
-
+      if (sim_detector.detect(prev, curr))
+      {
+        count = 0;
+      }
+      else
+      {
+        prev = curr;
         saveImage(msg);
-      } else {
-        ROS_ERROR_STREAM("I saw you moving you fool!");
-      }*/
+        count = 1;
+      };
+    }
+    //}
+
+    // Blur detector test
+    /*     if (!blur_detector.detectBlur(msg)){
+           ROS_WARN_STREAM("saving raw image");
+
+           saveImage(msg);
+         } else {
+           ROS_ERROR_STREAM("I saw you moving you fool!");
+         }*/
     r.sleep();
   }
 
@@ -219,13 +222,13 @@ public:
     ros::Rate r(rate_);
 
     // Blur detector test
-/*    if (!blur_detector.detectBlur(msg)){
-      ROS_WARN_STREAM("saving compressed image");
+    /*    if (!blur_detector.detectBlur(msg)){
+          ROS_WARN_STREAM("saving compressed image");
 
-      saveCompressedImage(msg);
-    } else {
-      ROS_ERROR_STREAM("I saw you moving you compressed fool!");
-    }   */
+          saveCompressedImage(msg);
+        } else {
+          ROS_ERROR_STREAM("I saw you moving you compressed fool!");
+        }   */
     r.sleep();
   }
 

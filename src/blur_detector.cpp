@@ -3,8 +3,3 @@
 //
 
 #include "blur_detector.h"
-
-
-
-
-
