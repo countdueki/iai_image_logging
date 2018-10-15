@@ -106,7 +106,29 @@ public:
 
      bool detectBlur(const sensor_msgs::ImageConstPtr &msg)
     {
-        cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg,msg->encoding);
+        cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg);
+        cv::Mat grey;
+        cv::cvtColor(image->image, grey, CV_BayerGR2GRAY);
+
+        double result = funcSobelStdDevOptimized(grey);
+        bool blurred = detectBlur(result);
+
+        results.push_back(result);
+        isBlurred.push_back(blurred);
+
+        if(results.size() == maxStatSize)
+        {
+            results.pop_front();
+            isBlurred.pop_front();
+        }
+
+        return blurred;
+    }
+
+    bool detectBlur(const sensor_msgs::CompressedImageConstPtr &c_msg)
+    {
+        cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(c_msg);
+
         cv::Mat grey;
         cv::cvtColor(image->image, grey, CV_BayerGR2GRAY);
 

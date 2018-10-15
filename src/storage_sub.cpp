@@ -166,9 +166,9 @@ public:
         ROS_WARN_STREAM("saving raw image");
 
         saveImage(msg);
+      } else {
+        ROS_ERROR_STREAM("I saw you moving you fool!");
       }
-      ROS_ERROR_STREAM("I saw you moving you fool!");
-
     r.sleep();
   }
 
@@ -208,11 +208,15 @@ public:
    */
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    ROS_WARN_STREAM("saving compressed image");
     ros::Rate r(rate_);
 
-    saveCompressedImage(msg);
-    r.sleep();
+    if (!blur_detector.detectBlur(msg)){
+      ROS_WARN_STREAM("saving compressed image");
+
+      saveCompressedImage(msg);
+    } else {
+      ROS_ERROR_STREAM("I saw you moving you compressed fool!");
+    }    r.sleep();
   }
 
   void saveTheora(const theora_image_transport::PacketConstPtr& msg)
