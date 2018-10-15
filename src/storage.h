@@ -5,6 +5,15 @@
 #ifndef IAI_IMAGE_LOGGING_STORAGE_H
 #define IAI_IMAGE_LOGGING_STORAGE_H
 
+#include <ros/ros.h>
+
+#include <string>
+#include <vector>
+#include <map>
+#include <mongo/client/dbclient.h>
+#include <iai_image_logging_msgs/Update.h>
+#include <iai_image_logging_msgs/Delete.h>
+#include "storage_sub.cpp"
 /*// opencv
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>

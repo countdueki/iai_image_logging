@@ -16,8 +16,10 @@
 #include <iai_image_logging_msgs/Update.h>
 #include <mongo/client/dbclient.h>
 
-#include <string>
+#include "blur_detector.h"
 
+#include <string>
+int count = 0;
 using ros::Subscriber;
 using ros::SubscribeOptions;
 using ros::NodeHandle;
@@ -25,7 +27,7 @@ using ros::CallbackQueue;
 using ros::AsyncSpinner;
 using std::string;
 using mongo::DBClientConnection;
-DBClientConnection* client_connection_;
+
 enum
 {
   RAW,
@@ -78,19 +80,8 @@ public:
 
     // create actual subscriber
     createSubscriber(mode_);
-    ROS_WARN_STREAM("created new Subscriber successfully");
   }
   //~StorageSub(){};
-
-  void start()
-  {
-    spinner_->start();
-    // queue_.callAvailable();
-  }
-  void destroy()
-  {
-    sub_.shutdown();
-  }
 
 private:
   NodeHandle nh_;
@@ -105,7 +96,18 @@ private:
   bool motion_, blur_, similar_;
 
 public:
-  void saveImage(const sensor_msgs::ImageConstPtr& msg)
+
+    void start()
+    {
+        spinner_->start();
+        // queue_.callAvailable();
+    }
+    void destroy()
+    {
+        sub_.shutdown();
+    }
+
+    void saveImage(const sensor_msgs::ImageConstPtr& msg)
   {
     mongo::BSONObjBuilder document;
     mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
@@ -140,8 +142,26 @@ public:
   {
     ROS_WARN_STREAM("saving raw image");
     ros::Rate r(rate_);
+      sensor_msgs::ImageConstPtr prev, curr;
+      if (blur_){
+          if (count == 0){
+              prev = msg;
+              saveImage(msg);
+              count++;
 
-    saveImage(msg);
+          } else if (count == 1){
+
+              curr = msg;
+              if (BlurDetector::detect(prev, curr)){
+                  count = 0;
+              } else {
+                  prev = curr;
+                  saveImage(msg);
+                  count = 1;
+              };
+          }
+      }
+
     r.sleep();
   }
 
@@ -239,7 +259,6 @@ public:
         ops_.transport_hints = ros::TransportHints();
         ops_.allow_concurrent_callbacks = true;
         sub_ = nh_.subscribe(ops_);
-        ROS_WARN_STREAM("created compressed callback");
         break;
 
       case (THEORA):

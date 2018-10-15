@@ -3,15 +3,6 @@
 //
 #include "storage.h"
 
-#include <ros/ros.h>
-
-#include <string>
-#include <vector>
-#include <map>
-#include <mongo/client/dbclient.h>
-#include <iai_image_logging_msgs/Update.h>
-#include <iai_image_logging_msgs/Delete.h>
-#include "storage_sub.cpp"
 
 using std::string;
 using std::vector;
@@ -91,8 +82,6 @@ public:
   {
     try
     {
-      ROS_ERROR_STREAM("ERROR NOT HERE");
-
       db_host_ = req.db_host;
       string cur_topic = "";
       string req_topic = "";
@@ -104,47 +93,46 @@ public:
       }
       else
       {
-        ROS_WARN_STREAM("Create Subscriber Class");
-
         // assigns sub_ to required callback
         // createSubscriber(req.topic, req.mode);
         StorageSub* storage_sub = new StorageSub(*client_connection_, req);
-        ROS_WARN_STREAM("Created Subscriber Class");
 
         // iterate over camera list for existing entries
         for (auto it = subs_.begin(); it != subs_.end(); ++it)
         {
           if ((*it)->getCam() == req.cam_no)
           {
-            ROS_WARN_STREAM("Found Camera");
+            ROS_DEBUG_STREAM("Found Camera");
 
             // neater topic names
             cur_topic = (*it)->getTopic();
             req_topic = req.topic + getModeString(req.mode);
-            ROS_WARN_STREAM("current_topic: " << cur_topic);
-            ROS_WARN_STREAM("requested topic: " << req_topic);
+            ROS_DEBUG_STREAM("current_topic: " << cur_topic);
+            ROS_DEBUG_STREAM("requested topic: " << req_topic);
 
             // if we find topic, then update
             if (cur_topic.find(req_topic) != string::npos)
             {
-              ROS_WARN_STREAM("Found topic. delete old...");
+              ROS_DEBUG_STREAM("Found topic. delete old...");
 
               // shutdown and delete old subscriber
               (*it)->destroy();
               subs_.erase(it);
-              ROS_WARN_STREAM("...and add new");
+              ROS_DEBUG_STREAM("...and add new");
 
               // add updated Subscriber
               subs_.push_back(storage_sub);
+              ROS_INFO_STREAM("Updated Subscriber");
               return true;
             }
           }
         }
         // add new subscriber
-        ROS_WARN_STREAM("Adding new Subscriber");
+        ROS_DEBUG_STREAM("Adding new Subscriber");
         subs_.push_back(storage_sub);
         cams_size++;
-        ROS_WARN_STREAM("size of subs_: " << subs_.size());
+        ROS_DEBUG_STREAM("size of subs_: " << subs_.size());
+        ROS_INFO_STREAM("Added Subscriber");
         return true;
       }
     }

@@ -4,15 +4,13 @@ project(iai_image_logging)
 add_compile_options(-std=c++11)
 
 # OpenCV needs to be packaged seperately
-#find_package(OpenCV 2 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED
         roscpp
-        image_geometry
         cv_bridge
+        image_geometry
         dynamic_reconfigure
         iai_image_logging_msgs
-        image_transport
-        compressed_image_transport
         mongodb_store
         )
 
@@ -20,12 +18,14 @@ catkin_package(CATKIN_DEPENDS
         iai_image_logging_msgs
         )
 
-include_directories(${catkin_INCLUDE_DIRS}
-#        ${OpenCV_INCLUDE_DIRS}
+include_directories(
+        ${catkin_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
         )
 add_library(storage_sub
         src/storage_sub.cpp
-        )
+        src/blur_detector.h )
+
 add_executable(image_logger
         src/image_logger.cpp
 
@@ -39,7 +39,7 @@ add_executable(storage
 
         )
 target_link_libraries(storage
-#        ${OpenCV_LIBRARIES}
+        ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         storage_sub
 
