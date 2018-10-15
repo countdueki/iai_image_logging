@@ -94,6 +94,7 @@ private:
   int cam_, mode_;
   double rate_;
   bool motion_, blur_, similar_;
+  BlurDetector blur_detector;
 
 public:
 
@@ -140,9 +141,9 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
-    ROS_WARN_STREAM("saving raw image");
     ros::Rate r(rate_);
-      sensor_msgs::ImageConstPtr prev, curr;
+
+      /*sensor_msgs::ImageConstPtr prev, curr;
       if (blur_){
           if (count == 0){
               prev = msg;
@@ -160,7 +161,13 @@ public:
                   count = 1;
               };
           }
+      }*/
+      if (!blur_detector.detectBlur(msg)){
+        ROS_WARN_STREAM("saving raw image");
+
+        saveImage(msg);
       }
+      ROS_ERROR_STREAM("I saw you moving you fool!");
 
     r.sleep();
   }

@@ -5,7 +5,6 @@
 #include "blur_detector.h"
 
 
-std::list<double> BlurDetector::results;
-std::list<bool> BlurDetector::isBlurred;
+
 
 

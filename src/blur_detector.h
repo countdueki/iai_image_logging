@@ -38,22 +38,17 @@ private:
     const size_t maxStatSize;
 
 public:
-    static std::list<double> results;
-    static std::list<bool> isBlurred;
+    std::list<double> results;
+    std::list<bool> isBlurred;
 
-
-    static bool detect(sensor_msgs::ImageConstPtr& prev, sensor_msgs::ImageConstPtr& msg)
+    BlurDetector(): threshold(0.01), maxHist(10), minHist(3), waitBlur(5), maxStatSize(500)
     {
-        cv_bridge::CvImageConstPtr prev_img = cv_bridge::toCvShare(prev, prev->encoding);
-        cv_bridge::CvImageConstPtr curr_img = cv_bridge::toCvShare(msg, msg->encoding);
+        sum = 0;
+        avg = 0;
+        wasBlurred = 0;
+    };
 
-        cv::Mat prev_mat = prev_img->image;
-        cv::Mat curr_mat = curr_img->image;
-
-        cvSobel(&prev_mat, &curr_mat, 1,0,3);
-    }
-
-    double funcSobelStdDevOptimized(const cv::Mat &img)
+     double funcSobelStdDevOptimized(const cv::Mat &img)
     {
         const size_t height = img.rows - 2;
         const size_t width = img.cols - 2;
@@ -109,10 +104,11 @@ public:
     }
 
 
-    bool detectBlur(const cv::Mat &image)
+     bool detectBlur(const sensor_msgs::ImageConstPtr &msg)
     {
+        cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg,msg->encoding);
         cv::Mat grey;
-        cv::cvtColor(image, grey, CV_BGR2GRAY);
+        cv::cvtColor(image->image, grey, CV_BayerGR2GRAY);
 
         double result = funcSobelStdDevOptimized(grey);
         bool blurred = detectBlur(result);
@@ -129,7 +125,7 @@ public:
         return blurred;
     }
 
-    bool detectBlur(const double result)
+     bool detectBlur(const double result)
     {
         bool blurred = history.size() < minHist;
 
