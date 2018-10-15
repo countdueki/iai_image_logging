@@ -25,7 +25,7 @@ using ros::CallbackQueue;
 using ros::AsyncSpinner;
 using std::string;
 using mongo::DBClientConnection;
-
+DBClientConnection* client_connection_;
 enum
 {
   RAW,
@@ -60,7 +60,7 @@ public:
     ops_.allow_concurrent_callbacks = true;
     sub_ = nh_.subscribe(ops_);
   }
-  StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 30.0,
+  StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 3.0,
              bool motion = false, bool blur = false, bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
@@ -70,56 +70,26 @@ public:
     cam_ = req.cam_no;
     mode_ = req.mode;
     id_ = std::to_string(req.cam_no) + std::to_string(req.mode) + "_" + "_ID";
-    collection_ = addIdentifier(req.collection);  // adds mode and cam# as suffix
+    collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = rate;
     motion_ = motion;
     blur_ = blur;
     similar_ = similar;
 
     // create actual subscriber
-    switch (req.mode)
-    {
-      case (RAW):
-      case (DEPTH):
-        ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
-        ops_.transport_hints = ros::TransportHints();
-        ops_.allow_concurrent_callbacks = true;
-        sub_ = nh_.subscribe(ops_);
-        break;
-
-      case (COMPRESSED):
-      case (COMPRESSED_DEPTH):
-        ops_.template init<sensor_msgs::CompressedImage>(topic_ + "/compressed", 1,
-                                                         boost::bind(&StorageSub::compressedImageCallback, this, _1));
-        ops_.transport_hints = ros::TransportHints();
-        ops_.allow_concurrent_callbacks = true;
-        sub_ = nh_.subscribe(ops_);
-        ROS_WARN_STREAM("created compressed callback");
-        break;
-
-      case (THEORA):
-        ops_.template init<theora_image_transport::Packet>(topic_ + "/theora", 1,
-                                                           boost::bind(&StorageSub::theoraCallback, this, _1));
-        ops_.transport_hints = ros::TransportHints();
-        ops_.allow_concurrent_callbacks = true;
-        sub_ = nh_.subscribe(ops_);
-        break;
-
-      default:
-        break;
-    }
+    createSubscriber(mode_);
     ROS_WARN_STREAM("created new Subscriber successfully");
   }
-  ~StorageSub(){};
+  //~StorageSub(){};
 
   void start()
   {
     spinner_->start();
+    // queue_.callAvailable();
   }
   void destroy()
   {
     sub_.shutdown();
-    delete client_connection_;
   }
 
 private:
@@ -128,38 +98,11 @@ private:
   Subscriber sub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
-
-public:
-  AsyncSpinner* getSpinner_() const
-  {
-    return spinner_;
-  }
-
-private:
   DBClientConnection* client_connection_;
   string topic_, collection_, id_;
   int cam_, mode_;
   double rate_;
-
-public:
-  int getCam() const
-  {
-    return cam_;
-  }
-
-private:
   bool motion_, blur_, similar_;
-
-public:
-  int getMode() const
-  {
-    return mode_;
-  }
-
-  const string& getTopic() const
-  {
-    return topic_;
-  }
 
 public:
   void saveImage(const sensor_msgs::ImageConstPtr& msg)
@@ -195,32 +138,41 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
-    ROS_WARN_STREAM("...and I'm a spinner. I play my music in the sun!");
+    ROS_WARN_STREAM("saving raw image");
+    ros::Rate r(rate_);
 
     saveImage(msg);
-    sleep(rate_);
+    r.sleep();
   }
 
   void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    mongo::BSONObjBuilder document;
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("format", msg->format);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
+    try
+    {
+      mongo::BSONObjBuilder document;
+      mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+      document.append("header",
+                      BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+      document.append("format", msg->format);
+      document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+      std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+      document.append("type", type);
+      document.append("size", (int)msg->data.size());
 
-    if (mode_ == COMPRESSED)
-    {
-      document.append("mode_", "compressed");
+      if (mode_ == COMPRESSED)
+      {
+        document.append("mode_", "compressed");
+      }
+      else if (mode_ == COMPRESSED_DEPTH)
+      {
+        document.append("mode_", "compressed_depth");
+      }
+      client_connection_->insert(collection_, document.obj());
     }
-    else if (mode_ == COMPRESSED_DEPTH)
+    catch (std::bad_alloc& ba)
     {
-      document.append("mode_", "compressed_depth");
+      ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
     }
-    client_connection_->insert(collection_, document.obj());
   }
 
   /**
@@ -229,10 +181,11 @@ public:
    */
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    ROS_WARN_STREAM("...and I'm a compressed spinner. I play my music on the run!");
+    ROS_WARN_STREAM("saving compressed image");
+    ros::Rate r(rate_);
 
     saveCompressedImage(msg);
-    sleep(rate_);
+    r.sleep();
   }
 
   void saveTheora(const theora_image_transport::PacketConstPtr& msg)
@@ -261,8 +214,57 @@ public:
    */
   void theoraCallback(const theora_image_transport::PacketConstPtr& msg)
   {
+    ROS_WARN_STREAM("saving theora image");
+    ros::Rate r(rate_);
     saveTheora(msg);
-    sleep(rate_);
+    r.sleep();
+  }
+
+  void createSubscriber(int mode)
+  {
+    switch (mode)
+    {
+      case (RAW):
+      case (DEPTH):
+        ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
+        ops_.transport_hints = ros::TransportHints();
+        ops_.allow_concurrent_callbacks = true;
+        sub_ = nh_.subscribe(ops_);
+        break;
+
+      case (COMPRESSED):
+      case (COMPRESSED_DEPTH):
+        ops_.template init<sensor_msgs::CompressedImage>(topic_, 1,
+                                                         boost::bind(&StorageSub::compressedImageCallback, this, _1));
+        ops_.transport_hints = ros::TransportHints();
+        ops_.allow_concurrent_callbacks = true;
+        sub_ = nh_.subscribe(ops_);
+        ROS_WARN_STREAM("created compressed callback");
+        break;
+
+      case (THEORA):
+        ops_.template init<theora_image_transport::Packet>(topic_, 1,
+                                                           boost::bind(&StorageSub::theoraCallback, this, _1));
+        ops_.transport_hints = ros::TransportHints();
+        ops_.allow_concurrent_callbacks = true;
+        sub_ = nh_.subscribe(ops_);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  // Getter, Setter and helper
+public:
+  int getCam() const
+  {
+    return cam_;
+  }
+
+  const string& getTopic() const
+  {
+    return topic_;
   }
 
   string addIdentifier(string collection)

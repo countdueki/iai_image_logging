@@ -25,7 +25,7 @@ include_directories(${catkin_INCLUDE_DIRS}
         )
 add_library(storage_sub
         src/storage_sub.cpp
-        src/connector.cpp src/connector.h)
+        )
 add_executable(image_logger
         src/image_logger.cpp
 

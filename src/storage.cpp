@@ -148,9 +148,9 @@ public:
         return true;
       }
     }
-    catch (ros::Exception e)
+    catch (std::bad_alloc& ba)
     {
-      ROS_ERROR_STREAM(e.what());
+      ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
       return false;
     }
   }
@@ -256,9 +256,9 @@ public:
       ROS_ERROR_STREAM("topic initialized with: " << sub->getTopic());
       ROS_ERROR_STREAM("size: " << subs_.size());
     }
-    catch (ros::Exception e)
+    catch (std::bad_alloc& ba)
     {
-      ROS_ERROR_STREAM(e.what());
+      ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
     }
   }
 };
@@ -275,20 +275,18 @@ int main(int argc, char** argv)
   // create storage and initialize
   Storage* storage = &Storage::Instance();
   storage->init();
-  ros::AsyncSpinner spinner(0);
-  ros::Rate r(20.0);
+  // ros::Rate r(20.0);
   while (storage->getNodeHandle().ok())
   {
     // TODO check why only one spinner is started
     for (auto s : storage->getSubs())
     {
       s->start();
-      ROS_ERROR_STREAM("Topic: " << s->getTopic());
+      ROS_DEBUG_STREAM("Topic: " << s->getTopic());
     }
-    spinner.start();
-    ROS_WARN_STREAM("storage spinned");
-    //  ros::spinOnce();
-    r.sleep();
+    ROS_DEBUG_STREAM("storage spinned");
+    ros::spinOnce();
+    // r.sleep();
   }
   return 0;
 }
