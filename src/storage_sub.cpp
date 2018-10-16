@@ -28,7 +28,6 @@ using ros::CallbackQueue;
 using ros::AsyncSpinner;
 using std::string;
 using mongo::DBClientConnection;
-sensor_msgs::ImageConstPtr prev, curr;
 
 enum
 {
@@ -52,10 +51,14 @@ public:
     mode_ = 0;
     id_ = "00_ID";
     collection_ = "db.standard";  // adds mode and cam# as suffix
-    rate_ = 10.0;
+    rate_ = 1.0;
     motion_ = false;
-    blur_ = false;
-    similar_ = false;
+    blur_ = true;
+    similar_ = true;
+    prev_image_ = false;
+    motion_detected_ = false;
+    blur_detected_ = false;
+    similar_detected_ = false;
 
     // create actual subscriber
 
@@ -80,6 +83,12 @@ public:
     blur_ = blur;
     similar_ = similar;
 
+    prev_image_ = false;
+    motion_detected_ = false;
+    blur_detected_ = false;
+    similar_detected_ = false;
+
+
     // create actual subscriber
     createSubscriber(mode_);
   }
@@ -95,7 +104,9 @@ private:
   string topic_, collection_, id_;
   int cam_, mode_;
   double rate_;
-  bool motion_, blur_, similar_;
+  bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;
+    sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
+    sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
 
@@ -143,45 +154,41 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
+      // TODO correct order and dependencies
     ros::Rate r(rate_);
-
-    // Similarity Detector test
-    // if (similar_){
-    if (count == 0)
-    {
-      prev = msg;
-      saveImage(msg);
-      count++;
-    }
-    else if (count == 1)
-    {
-      curr = msg;
-
-      if (sim_detector.MSE(prev, curr))
-      {
-          ROS_ERROR_STREAM("same raw scene detected");
-        count = 0;
+    if (motion_){
+      if (motion_detected_) {
+        ROS_DEBUG_STREAM("motion detected");
       }
-      else
-      {
-          ROS_WARN_STREAM("saving raw image");
-        prev = curr;
+    }
+    if (blur_){
+      blur_detected_ = blur_detector.detectBlur(msg);
+      if (blur_detected_){
+        ROS_WARN_STREAM("blur detected");
+      }
+    }
+    if (similar_){
+      if (prev_image_){
+          sim_curr_ = msg;
+        similar_detected_ = sim_detector.detectMSE(sim_prev_, sim_curr_);
+        if (similar_detected_){
+          ROS_WARN_STREAM("similar image detected");
+          sim_prev_ = sim_curr_;
+        } else if (!motion_detected_ && !blur_detected_){
+            saveImage(msg);
+          sim_prev_ = sim_curr_;
+        }
+      } else {
+        sim_prev_ = msg;
+        prev_image_ = true;
+      }
+    }
+    if (!motion_detected_ && !blur_detected_ && !similar_detected_ ){
         saveImage(msg);
-        count = 1;
-      }
     }
-    //}
-
-    // Blur detector test
-    /*     if (!blur_detector.detectBlur(msg)){
-           ROS_WARN_STREAM("saving raw image");
-
-           saveImage(msg);
-         } else {
-           ROS_ERROR_STREAM("I saw you moving you fool!");
-         }*/
     r.sleep();
-  }
+    }
+
 
   void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
   {
@@ -221,15 +228,38 @@ public:
   {
     ros::Rate r(rate_);
 
-    // Blur detector test
-    /*    if (!blur_detector.detectBlur(msg)){
-          ROS_WARN_STREAM("saving compressed image");
+      // TODO correct order and dependencies
 
-          saveCompressedImage(msg);
+    if (motion_){
+      if (motion_detected_) {
+        ROS_DEBUG_STREAM("motion detected");
+      }
+    } else if (blur_){
+      blur_detected_ = blur_detector.detectBlur(msg);
+      if (blur_detected_){
+        ROS_WARN_STREAM("blur detected");
+      }
+    } else if (similar_){
+      if (prev_image_){
+          sim_curr_c_ = msg;
+        similar_detected_ = sim_detector.detectMSE(sim_prev_c_, sim_curr_c_);
+        if (similar_detected_){
+          ROS_WARN_STREAM("similar image detected");
+          sim_prev_c_ = sim_curr_c_;
         } else {
-          ROS_ERROR_STREAM("I saw you moving you compressed fool!");
-        }   */
+          saveCompressedImage(msg);
+          sim_prev_c_ = sim_curr_c_;
+        }
+      } else {
+        sim_prev_c_ = msg;
+        prev_image_ = true;
+      }
+    } else {
+      saveCompressedImage(msg);
+    }
+
     r.sleep();
+
   }
 
   void saveTheora(const theora_image_transport::PacketConstPtr& msg)
