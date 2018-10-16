@@ -52,7 +52,7 @@ public:
     mode_ = 0;
     id_ = "00_ID";
     collection_ = "db.standard";  // adds mode and cam# as suffix
-    rate_ = 1.0;
+    rate_ = 10.0;
     motion_ = false;
     blur_ = false;
     similar_ = false;
@@ -152,23 +152,23 @@ public:
       prev = msg;
       saveImage(msg);
       count++;
-      ROS_ERROR_STREAM("added prev");
     }
     else if (count == 1)
     {
       curr = msg;
-      ROS_ERROR_STREAM("added curr");
 
-      if (sim_detector.detect(prev, curr))
+      if (sim_detector.MSE(prev, curr))
       {
+          ROS_ERROR_STREAM("same raw scene detected");
         count = 0;
       }
       else
       {
+          ROS_WARN_STREAM("saving raw image");
         prev = curr;
         saveImage(msg);
         count = 1;
-      };
+      }
     }
     //}
 
