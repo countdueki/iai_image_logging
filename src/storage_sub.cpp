@@ -59,6 +59,7 @@ public:
     motion_detected_ = false;
     blur_detected_ = false;
     similar_detected_ = false;
+    can_save = true;
 
     // create actual subscriber
 
@@ -80,14 +81,13 @@ public:
     collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = rate;
     motion_ = motion;
-    blur_ = blur;
-    similar_ = similar;
-
+    blur_ = true;
+    similar_ = true;
     prev_image_ = false;
     motion_detected_ = false;
     blur_detected_ = false;
     similar_detected_ = false;
-
+can_save = true;
 
     // create actual subscriber
     createSubscriber(mode_);
@@ -109,6 +109,7 @@ private:
     sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
+  bool can_save;
 
 public:
   void start()
@@ -144,7 +145,24 @@ public:
     {
       document.append("mode_", "depth");
     }
-    // TODO check failure on second raw connection
+
+      mongo::BSONObjBuilder meta;
+
+      ros::Time now = ros::Time::now();
+      mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
+      meta.append("inserted_at", nowDate);
+
+      meta.append("stored_type", type);
+      meta.append("topic", topic_);
+
+      size_t slashIndex = type.find('/');
+      std::string package = type.substr(0, slashIndex);
+      std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
+      std::string pythonName = package + ".msg._" + name + "." + name;
+      meta.append("stored_class", pythonName);
+
+      document.append("_meta", meta.obj());
+
     client_connection_->insert(collection_, document.obj());
   }
 
@@ -154,18 +172,19 @@ public:
    */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
-      // TODO correct order and dependencies
     ros::Rate r(rate_);
     if (motion_){
       if (motion_detected_) {
         ROS_DEBUG_STREAM("motion detected");
-      }
+        can_save = false;
+      } else {can_save = true;}
     }
     if (blur_){
       blur_detected_ = blur_detector.detectBlur(msg);
       if (blur_detected_){
         ROS_WARN_STREAM("blur detected");
-      }
+          can_save = false;
+      }else {can_save = true;}
     }
     if (similar_){
       if (prev_image_){
@@ -174,16 +193,18 @@ public:
         if (similar_detected_){
           ROS_WARN_STREAM("similar image detected");
           sim_prev_ = sim_curr_;
+            can_save = false;
+
         } else if (!motion_detected_ && !blur_detected_){
-            saveImage(msg);
           sim_prev_ = sim_curr_;
-        }
+        } else {can_save = true;}
       } else {
         sim_prev_ = msg;
         prev_image_ = true;
+        can_save = true;
       }
     }
-    if (!motion_detected_ && !blur_detected_ && !similar_detected_ ){
+    if (!motion_detected_ && !blur_detected_ && !similar_detected_ && can_save){
         saveImage(msg);
     }
     r.sleep();
@@ -212,8 +233,27 @@ public:
       {
         document.append("mode_", "compressed_depth");
       }
-      client_connection_->insert(collection_, document.obj());
+
+        mongo::BSONObjBuilder meta;
+
+        ros::Time now = ros::Time::now();
+        mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
+        meta.append("inserted_at", nowDate);
+
+        meta.append("stored_type", type);
+        meta.append("topic", topic_);
+
+        size_t slashIndex = type.find('/');
+        std::string package = type.substr(0, slashIndex);
+        std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
+        std::string pythonName = package + ".msg._" + name + "." + name;
+        meta.append("stored_class", pythonName);
+
+        document.append("_meta", meta.obj());
+        client_connection_->insert(collection_, document.obj());
     }
+
+
     catch (std::bad_alloc& ba)
     {
       ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
@@ -228,35 +268,39 @@ public:
   {
     ros::Rate r(rate_);
 
-      // TODO correct order and dependencies
-
-    if (motion_){
-      if (motion_detected_) {
-        ROS_DEBUG_STREAM("motion detected");
+      if (motion_){
+          if (motion_detected_) {
+              ROS_DEBUG_STREAM("motion detected");
+              can_save = false;
+          }else {can_save = true;}
       }
-    } else if (blur_){
-      blur_detected_ = blur_detector.detectBlur(msg);
-      if (blur_detected_){
-        ROS_WARN_STREAM("blur detected");
+      if (blur_){
+          blur_detected_ = blur_detector.detectBlur(msg);
+          if (blur_detected_) {
+              ROS_WARN_STREAM("blur detected");
+              can_save = false;
+          }else {can_save = true;}
       }
-    } else if (similar_){
-      if (prev_image_){
-          sim_curr_c_ = msg;
-        similar_detected_ = sim_detector.detectMSE(sim_prev_c_, sim_curr_c_);
-        if (similar_detected_){
-          ROS_WARN_STREAM("similar image detected");
-          sim_prev_c_ = sim_curr_c_;
-        } else {
+      if (similar_){
+          if (prev_image_){
+              sim_curr_c_ = msg;
+              similar_detected_ = sim_detector.detectMSE(sim_prev_c_, sim_curr_c_);
+              if (similar_detected_){
+                  ROS_WARN_STREAM("similar image detected");
+                  sim_prev_c_ = sim_curr_c_;
+                  can_save = false;
+              } else if (!motion_detected_ && !blur_detected_){
+                  sim_prev_c_ = sim_curr_c_;
+              }else {can_save = true;}
+          } else {
+              sim_prev_c_ = msg;
+              prev_image_ = true;
+              can_save = true;
+          }
+      }
+      if (!motion_detected_ && !blur_detected_ && !similar_detected_ && can_save ){
           saveCompressedImage(msg);
-          sim_prev_c_ = sim_curr_c_;
-        }
-      } else {
-        sim_prev_c_ = msg;
-        prev_image_ = true;
       }
-    } else {
-      saveCompressedImage(msg);
-    }
 
     r.sleep();
 
