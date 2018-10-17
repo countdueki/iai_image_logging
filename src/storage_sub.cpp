@@ -20,7 +20,6 @@
 #include "similarity_detector.h"
 
 #include <string>
-int count = 0;
 using ros::Subscriber;
 using ros::SubscribeOptions;
 using ros::NodeHandle;
@@ -59,7 +58,6 @@ public:
     motion_detected_ = false;
     blur_detected_ = false;
     similar_detected_ = false;
-    can_save = true;
 
     // create actual subscriber
 
@@ -67,6 +65,10 @@ public:
     ops_.transport_hints = ros::TransportHints();
     ops_.allow_concurrent_callbacks = true;
     sub_ = nh_.subscribe(ops_);
+
+    // create publisher
+      pub_ = nh_.advertise<sensor_msgs::Image>("/" + id_, 1, true);
+
   }
   StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 3.0,
              bool motion = false, bool blur = false, bool similar = false)
@@ -77,7 +79,7 @@ public:
     topic_ = req.topic + getModeString(req.mode);
     cam_ = req.cam_no;
     mode_ = req.mode;
-    id_ = std::to_string(req.cam_no) + std::to_string(req.mode) + "_" + "_ID";
+    id_ = std::to_string(req.cam_no) + std::to_string(req.mode) +  "_" + topic_;
     collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = rate;
     motion_ = motion;
@@ -87,10 +89,9 @@ public:
     motion_detected_ = false;
     blur_detected_ = false;
     similar_detected_ = false;
-can_save = true;
-
     // create actual subscriber
     createSubscriber(mode_);
+    createPublisher(mode_);
   }
   //~StorageSub(){};
 
@@ -98,7 +99,8 @@ private:
   NodeHandle nh_;
   CallbackQueue queue_;
   Subscriber sub_;
-  SubscribeOptions ops_;
+  ros::Publisher pub_;
+    SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
   string topic_, collection_, id_;
@@ -109,7 +111,6 @@ private:
     sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
-  bool can_save;
 
 public:
   void start()
@@ -176,15 +177,16 @@ public:
     if (motion_){
       if (motion_detected_) {
         ROS_DEBUG_STREAM("motion detected");
-        can_save = false;
-      } else {can_save = true;}
+        return;
+      }
     }
     if (blur_){
       blur_detected_ = blur_detector.detectBlur(msg);
       if (blur_detected_){
         ROS_WARN_STREAM("blur detected");
-          can_save = false;
-      }else {can_save = true;}
+          return;
+
+      }
     }
     if (similar_){
       if (prev_image_){
@@ -192,20 +194,23 @@ public:
         similar_detected_ = sim_detector.detectMSE(sim_prev_, sim_curr_);
         if (similar_detected_){
           ROS_WARN_STREAM("similar image detected");
+
           sim_prev_ = sim_curr_;
-            can_save = false;
+            return;
+
 
         } else if (!motion_detected_ && !blur_detected_){
           sim_prev_ = sim_curr_;
-        } else {can_save = true;}
+        }
       } else {
         sim_prev_ = msg;
         prev_image_ = true;
-        can_save = true;
       }
     }
-    if (!motion_detected_ && !blur_detected_ && !similar_detected_ && can_save){
+    if (!motion_detected_ && !blur_detected_ && !similar_detected_ ){
         saveImage(msg);
+        pub_.publish(msg);
+        //show(msg);
     }
     r.sleep();
     }
@@ -271,15 +276,15 @@ public:
       if (motion_){
           if (motion_detected_) {
               ROS_DEBUG_STREAM("motion detected");
-              can_save = false;
-          }else {can_save = true;}
+              return;
+          }
       }
       if (blur_){
           blur_detected_ = blur_detector.detectBlur(msg);
           if (blur_detected_) {
               ROS_WARN_STREAM("blur detected");
-              can_save = false;
-          }else {can_save = true;}
+              return;
+          }
       }
       if (similar_){
           if (prev_image_){
@@ -288,18 +293,20 @@ public:
               if (similar_detected_){
                   ROS_WARN_STREAM("similar image detected");
                   sim_prev_c_ = sim_curr_c_;
-                  can_save = false;
+                  return;
               } else if (!motion_detected_ && !blur_detected_){
                   sim_prev_c_ = sim_curr_c_;
-              }else {can_save = true;}
+              }
           } else {
               sim_prev_c_ = msg;
               prev_image_ = true;
-              can_save = true;
           }
       }
-      if (!motion_detected_ && !blur_detected_ && !similar_detected_ && can_save ){
+      if (!motion_detected_ && !blur_detected_ && !similar_detected_ ){
           saveCompressedImage(msg);
+          pub_.publish(msg);
+          //show(msg);
+
       }
 
     r.sleep();
@@ -372,7 +379,33 @@ public:
     }
   }
 
-  // Getter, Setter and helper
+    void createPublisher(int mode)
+    {
+        switch (mode)
+        {
+            case (RAW):
+            case (DEPTH):
+
+                pub_ = nh_.advertise<sensor_msgs::Image>("/" + id_, 1, true);
+                break;
+
+            case (COMPRESSED):
+            case (COMPRESSED_DEPTH):
+                pub_ = nh_.advertise<sensor_msgs::CompressedImage>("/" + id_, 1, true);
+
+                break;
+
+            case (THEORA):
+                pub_ = nh_.advertise<theora_image_transport::Packet>("/" + id_, 1, true);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+
+    // Getter, Setter and helper
 public:
   int getCam() const
   {
@@ -426,6 +459,22 @@ public:
         break;
     }
   }
+
+  void show(const sensor_msgs::ImageConstPtr& msg){
+      cv_bridge::CvImagePtr img;
+      img = cv_bridge::toCvCopy(msg);
+      cv::imshow("Image recorded",img->image);
+      waitKey(1);
+  }
+    void show(const sensor_msgs::CompressedImageConstPtr& msg){
+            cv::namedWindow("Compressed image recorded");
+          cv_bridge::CvImageConstPtr img;
+          img = cv_bridge::toCvCopy(msg);
+          cv::imshow("Compressed image recorded",img->image);
+          waitKey(1);
+
+
+    }
 };
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_SUB_H
