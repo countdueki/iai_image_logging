@@ -4,6 +4,8 @@
  * Author: Tammo Wuebbena <ta_wu@tzi.de>
  */
 
+#include <iai_image_logging_msgs/DeleteRequest.h>
+#include <iai_image_logging_msgs/DeleteResponse.h>
 #include "image_logger.h"
 
 using std::string;
@@ -50,8 +52,7 @@ void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, Reconfigure
   req.config.strs.push_back(format);
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
-
-  ROS_DEBUG_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
+  ROS_WARN_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
@@ -83,7 +84,7 @@ void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureRes
   req.config.ints.push_back(quality);
   req.config.ints.push_back(target_bitrate);
 
-  ROS_DEBUG_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
+  ROS_WARN_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
@@ -116,34 +117,6 @@ void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, Recon
 }
 
 /**
- * adds cam and compression suffixes to topics and calls storage::update function to add a new Subscriber
- * @param cfg information for new subscriber and mongoDB info
- * @return 0 if success, false otherwise
- */
-int updateStorage(MainConfig& cfg)
-{
-  try
-  {
-    iai_image_logging_msgs::UpdateRequest req;
-    iai_image_logging_msgs::UpdateResponse res;
-
-    req.db_host = cfg.db_host;
-    req.collection = cfg.collection;
-    req.topic = cfg.topic;
-    req.mode = cfg.mode;
-    req.cam_no = cfg.cam_no;
-
-    ROS_WARN_STREAM("Calling update storage");
-    ros::service::call("storage/update", req, res);
-    return 0;
-  }
-  catch (ros::Exception e)
-  {
-    ROS_ERROR_STREAM(e.what());
-    return -1;
-  }
-}
-/**
  * Callback for dynamic reconfiguration
  * @param cfg Configuration to update parameters of topics to be logged
  */
@@ -167,27 +140,6 @@ void mainConfigurationCb(MainConfig& cfg)
   {
     ROS_DEBUG_STREAM("Setting parameters for raw topic_: " << cfg.topic);
   }
-  if (updateStorage(cfg) != 0)
-  {
-    ROS_ERROR_STREAM("Could not update Storage node");
-  }
-}
-
-/**
- * initialize storage node
- */
-void initStorage()
-{
-  try
-  {
-    iai_image_logging_msgs::UpdateRequest req;
-    iai_image_logging_msgs::UpdateResponse res;
-    ros::service::call("storage/update", req, res);
-  }
-  catch (ros::Exception e)
-  {
-    ROS_ERROR_STREAM(e.what());
-  }
 }
 
 int main(int argc, char** argv)
@@ -202,9 +154,6 @@ int main(int argc, char** argv)
 
   cb_type = boost::bind(&mainConfigurationCb, _1);
   server.setCallback(cb_type);
-
-  // initialize storage node with subscribers // TODO: Fix fail on empty storage node (i.e. when initStorage not used)
-  initStorage();
 
   ros::spin();
 

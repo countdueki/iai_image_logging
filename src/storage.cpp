@@ -2,6 +2,8 @@
 // Created by tammo on 13.09.18.
 //
 #include "storage.h"
+#include <iai_image_logging_msgs/MainConfig.h>
+#include <dynamic_reconfigure/client.h>
 
 using std::string;
 using std::vector;
@@ -18,7 +20,7 @@ public:
     static boost::shared_ptr<Storage> instance(new Storage);
     return *instance;
   }
-  // TODO: change vector to cams
+
 private:
   Storage()
   {
@@ -31,7 +33,7 @@ private:
     }
     mongo::client::initialize();
 
-    cams_size = 0;
+    cams_size_ = 0;
     // start storage services
     update_config = nh_.advertiseService("storage/update", &Storage::update, this);
     add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
@@ -43,40 +45,35 @@ private:
   // ~Storage(){}
 
   string db_host_;
-
   ros::NodeHandle nh_;
-
-public:
-  const NodeHandle& getNodeHandle() const
-  {
-    return nh_;
-  }
-
-private:
   ros::ServiceServer update_config;
   ros::ServiceServer add_service;
   ros::ServiceServer del_service;
   StorageSubVector subs_;
+  DBClientConnection* client_connection_ = new DBClientConnection(true);
+  int cams_size_;
 
 public:
-  const StorageSubVector& getSubs() const
+  void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    return subs_;
+    dynamic_reconfigure::ReconfigureRequest req_;
+    dynamic_reconfigure::ReconfigureResponse res_;
+    dynamic_reconfigure::StrParameter format;
+    format.name = "format";
+    format.value = req.format;
+    req_.config.strs.push_back(format);
+    ros::service::call("image_logger/set_parameters", req_, res_);  // WORKS!
+    // ros::service::call("image_logger/updateCamera",req,res);
   }
 
-private:
-  DBClientConnection* client_connection_ = new DBClientConnection(true);
-
-  int cams_size;
-
-public:
   /**
-   * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a mmap<Subscriber,mode>)
-   * If the requested topic is not found, it is added. If the camera isn't found, it is added
-   * @param req Topic and database info to update
-   * @param res success bool
-   * @return true, if update was successfull, false else
-   */
+         * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a
+   * mmap<Subscriber,mode>)
+         * If the requested topic is not found, it is added. If the camera isn't found, it is added
+         * @param req Topic and database info to update
+         * @param res success bool
+         * @return true, if update was successfull, false else
+         */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
     try
@@ -85,10 +82,10 @@ public:
       string cur_topic = "";
       string req_topic = "";
 
-      if (req.cam_no > cams_size)
+      if (req.cam_no > cams_size_)
       {
         ROS_ERROR_STREAM("Cameras have to be added in order. Camera " << req.cam_no << " cannot be added.");
-        ROS_ERROR_STREAM("Please add camera with index " << cams_size);
+        ROS_ERROR_STREAM("Please add camera with index " << cams_size_);
       }
       else
       {
@@ -117,6 +114,8 @@ public:
               // shutdown and delete old subscriber
               (*it)->destroy();
               subs_.erase(it);
+              ROS_DEBUG_STREAM("...update camera topic...");
+              // updateCamera(req,res);
               ROS_DEBUG_STREAM("...and add new");
 
               // add updated Subscriber
@@ -128,8 +127,9 @@ public:
         }
         // add new subscriber
         ROS_DEBUG_STREAM("Adding new Subscriber");
+        // updateCamera(req,res);
         subs_.push_back(storage_sub);
-        cams_size++;
+        cams_size_++;
         ROS_DEBUG_STREAM("size of subs_: " << subs_.size());
         ROS_INFO_STREAM("Added Subscriber");
         return true;
@@ -150,17 +150,17 @@ public:
    */
   bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
   {
-    /*  if (cams_size < req.cam_no)
-      {
-        ROS_ERROR_STREAM("Camera does not exist");
-      }
-      else
-      {
-        // TODO update kinect topic parameters
-        update(req, res);
-        res.success = true;
-        return true;
-      }*/
+    if (cams_size_ < req.cam_no)
+    {
+      ROS_ERROR_STREAM("Camera does not exist");
+    }
+    else
+    {
+      updateCamera(req, res);
+      update(req, res);
+      res.success = true;
+      return true;
+    }
   }
 
   /**
@@ -171,7 +171,7 @@ public:
   */
   bool delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
   {
-    /* if (cams_size < req.cam_no)
+    /* if (cams_size_ < req.cam_no)
       {
         ROS_ERROR_STREAM("Camera does not exist");
       }
@@ -238,7 +238,7 @@ public:
       ROS_WARN_STREAM("initialize...");
       StorageSub* sub = new StorageSub(*client_connection_);
       subs_.push_back(sub);
-      cams_size++;
+      cams_size_++;
       ROS_WARN_STREAM("initilization done");
       ROS_ERROR_STREAM("topic initialized with: " << sub->getTopic());
       ROS_ERROR_STREAM("size: " << subs_.size());
@@ -247,6 +247,16 @@ public:
     {
       ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
     }
+  }
+
+  const StorageSubVector& getSubs() const
+  {
+    return subs_;
+  }
+
+  const NodeHandle& getNodeHandle() const
+  {
+    return nh_;
   }
 };
 /**
@@ -265,7 +275,6 @@ int main(int argc, char** argv)
   // ros::Rate r(20.0);
   while (storage->getNodeHandle().ok())
   {
-    // TODO check why only one spinner is started
     for (auto s : storage->getSubs())
     {
       s->start();

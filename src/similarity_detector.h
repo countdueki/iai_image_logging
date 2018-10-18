@@ -27,7 +27,7 @@ public:
     cv::Mat src = prev_image->image;
     cv::Mat dst = curr_image->image;
 
-   //-- Step 1: Detect the keypoints using SURF Detector
+    //-- Step 1: Detect the keypoints using SURF Detector
     int minHessian = 400;
 
     Ptr<BRISK> detector = BRISK::create();
@@ -49,32 +49,31 @@ public:
     std::vector<DMatch> matches;
     matcher->match(descriptors_1, descriptors_2, matches);
 
-
-
     //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist,
     //-- or a small arbitary value ( 0.02 ) in the event that min_dist is very
     //-- small)
     //-- PS.- radiusMatch can also be used here.
     std::vector<DMatch> good_matches;
 
-
     //-- Draw only "good" matches
     Mat img_matches;
     drawMatches(src, keypoints_1, dst, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
                 std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
-      int thresh = 100;
+    int thresh = 100;
 
-
-      if((keypoints_1.size() > (keypoints_2.size() - thresh)) || (keypoints_1.size() < (keypoints_2.size() + thresh))){
-          std::cout << keypoints_1.size() << std::endl;
-          std::cout << keypoints_2.size() << std::endl;
-          return true;
-      }else {
-          std::cout << keypoints_1.size() << std::endl;
-          std::cout << keypoints_2.size() << std::endl;
-          return false;
-      }
+    if ((keypoints_1.size() > (keypoints_2.size() - thresh)) || (keypoints_1.size() < (keypoints_2.size() + thresh)))
+    {
+      std::cout << keypoints_1.size() << std::endl;
+      std::cout << keypoints_2.size() << std::endl;
+      return true;
+    }
+    else
+    {
+      std::cout << keypoints_1.size() << std::endl;
+      std::cout << keypoints_2.size() << std::endl;
+      return false;
+    }
 
     /*
     //-- Show detected matches
@@ -89,15 +88,13 @@ public:
  */
   }
 
-
-
-bool detectMSE(sensor_msgs::ImageConstPtr prev, sensor_msgs::ImageConstPtr curr){
+  bool detectMSE(sensor_msgs::ImageConstPtr prev, sensor_msgs::ImageConstPtr curr)
+  {
     cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
     cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
 
     cv::Mat src = prev_image->image;
     cv::Mat dst = curr_image->image;
-
 
     cv::Mat diffImage;
     cv::absdiff(src, dst, diffImage);
@@ -107,48 +104,51 @@ bool detectMSE(sensor_msgs::ImageConstPtr prev, sensor_msgs::ImageConstPtr curr)
     double thresh = 80.0;
     double mse = 0.0;
     square_diffImage.convertTo(square_diffImage, CV_32F);
-    Scalar sum =   cv::sum(square_diffImage);
+    Scalar sum = cv::sum(square_diffImage);
 
-
-    mse =  (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
-    if(mse < thresh){
-        std::cout << mse << std::endl;
-        return true;
-    }else {
-        std::cout << mse << std::endl;
-        return false;
+    mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
+    if (mse < thresh)
+    {
+      std::cout << mse << std::endl;
+      return true;
     }
-}
-
-
-    bool detectMSE(sensor_msgs::CompressedImageConstPtr prev, sensor_msgs::CompressedImageConstPtr curr){
-        cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
-        cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
-
-        cv::Mat src = prev_image->image;
-        cv::Mat dst = curr_image->image;
-
-
-        cv::Mat diffImage;
-        cv::absdiff(src, dst, diffImage);
-
-        cv::Mat square_diffImage = diffImage.mul(diffImage);
-
-        double thresh = 80.0;
-        double mse = 0.0;
-        square_diffImage.convertTo(square_diffImage, CV_32F);
-        Scalar sum =   cv::sum(square_diffImage);
-
-
-        mse =  (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
-        if(mse < thresh){
-            std::cout << mse << std::endl;
-            return true;
-        }else {
-            std::cout << mse << std::endl;
-            return false;
-        }
+    else
+    {
+      std::cout << mse << std::endl;
+      return false;
     }
+  }
+
+  bool detectMSE(sensor_msgs::CompressedImageConstPtr prev, sensor_msgs::CompressedImageConstPtr curr)
+  {
+    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
+    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
+
+    cv::Mat src = prev_image->image;
+    cv::Mat dst = curr_image->image;
+
+    cv::Mat diffImage;
+    cv::absdiff(src, dst, diffImage);
+
+    cv::Mat square_diffImage = diffImage.mul(diffImage);
+
+    double thresh = 80.0;
+    double mse = 0.0;
+    square_diffImage.convertTo(square_diffImage, CV_32F);
+    Scalar sum = cv::sum(square_diffImage);
+
+    mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
+    if (mse < thresh)
+    {
+      std::cout << mse << std::endl;
+      return true;
+    }
+    else
+    {
+      std::cout << mse << std::endl;
+      return false;
+    }
+  }
 };
 
 #endif  // IAI_IMAGE_LOGGING_SIMILARITY_DETECTOR_H
