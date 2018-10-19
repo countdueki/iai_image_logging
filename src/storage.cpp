@@ -62,7 +62,7 @@ public:
     format.name = "format";
     format.value = req.format;
     req_.config.strs.push_back(format);
-    ros::service::call("image_logger/set_parameters", req_, res_);  // WORKS!
+    ros::service::call("/image_logger/set_parameters", req_, res_);  // WORKS!
     // ros::service::call("image_logger/updateCamera",req,res);
   }
 
@@ -115,7 +115,7 @@ public:
               (*it)->destroy();
               subs_.erase(it);
               ROS_DEBUG_STREAM("...update camera topic...");
-              // updateCamera(req,res);
+              updateCamera(req,res);
               ROS_DEBUG_STREAM("...and add new");
 
               // add updated Subscriber
