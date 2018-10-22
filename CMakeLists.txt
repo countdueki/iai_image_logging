@@ -22,27 +22,30 @@ include_directories(
         ${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         )
-add_library(storage_sub
-        src/storage_sub.cpp
-        include/storage_sub.h
-        include/blur_detector.h include/similarity_detector.h)
+add_library(iai_subscriber
+        src/iai_subscriber.cpp
+        include/header/iai_subscriber.h
+        include/features/blur_detector.h include/features/similarity_detector.h)
 
-add_executable(image_logger
-        src/image_logger.cpp
+add_executable(iai_updater
+        src/iai_updater.cpp
+        include/header/iai_updater.h
+        include/header/iai_subscriber.h)
 
-        include/storage_sub.h)
-target_link_libraries(image_logger
+target_link_libraries(iai_updater
         ${catkin_LIBRARIES}
         )
 
-add_executable(storage
-        src/storage.cpp
+add_executable(iai_configurator
+        src/iai_configurator.cpp
+        include/header/iai_configurator.h
+
 
         )
-target_link_libraries(storage
+target_link_libraries(iai_configurator
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
-        storage_sub
+        iai_subscriber
 
         )
 

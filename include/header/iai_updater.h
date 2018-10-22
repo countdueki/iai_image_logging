@@ -32,7 +32,7 @@ enum
   DEPTH,
   COMPRESSED_DEPTH
 };
-class ImageLogger
+class IAIUpdater
 {
 public:
   static void setCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res);

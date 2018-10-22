@@ -2,19 +2,19 @@
 // Created by tammo on 12.10.18.
 //
 
-#include "../include/storage_sub.h"
+#include "../include/header/iai_subscriber.h"
 
-void StorageSub::start()
+void IAISubscriber::start()
 {
   spinner_->start();
   // queue_.callAvailable();
 }
-void StorageSub::destroy()
+void IAISubscriber::destroy()
 {
   sub_.shutdown();
 }
 
-void StorageSub::saveImage(const sensor_msgs::ImageConstPtr& msg)
+void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
   mongo::BSONObjBuilder document;
   mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
@@ -62,7 +62,7 @@ void StorageSub::saveImage(const sensor_msgs::ImageConstPtr& msg)
  * image callback to save raw and depth images
  * @param msg raw and depth images
  */
-void StorageSub::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   ros::Rate r(rate_);
   if (motion_)
@@ -115,7 +115,7 @@ void StorageSub::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   r.sleep();
 }
 
-void StorageSub::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
+void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   try
   {
@@ -167,7 +167,7 @@ void StorageSub::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr&
  * CompressedImage callback to save compressed images and compressed depth images
  * @param msg compressed image
  */
-void StorageSub::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
+void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   ros::Rate r(rate_);
 
@@ -221,7 +221,7 @@ void StorageSub::compressedImageCallback(const sensor_msgs::CompressedImageConst
   r.sleep();
 }
 
-void StorageSub::saveTheora(const theora_image_transport::PacketConstPtr& msg)
+void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg)
 {
   mongo::BSONObjBuilder document;
 
@@ -245,7 +245,7 @@ void StorageSub::saveTheora(const theora_image_transport::PacketConstPtr& msg)
  * Theora Callback to save video packets
  * @param msg theora video
  */
-void StorageSub::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
+void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
 {
   ROS_WARN_STREAM("saving theora image");
   ros::Rate r(rate_);
@@ -253,13 +253,13 @@ void StorageSub::theoraCallback(const theora_image_transport::PacketConstPtr& ms
   r.sleep();
 }
 
-void StorageSub::createSubscriber(int mode)
+void IAISubscriber::createSubscriber(int mode)
 {
   switch (mode)
   {
     case (RAW):
     case (DEPTH):
-      ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
+      ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&IAISubscriber::imageCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
       sub_ = nh_.subscribe(ops_);
@@ -268,14 +268,14 @@ void StorageSub::createSubscriber(int mode)
     case (COMPRESSED):
     case (COMPRESSED_DEPTH):
       ops_.template init<sensor_msgs::CompressedImage>(topic_, 1,
-                                                       boost::bind(&StorageSub::compressedImageCallback, this, _1));
+                                                       boost::bind(&IAISubscriber::compressedImageCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
       sub_ = nh_.subscribe(ops_);
       break;
 
     case (THEORA):
-      ops_.template init<theora_image_transport::Packet>(topic_, 1, boost::bind(&StorageSub::theoraCallback, this, _1));
+      ops_.template init<theora_image_transport::Packet>(topic_, 1, boost::bind(&IAISubscriber::theoraCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
       sub_ = nh_.subscribe(ops_);
@@ -286,7 +286,7 @@ void StorageSub::createSubscriber(int mode)
   }
 }
 
-void StorageSub::createPublisher(int mode)
+void IAISubscriber::createPublisher(int mode)
 {
   switch (mode)
   {
@@ -311,7 +311,7 @@ void StorageSub::createPublisher(int mode)
   }
 }
 
-string StorageSub::addIdentifier(string collection)
+string IAISubscriber::addIdentifier(string collection)
 {
   switch (mode_)
   {
@@ -335,7 +335,7 @@ string StorageSub::addIdentifier(string collection)
       break;
   }
 }
-string StorageSub::getModeString(int mode)
+string IAISubscriber::getModeString(int mode)
 {
   switch (mode)
   {
@@ -354,7 +354,7 @@ string StorageSub::getModeString(int mode)
   }
 }
 
-string StorageSub::generateID(string topic, string mode_str)
+string IAISubscriber::generateID(string topic, string mode_str)
 {
   string result;
   // parse topic
@@ -382,14 +382,14 @@ string StorageSub::generateID(string topic, string mode_str)
   return result;
 }
 
-void StorageSub::show(const sensor_msgs::ImageConstPtr& msg)
+void IAISubscriber::show(const sensor_msgs::ImageConstPtr& msg)
 {
   cv_bridge::CvImagePtr img;
   img = cv_bridge::toCvCopy(msg);
   cv::imshow("Image recorded", img->image);
   waitKey(1);
 }
-void StorageSub::show(const sensor_msgs::CompressedImageConstPtr& msg)
+void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   cv::namedWindow("Compressed image recorded");
   cv_bridge::CvImageConstPtr img;
@@ -398,17 +398,17 @@ void StorageSub::show(const sensor_msgs::CompressedImageConstPtr& msg)
   waitKey(1);
 }
 
-const string& StorageSub::getTopic() const
+const string& IAISubscriber::getTopic() const
 {
   return topic_;
 }
 
-int StorageSub::getCam() const
+int IAISubscriber::getCam() const
 {
   return cam_;
 }
 
-const string& StorageSub::getID() const
+const string& IAISubscriber::getID() const
 {
   return id_;
 }

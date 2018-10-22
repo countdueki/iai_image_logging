@@ -1,9 +1,9 @@
 //
 // Created by tammo on 13.09.18.
 //
-#include "../include/storage.h"
+#include "../include/header/iai_configurator.h"
 
-void Storage::updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
 {
   ReconfigureRequest req_;
   ReconfigureResponse res_;
@@ -68,14 +68,14 @@ void Storage::updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image
        * @param res success bool
        * @return true, if update was successfull, false else
        */
-bool Storage::update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
 {
   try
   {
     db_host_ = req.db_host;
     string cur_topic, req_topic;
 
-    StorageSub* storage_sub = new StorageSub(*client_connection_, req);
+    IAISubscriber* iai_sub = new IAISubscriber(*client_connection_, req);
     // iterate over camera list for existing entries
     for (auto it = subs_.begin(); it != subs_.end(); ++it)
     {
@@ -92,16 +92,17 @@ bool Storage::update(iai_image_logging_msgs::UpdateRequest& req, iai_image_loggi
         ROS_DEBUG_STREAM("...add new");
 
         // add updated Subscriber
-        subs_.push_back(storage_sub);
-        ROS_DEBUG_STREAM("Updated Subscriber");
+        subs_.push_back(iai_sub);
+        ROS_INFO_STREAM("Updated Subscriber: " << iai_sub->getID());
         return true;
       }
     }
     // add new subscriber
-    ROS_INFO_STREAM("Adding new Subscriber");
-    // updateCamera(req,res);
-    subs_.push_back(storage_sub);
+    updateCamera(req,res);
+    subs_.push_back(iai_sub);
     ROS_DEBUG_STREAM("size of subs_: " << subs_.size());
+    ROS_INFO_STREAM("Added new Subscriber: " << (iai_sub->getID()));
+    res.success = true;
     return true;
   }
   catch (std::bad_alloc& ba)
@@ -117,9 +118,8 @@ bool Storage::update(iai_image_logging_msgs::UpdateRequest& req, iai_image_loggi
  * @param res success bool
  * @return true if success, false else
  */
-bool Storage::addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+bool IAIConfigurator::addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
 {
-  updateCamera(req, res);
   update(req, res);
   res.success = true;
   return true;
@@ -131,7 +131,7 @@ bool Storage::addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_lo
 * @param res success bool
 * @return true if success, false else
 */
-bool Storage::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
+bool IAIConfigurator::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
 {
   try
   {
@@ -146,7 +146,7 @@ bool Storage::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_lo
         ROS_DEBUG_STREAM("...Found topic, deleting...");
         (*it)->destroy();
         subs_.erase(it);
-        ROS_DEBUG_STREAM("...erased Subscriber");
+        ROS_INFO_STREAM("Deleted Subscriber: " << (*it)->getID());
         return true;
       }
     }
@@ -160,30 +160,12 @@ bool Storage::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_lo
   }
 }
 
-string Storage::getModeString(int mode)
-{
-  switch (mode)
-  {
-    case (RAW):
-      return "";
-    case (COMPRESSED):
-      return "/compressed";
-    case (THEORA):
-      return "/theora";
-    case (DEPTH):
-      return "";
-    case (COMPRESSED_DEPTH):
-      return "/compressedDepth";
-    default:
-      break;
-  }
-}
-const NodeHandle& Storage::getNodeHandle() const
+const NodeHandle& IAIConfigurator::getNodeHandle() const
 {
   return nh_;
 }
 
-const StorageSubVector& Storage::getSubscribers() const
+const StorageSubVector& IAIConfigurator::getSubscribers() const
 {
   return subs_;
 }
@@ -203,7 +185,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "storage");
 
   // create storage and initialize
-  Storage* storage = &Storage::Instance();
+  IAIConfigurator* storage = &IAIConfigurator::Instance();
 
   while (storage->getNodeHandle().ok())
   {

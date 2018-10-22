@@ -4,7 +4,7 @@
  * Author: Tammo Wuebbena <ta_wu@tzi.de>
  */
 
-#include "../include/image_logger.h"
+#include "../include/header/iai_updater.h"
 
 /**
  * Set parameters for compression
@@ -12,7 +12,7 @@
  * @param req
  * @param res
  */
-void ImageLogger::setCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
+void IAIUpdater::setCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   StrParam format;
   IntParam jpeg, png;
@@ -40,7 +40,7 @@ void ImageLogger::setCompressedParameters(MainConfig& cfg, ReconfigureRequest re
  * @param req
  * @param res
  */
-void ImageLogger::setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
+void IAIUpdater::setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
 
@@ -72,7 +72,7 @@ void ImageLogger::setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, R
  * @param req
  * @param res
  */
-void ImageLogger::setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
+void IAIUpdater::setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam png;
   DoubleParam depth_max, depth_quantization;
@@ -98,7 +98,7 @@ void ImageLogger::setDepthCompressedParameters(MainConfig& cfg, ReconfigureReque
  * Callback for dynamic reconfiguration
  * @param cfg Configuration to update parameters of topics to be logged
  */
-void ImageLogger::mainConfigurationCb(MainConfig& cfg)
+void IAIUpdater::mainConfigurationCb(MainConfig& cfg)
 {
   ReconfigureRequest req;
   ReconfigureResponse res;
@@ -122,14 +122,14 @@ void ImageLogger::mainConfigurationCb(MainConfig& cfg)
 
 int main(int argc, char** argv)
 {
-  string node_name = "image_logger";
+  string node_name = "iai_updater";
   ros::init(argc, argv, node_name);
   ros::NodeHandle nh;
 
   dynamic_reconfigure::Server<MainConfig> server_;
   dynamic_reconfigure::Server<MainConfig>::CallbackType cb_type_;
 
-  cb_type_ = boost::bind(&ImageLogger::mainConfigurationCb, _1);
+  cb_type_ = boost::bind(&IAIUpdater::mainConfigurationCb, _1);
   server_.setCallback(cb_type_);
 
   ros::spin();

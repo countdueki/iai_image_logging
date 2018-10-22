@@ -16,8 +16,8 @@
 #include <iai_image_logging_msgs/Update.h>
 #include <mongo/client/dbclient.h>
 
-#include "blur_detector.h"
-#include "similarity_detector.h"
+#include "../features/blur_detector.h"
+#include "../features/similarity_detector.h"
 
 #include <string>
 using ros::Subscriber;
@@ -37,10 +37,10 @@ enum
   COMPRESSED_DEPTH
 };
 
-class StorageSub
+class IAISubscriber
 {
 public:
-  explicit StorageSub(DBClientConnection& connection)
+  explicit IAISubscriber(DBClientConnection& connection)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
@@ -61,7 +61,7 @@ public:
 
     // create actual subscriber
 
-    ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&StorageSub::imageCallback, this, _1));
+    ops_.template init<sensor_msgs::Image>(topic_, 1, boost::bind(&IAISubscriber::imageCallback, this, _1));
     ops_.transport_hints = ros::TransportHints();
     ops_.allow_concurrent_callbacks = true;
     sub_ = nh_.subscribe(ops_);
@@ -70,12 +70,13 @@ public:
     pub_ = nh_.advertise<sensor_msgs::Image>("/" + id_, 1, true);
   }
 
-  StorageSub(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 3.0,
+  IAISubscriber(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 3.0,
              bool motion = false, bool blur = false, bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
+    // concatenate base topic and mode string
     topic_ = req.topic + getModeString(req.mode);
     cam_ = req.cam_no;
     mode_ = req.mode;
@@ -93,7 +94,7 @@ public:
     createSubscriber(mode_);
     createPublisher(mode_);
   }
-  //~StorageSub(){};
+  //~IAISubscriber(){};
 
 private:
   NodeHandle nh_;

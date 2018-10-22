@@ -12,7 +12,7 @@
 #include <mongo/client/dbclient.h>
 #include <iai_image_logging_msgs/Update.h>
 #include <iai_image_logging_msgs/Delete.h>
-#include "../src/storage_sub.cpp"
+#include "../../src/iai_subscriber.cpp"
 
 #include <iai_image_logging_msgs/MainConfig.h>
 #include <dynamic_reconfigure/client.h>
@@ -21,25 +21,26 @@ using std::string;
 using std::vector;
 
 using mongo::DBClientConnection;
-typedef vector<StorageSub*> StorageSubVector;
+typedef vector<IAISubscriber*> StorageSubVector;
 using dynamic_reconfigure::ReconfigureRequest;
 using dynamic_reconfigure::ReconfigureResponse;
 
 typedef dynamic_reconfigure::StrParameter StrParam;
 typedef dynamic_reconfigure::IntParameter IntParam;
 typedef dynamic_reconfigure::DoubleParameter DoubleParam;
-class Storage
+class IAIConfigurator
 {
 public:
-  static Storage& Instance()
+  static IAIConfigurator& Instance()
   {
-    static boost::shared_ptr<Storage> instance(new Storage);
+    static boost::shared_ptr<IAIConfigurator> instance(new IAIConfigurator);
     return *instance;
   }
 
 private:
-  Storage()
+  IAIConfigurator()
   {
+      string node_name = "iai_configurator";
     db_host_ = "localhost";
     // establish MongoDB connection
     string errmsg;
@@ -49,17 +50,16 @@ private:
     }
     mongo::client::initialize();
 
-    cams_size_ = 0;
     // start storage services
-    update_config = nh_.advertiseService("storage/update", &Storage::update, this);
-    add_service = nh_.advertiseService("storage/add", &Storage::addConfig, this);
-    del_service = nh_.advertiseService("storage/del", &Storage::delConfig, this);
+    update_config = nh_.advertiseService(node_name + "/update", &IAIConfigurator::update, this);
+    add_service = nh_.advertiseService(node_name + "/add", &IAIConfigurator::addConfig, this);
+    del_service = nh_.advertiseService(node_name + "/del", &IAIConfigurator::delConfig, this);
   }
 
-  Storage(const Storage& old);
+  IAIConfigurator(const IAIConfigurator& old);
 
-  const Storage& operator=(const Storage& old);
-  // ~Storage(){}
+  const IAIConfigurator& operator=(const IAIConfigurator& old);
+  // ~IAIConfigurator(){}
 
   string db_host_;
   ros::NodeHandle nh_;
@@ -70,15 +70,12 @@ private:
   ros::ServiceServer del_service;
   StorageSubVector subs_;
   DBClientConnection* client_connection_ = new DBClientConnection(true);
-  int cams_size_;
 
 public:
   void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
   bool addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
   bool delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res);
-  void init();
-  string getModeString(int mode);
 
   const NodeHandle& getNodeHandle() const;
 
