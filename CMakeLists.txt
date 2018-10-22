@@ -24,12 +24,13 @@ include_directories(
         )
 add_library(storage_sub
         src/storage_sub.cpp
-        src/blur_detector.h src/similarity_detector.h)
+        include/storage_sub.h
+        include/blur_detector.h include/similarity_detector.h)
 
 add_executable(image_logger
         src/image_logger.cpp
 
-        )
+        include/storage_sub.h)
 target_link_libraries(image_logger
         ${catkin_LIBRARIES}
         )

@@ -4,29 +4,7 @@
  * Author: Tammo Wuebbena <ta_wu@tzi.de>
  */
 
-#include <iai_image_logging_msgs/DeleteRequest.h>
-#include <iai_image_logging_msgs/DeleteResponse.h>
-#include "image_logger.h"
-
-using std::string;
-
-using dynamic_reconfigure::ReconfigureRequest;
-using dynamic_reconfigure::ReconfigureResponse;
-
-typedef iai_image_logging_msgs::MainConfig MainConfig;
-
-typedef dynamic_reconfigure::StrParameter StrParam;
-typedef dynamic_reconfigure::IntParameter IntParam;
-typedef dynamic_reconfigure::DoubleParameter DoubleParam;
-
-enum
-{
-  RAW,
-  COMPRESSED,
-  THEORA,
-  DEPTH,
-  COMPRESSED_DEPTH
-};
+#include "../include/image_logger.h"
 
 /**
  * Set parameters for compression
@@ -34,7 +12,7 @@ enum
  * @param req
  * @param res
  */
-void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, ReconfigureResponse res)
+void ImageLogger::setCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   StrParam format;
   IntParam jpeg, png;
@@ -52,7 +30,7 @@ void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, Reconfigure
   req.config.strs.push_back(format);
   req.config.ints.push_back(jpeg);
   req.config.ints.push_back(png);
-  ROS_WARN_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
 
@@ -62,7 +40,7 @@ void setCompressedParameters(MainConfig cfg, ReconfigureRequest req, Reconfigure
  * @param req
  * @param res
  */
-void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
+void ImageLogger::setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
 
@@ -84,7 +62,7 @@ void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureRes
   req.config.ints.push_back(quality);
   req.config.ints.push_back(target_bitrate);
 
-  ROS_WARN_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
+  ROS_DEBUG_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
 }
 
@@ -94,7 +72,7 @@ void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureRes
  * @param req
  * @param res
  */
-void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
+void ImageLogger::setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res)
 {
   IntParam png;
   DoubleParam depth_max, depth_quantization;
@@ -120,7 +98,7 @@ void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, Recon
  * Callback for dynamic reconfiguration
  * @param cfg Configuration to update parameters of topics to be logged
  */
-void mainConfigurationCb(MainConfig& cfg)
+void ImageLogger::mainConfigurationCb(MainConfig& cfg)
 {
   ReconfigureRequest req;
   ReconfigureResponse res;
@@ -148,12 +126,11 @@ int main(int argc, char** argv)
   ros::init(argc, argv, node_name);
   ros::NodeHandle nh;
 
-  // Server for dynamic_reconfigure callback
-  dynamic_reconfigure::Server<MainConfig> server;
-  dynamic_reconfigure::Server<MainConfig>::CallbackType cb_type;
+  dynamic_reconfigure::Server<MainConfig> server_;
+  dynamic_reconfigure::Server<MainConfig>::CallbackType cb_type_;
 
-  cb_type = boost::bind(&mainConfigurationCb, _1);
-  server.setCallback(cb_type);
+  cb_type_ = boost::bind(&ImageLogger::mainConfigurationCb, _1);
+  server_.setCallback(cb_type_);
 
   ros::spin();
 

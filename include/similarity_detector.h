@@ -140,12 +140,12 @@ public:
     mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
     if (mse < thresh)
     {
-      std::cout << mse << std::endl;
+      // std::cout << mse << std::endl;
       return true;
     }
     else
     {
-      std::cout << mse << std::endl;
+      // std::cout << mse << std::endl;
       return false;
     }
   }
