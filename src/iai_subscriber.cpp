@@ -312,7 +312,7 @@ void IAISubscriber::createPublisher(int mode)
 }
 
 string IAISubscriber::addIdentifier(string collection)
-{
+{/**
   switch (mode_)
   {
     case (RAW):
@@ -333,7 +333,7 @@ string IAISubscriber::addIdentifier(string collection)
     default:
       collection = collection;
       break;
-  }
+  }**/
 }
 string IAISubscriber::getModeString(int mode)
 {
@@ -367,9 +367,7 @@ string IAISubscriber::generateID(string topic, string mode_str)
 
   while ((pos = topic.find(delimiter)) != std::string::npos)
   {
-    token = topic.substr(0, pos);
-    std::cout << token << std::endl;
-    topic.erase(pos, topic.length());
+    topic.replace(pos,pos+1,"__");
   }
   // add mode string
   if (mode_str.at(0) == '/')
@@ -403,10 +401,7 @@ const string& IAISubscriber::getTopic() const
   return topic_;
 }
 
-int IAISubscriber::getCam() const
-{
-  return cam_;
-}
+
 
 const string& IAISubscriber::getID() const
 {

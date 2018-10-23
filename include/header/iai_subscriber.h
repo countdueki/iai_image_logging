@@ -46,7 +46,6 @@ public:
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     topic_ = "/camera/rgb/image_raw";
-    cam_ = 0;
     mode_ = 0;
     id_ = "00_ID";
     collection_ = "db.standard";  // adds mode and cam# as suffix
@@ -78,14 +77,15 @@ public:
     client_connection_ = &connection;
     // concatenate base topic and mode string
     topic_ = req.topic + getModeString(req.mode);
-    cam_ = req.cam_no;
     mode_ = req.mode;
     id_ = generateID(req.topic, getModeString(req.mode));
     collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
-    rate_ = rate;
-    motion_ = motion;
-    blur_ = true;
-    similar_ = true;
+    rate_ = req.rate;
+    motion_ = req.motion;
+    blur_ = req.blur;
+    similar_ = req.similar;
+
+    // start condtitions
     prev_image_ = false;
     motion_detected_ = false;
     blur_detected_ = false;
@@ -105,7 +105,7 @@ private:
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
   string topic_, collection_, id_;
-  int cam_, mode_;
+  int  mode_;
   double rate_;
   bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;
   sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
@@ -145,8 +145,6 @@ public:
   void show(const sensor_msgs::CompressedImageConstPtr& msg);
 
   const string& getTopic() const;
-
-  int getCam() const;
 
   const string& getID() const;
 };
