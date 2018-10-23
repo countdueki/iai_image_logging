@@ -361,21 +361,26 @@ string IAISubscriber::generateID(string topic, string mode_str)
   std::string delimiter = "/";
 
   size_t pos = 0;
-  std::string token;
   if (topic.at(0) == '/')
     topic.erase(0, 1);
 
   while ((pos = topic.find(delimiter)) != std::string::npos)
   {
-    topic.replace(pos,pos+1,"__");
+    if (pos == topic.length() - 1){
+      topic.erase(pos,1);
+    }else {
+      topic.replace(pos,1,"__");
+
+    }
   }
+
   // add mode string
   if (mode_str.at(0) == '/')
   {
     ROS_DEBUG_STREAM("modestring starts with: " << mode_str.at(0));
     mode_str.erase(0, 1);
   }
-  result += topic + "_" + mode_str;
+  result += topic + "__" + mode_str;
 
   return result;
 }
@@ -406,4 +411,36 @@ const string& IAISubscriber::getTopic() const
 const string& IAISubscriber::getID() const
 {
   return id_;
+}
+
+double IAISubscriber::getRate_() const {
+    return rate_;
+}
+
+void IAISubscriber::setRate_(double rate_) {
+    IAISubscriber::rate_ = rate_;
+}
+
+bool IAISubscriber::isMotion_() const {
+    return motion_;
+}
+
+void IAISubscriber::setMotion_(bool motion_) {
+    IAISubscriber::motion_ = motion_;
+}
+
+bool IAISubscriber::isBlur_() const {
+    return blur_;
+}
+
+void IAISubscriber::setBlur_(bool blur_) {
+    IAISubscriber::blur_ = blur_;
+}
+
+bool IAISubscriber::isSimilar_() const {
+    return similar_;
+}
+
+void IAISubscriber::setSimilar_(bool similar_) {
+    IAISubscriber::similar_ = similar_;
 }

@@ -33,8 +33,7 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, i
   quality.name = "quality";
   quality.value = req.quality;
 
-  /*
-   *       DoubleParam depth_max, depth_quantization;
+      DoubleParam depth_max, depth_quantization;
 
         depth_max.name = "depth_max";
         depth_max.value = req.depth_max;
@@ -42,8 +41,9 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, i
         depth_quantization.name = "depth_quantization";
         depth_quantization.value = req.depth_quantization;
 
+        // Set parameters for depth images
         req_.config.doubles.push_back(depth_max);
-        req_.config.doubles.push_back(depth_quantization);*/
+        req_.config.doubles.push_back(depth_quantization);
 
   // Set parameters for compressed images
   req_.config.strs.push_back(format);
@@ -94,7 +94,8 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
         // add updated Subscriber
         subs_.push_back(iai_sub);
         ROS_INFO_STREAM("Updated Subscriber: " << iai_sub->getID());
-        return true;
+          res.success = true;
+          return true;
       }
     }
     // add new subscriber
@@ -108,7 +109,8 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
   catch (std::bad_alloc& ba)
   {
     ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
-    return false;
+      res.success = false;
+      return false;
   }
 }
 
@@ -118,7 +120,7 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
  * @param res success bool
  * @return true if success, false else
  */
-bool IAIConfigurator::addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+bool IAIConfigurator::add(iai_image_logging_msgs::UpdateRequest &req, iai_image_logging_msgs::UpdateResponse &res)
 {
   update(req, res);
   res.success = true;
@@ -131,7 +133,7 @@ bool IAIConfigurator::addConfig(iai_image_logging_msgs::UpdateRequest& req, iai_
 * @param res success bool
 * @return true if success, false else
 */
-bool IAIConfigurator::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_image_logging_msgs::DeleteResponse& res)
+bool IAIConfigurator::del(iai_image_logging_msgs::DeleteRequest &req, iai_image_logging_msgs::DeleteResponse &res)
 {
   try
   {
@@ -157,6 +159,26 @@ bool IAIConfigurator::delConfig(iai_image_logging_msgs::DeleteRequest& req, iai_
   {
     ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
     return false;
+  }
+}
+
+bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res){
+  for (auto it = subs_.begin(); it != subs_.end(); ++it){
+
+    if ((*it)->getID() == req.iai_id){
+      (*it)->setRate_(req.rate);
+      (*it)->setMotion_(req.motion);
+      (*it)->setBlur_(req.blur);
+      (*it)->setSimilar_(req.similar);
+      ROS_WARN_STREAM("Set options for Sub with IAI_ID " << req.iai_id << " to");
+      ROS_WARN_STREAM("Motion: " << std::to_string((*it)->isMotion_()));
+      ROS_WARN_STREAM("Blur: " << std::to_string((*it)->isBlur_()));
+      ROS_WARN_STREAM("Similar: " << std::to_string((*it)->isSimilar_()));
+
+      res.success = true;
+    return true;
+    }
+
   }
 }
 

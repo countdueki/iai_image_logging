@@ -108,7 +108,8 @@ private:
   int  mode_;
   double rate_;
   bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;
-  sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
+
+    sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
   sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
@@ -147,6 +148,22 @@ public:
   const string& getTopic() const;
 
   const string& getID() const;
+
+    double getRate_() const;
+
+    void setRate_(double rate_);
+
+    bool isMotion_() const;
+
+    void setMotion_(bool motion_);
+
+    bool isBlur_() const;
+
+    void setBlur_(bool blur_);
+
+    bool isSimilar_() const;
+
+    void setSimilar_(bool similar_);
 };
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_SUB_H
