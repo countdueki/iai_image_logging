@@ -56,5 +56,6 @@ install(PROGRAMS
         # scripts/config_client.py
         scripts/add.py
         scripts/add_yaml.py
+        scripts/WIP/add_conf.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )

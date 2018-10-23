@@ -56,7 +56,7 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, i
   req_.config.ints.push_back(quality);
   req_.config.ints.push_back(target_bitrate);
 
-  ros::service::call("/image_logger/set_parameters", req_, res_);  // WORKS!
+  ros::service::call("/iai_updater/set_parameters", req_, res_);  // WORKS!
   // ros::service::call("image_logger/updateCamera",req,res);
 }
 
