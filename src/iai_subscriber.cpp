@@ -115,6 +115,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   r.sleep();
 }
 
+
 void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   try
@@ -275,7 +276,8 @@ void IAISubscriber::createSubscriber(int mode)
       break;
 
     case (THEORA):
-      ops_.template init<theora_image_transport::Packet>(topic_, 1, boost::bind(&IAISubscriber::theoraCallback, this, _1));
+      ops_.template init<theora_image_transport::Packet>(topic_, 1,
+                                                         boost::bind(&IAISubscriber::theoraCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
       sub_ = nh_.subscribe(ops_);
@@ -312,28 +314,28 @@ void IAISubscriber::createPublisher(int mode)
 }
 
 string IAISubscriber::addIdentifier(string collection)
-{/**
-  switch (mode_)
-  {
-    case (RAW):
-      collection = collection + "_raw" + "_cam_" + std::to_string(cam_);
-      break;
-    case (COMPRESSED):
-      collection = collection + "_compressed" + "_cam_" + std::to_string(cam_);
-      break;
-    case (THEORA):
-      collection = collection + "_theora" + "_cam_" + std::to_string(cam_);
-      break;
-    case (DEPTH):
-      collection = collection + "_depth" + "_cam_" + std::to_string(cam_);
-      break;
-    case (COMPRESSED_DEPTH):
-      collection = collection + "_compressedDepth" + "_cam_" + std::to_string(cam_);
-      break;
-    default:
-      collection = collection;
-      break;
-  }**/
+{ /**
+   switch (mode_)
+   {
+     case (RAW):
+       collection = collection + "_raw" + "_cam_" + std::to_string(cam_);
+       break;
+     case (COMPRESSED):
+       collection = collection + "_compressed" + "_cam_" + std::to_string(cam_);
+       break;
+     case (THEORA):
+       collection = collection + "_theora" + "_cam_" + std::to_string(cam_);
+       break;
+     case (DEPTH):
+       collection = collection + "_depth" + "_cam_" + std::to_string(cam_);
+       break;
+     case (COMPRESSED_DEPTH):
+       collection = collection + "_compressedDepth" + "_cam_" + std::to_string(cam_);
+       break;
+     default:
+       collection = collection;
+       break;
+   }**/
 }
 string IAISubscriber::getModeString(int mode)
 {
@@ -354,6 +356,15 @@ string IAISubscriber::getModeString(int mode)
   }
 }
 
+int IAISubscriber::getNumberFromModeString( string mode )
+{
+    if (mode.find("raw") != std::string::npos) return RAW;
+    if (mode.find("compressed") != std::string::npos) return COMPRESSED;
+    if (mode.find("theora") != std::string::npos) return THEORA;
+    if (mode.find("depth") != std::string::npos) return DEPTH;
+    if (mode.find("compressedDepth") != std::string::npos) return COMPRESSED_DEPTH;
+
+}
 string IAISubscriber::generateID(string topic, string mode_str)
 {
   string result;
@@ -366,11 +377,13 @@ string IAISubscriber::generateID(string topic, string mode_str)
 
   while ((pos = topic.find(delimiter)) != std::string::npos)
   {
-    if (pos == topic.length() - 1){
-      topic.erase(pos,1);
-    }else {
-      topic.replace(pos,1,"__");
-
+    if (pos == topic.length() - 1)
+    {
+      topic.erase(pos, 1);
+    }
+    else
+    {
+      topic.replace(pos, 1, "__");
     }
   }
 
@@ -390,7 +403,7 @@ void IAISubscriber::show(const sensor_msgs::ImageConstPtr& msg)
   cv_bridge::CvImagePtr img;
   img = cv_bridge::toCvCopy(msg);
   cv::imshow("Image recorded", img->image);
-  waitKey(1);
+  cv::waitKey(1);
 }
 void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
 {
@@ -398,7 +411,7 @@ void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
   cv_bridge::CvImageConstPtr img;
   img = cv_bridge::toCvCopy(msg);
   cv::imshow("Compressed image recorded", img->image);
-  waitKey(1);
+  cv::waitKey(1);
 }
 
 const string& IAISubscriber::getTopic() const
@@ -406,41 +419,47 @@ const string& IAISubscriber::getTopic() const
   return topic_;
 }
 
-
-
 const string& IAISubscriber::getID() const
 {
   return id_;
 }
 
-double IAISubscriber::getRate_() const {
-    return rate_;
+double IAISubscriber::getRate_() const
+{
+  return rate_;
 }
 
-void IAISubscriber::setRate_(double rate_) {
-    IAISubscriber::rate_ = rate_;
+void IAISubscriber::setRate_(double rate_)
+{
+  IAISubscriber::rate_ = rate_;
 }
 
-bool IAISubscriber::isMotion_() const {
-    return motion_;
+bool IAISubscriber::isMotion_() const
+{
+  return motion_;
 }
 
-void IAISubscriber::setMotion_(bool motion_) {
-    IAISubscriber::motion_ = motion_;
+void IAISubscriber::setMotion_(bool motion_)
+{
+  IAISubscriber::motion_ = motion_;
 }
 
-bool IAISubscriber::isBlur_() const {
-    return blur_;
+bool IAISubscriber::isBlur_() const
+{
+  return blur_;
 }
 
-void IAISubscriber::setBlur_(bool blur_) {
-    IAISubscriber::blur_ = blur_;
+void IAISubscriber::setBlur_(bool blur_)
+{
+  IAISubscriber::blur_ = blur_;
 }
 
-bool IAISubscriber::isSimilar_() const {
-    return similar_;
+bool IAISubscriber::isSimilar_() const
+{
+  return similar_;
 }
 
-void IAISubscriber::setSimilar_(bool similar_) {
-    IAISubscriber::similar_ = similar_;
+void IAISubscriber::setSimilar_(bool similar_)
+{
+  IAISubscriber::similar_ = similar_;
 }

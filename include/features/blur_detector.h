@@ -5,11 +5,7 @@
 #ifndef IAI_IMAGE_LOGGING_BLUR_DETECTOR_H
 #define IAI_IMAGE_LOGGING_BLUR_DETECTOR_H
 
-// STL
-#include <vector>
-#include <list>
-#include <string>
-
+#include <ros/ros.h>
 // OpenCV
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/Image.h>
@@ -25,100 +21,68 @@ class BlurDetector
 {
 private:
   const double threshold;
-  const size_t maxHist;
-  const size_t minHist;
-  const size_t waitBlur;
-
-  std::list<double> history;
-  double sum;
-  double avg;
-  int wasBlurred;
-
-  const size_t maxStatSize;
+  double result;
+  bool blurred;
 
 public:
-  std::list<double> results;
-  std::list<bool> isBlurred;
+  BlurDetector() : threshold(12.0){};
 
-  BlurDetector() : threshold(0.01), maxHist(10), minHist(3), waitBlur(5), maxStatSize(500)
+  /**
+   * Based on the blur filter MIS05
+   * @param img
+   * @return
+   */
+  double spatialFrequency(const cv::Mat& img)
   {
-    sum = 0;
-    avg = 0;
-    wasBlurred = 0;
-  };
-
-  double funcSobelStdDevOptimized(const cv::Mat& img)
-  {
-    const size_t height = img.rows - 2;
-    const size_t width = img.cols - 2;
-    const size_t n = height * width;
-    float mean = 0;
-    float stdDev = 0;
-    cv::Mat mag(height, width, CV_32F);
-
-#pragma omp parallel for
-    for (size_t r = 0; r < height; ++r)
+    try
     {
-      const uint8_t *it11, *it12, *it13, *it21, *it23, *it31, *it32, *it33;
-      it11 = img.ptr<uint8_t>(r);
-      it12 = it11 + 1;
-      it13 = it11 + 2;
-      it21 = img.ptr<uint8_t>(r + 1);
-      it23 = it21 + 2;
-      it31 = img.ptr<uint8_t>(r + 2);
-      it32 = it31 + 1;
-      it33 = it31 + 2;
-      float* itO = mag.ptr<float>(r);
-      float localMean = 0;
+      double mean_d, stddev_d, blur_result;
+      int ddepth = CV_32F;
+      cv::Mat dst, grad_x, grad_y, abs_grad_x, abs_grad_y, grad_norm;
+      std::vector<double> mean, stddev;
 
-      for (size_t c = 0; c < width; ++c, ++it11, ++it12, ++it13, ++it21, ++it23, ++it31, ++it32, ++it33, ++itO)
+      // cv::Laplacian(img,dst,ddepth, 1, delta,scale, cv::BORDER_DEFAULT);
+
+      // Apply Sobel filter on both gradients
+      cv::Sobel(img, grad_x, ddepth, 1, 0, 3);
+      cv::Sobel(img, grad_y, ddepth, 0, 1, 3);
+
+      cv::norm(grad_x, grad_y, cv::NORM_L2);
+      // cv::norm( grad_y, cv::NORM_L2);
+
+      cv::addWeighted(grad_x, 0.5, grad_y, 0.5, 0, grad_norm);
+
+      // calculate mean of standard deviations of all channels
+      cv::meanStdDev(grad_norm, mean, stddev);
+      for (int i = 0; i < stddev.size(); i++)
       {
-        const int t1 = *it11 - *it33;
-        const int t2 = *it13 - *it31;
-        const int dx = (t1 - t2 + ((*it21 - *it23) << 1));
-        const int dy = (t1 + t2 + ((*it12 - *it32) << 1));
-        const float mag = sqrtf(dx * dx + dy * dy);
-        localMean += mag;
-        *itO = mag;
+        stddev_d += stddev.at(i);
       }
+      stddev_d = stddev_d / stddev.size();
 
-#pragma omp atomic
-      mean += localMean;
+      std::cout << "Result of std deviation: " << stddev_d << std::endl;
+      /* cv::imshow("depth", grad_norm);
+       cv::waitKey();*/
+      blur_result = stddev_d;
+
+      ROS_WARN_STREAM("Sobel filtered stddev of image: " << blur_result << " (threshold: " << threshold << ")");
+
+      return blur_result;
     }
-    mean /= n;
-
-    for (size_t r = 0; r < height; ++r)
+    catch (cv::Exception e)
     {
-      const float* it = mag.ptr<float>(r);
-
-      for (size_t c = 0; c < width; ++c, ++it)
-      {
-        const float dev = *it - mean;
-        stdDev += (dev * dev);
-      }
+      ROS_ERROR_STREAM("Error calculating spatial Frequency: " << e.what());
     }
-    stdDev /= n;
-
-    return stdDev / mean;
   }
 
   bool detectBlur(const sensor_msgs::ImageConstPtr& msg)
   {
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg);
     cv::Mat grey;
-    cv::cvtColor(image->image, grey, CV_BayerGR2GRAY);
+    cv::cvtColor(image->image, grey, CV_BGR2GRAY);
 
-    double result = funcSobelStdDevOptimized(grey);
-    bool blurred = detectBlur(result);
-
-    results.push_back(result);
-    isBlurred.push_back(blurred);
-
-    if (results.size() == maxStatSize)
-    {
-      results.pop_front();
-      isBlurred.pop_front();
-    }
+    double result = spatialFrequency(grey);
+    blurred = detectBlur(result);
 
     return blurred;
   }
@@ -128,50 +92,24 @@ public:
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(c_msg);
 
     cv::Mat grey;
-    cv::cvtColor(image->image, grey, CV_BayerGR2GRAY);
+    cv::cvtColor(image->image, grey, CV_BGR2GRAY);
 
-    double result = funcSobelStdDevOptimized(grey);
-    bool blurred = detectBlur(result);
-
-    results.push_back(result);
-    isBlurred.push_back(blurred);
-
-    if (results.size() == maxStatSize)
-    {
-      results.pop_front();
-      isBlurred.pop_front();
-    }
+    double result = spatialFrequency(grey);
+    blurred = detectBlur(result);
 
     return blurred;
   }
 
   bool detectBlur(const double result)
   {
-    bool blurred = history.size() < minHist;
-
-    double diff = avg - result;
-    if (diff > threshold * avg)
+    if (result <= threshold)
     {
-      wasBlurred = waitBlur;
-      blurred = true;
+      return true;
     }
-
-    if (history.size() == maxHist)
+    else
     {
-      sum -= history.front();
-      history.pop_front();
+      return false;
     }
-    history.push_back(result);
-    sum += result;
-    avg = sum / history.size();
-
-    if (!blurred && wasBlurred)
-    {
-      blurred = true;
-      --wasBlurred;
-    }
-
-    return blurred;
   }
 };
 

@@ -10,9 +10,6 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <iai_image_logging_msgs/MainConfig.h>
-#include <iai_image_logging_msgs/Update.h>
-#include <iai_image_logging_msgs/DeleteRequest.h>
-#include <iai_image_logging_msgs/DeleteResponse.h>
 using std::string;
 
 using dynamic_reconfigure::ReconfigureRequest;

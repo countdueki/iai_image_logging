@@ -3,7 +3,8 @@
 //
 #include "../include/header/iai_configurator.h"
 
-void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
+void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
+                                   iai_image_logging_msgs::UpdateResponse& res)
 {
   ReconfigureRequest req_;
   ReconfigureResponse res_;
@@ -33,17 +34,17 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req, i
   quality.name = "quality";
   quality.value = req.quality;
 
-      DoubleParam depth_max, depth_quantization;
+  DoubleParam depth_max, depth_quantization;
 
-        depth_max.name = "depth_max";
-        depth_max.value = req.depth_max;
+  depth_max.name = "depth_max";
+  depth_max.value = req.depth_max;
 
-        depth_quantization.name = "depth_quantization";
-        depth_quantization.value = req.depth_quantization;
+  depth_quantization.name = "depth_quantization";
+  depth_quantization.value = req.depth_quantization;
 
-        // Set parameters for depth images
-        req_.config.doubles.push_back(depth_max);
-        req_.config.doubles.push_back(depth_quantization);
+  // Set parameters for depth images
+  req_.config.doubles.push_back(depth_max);
+  req_.config.doubles.push_back(depth_quantization);
 
   // Set parameters for compressed images
   req_.config.strs.push_back(format);
@@ -94,12 +95,12 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
         // add updated Subscriber
         subs_.push_back(iai_sub);
         ROS_INFO_STREAM("Updated Subscriber: " << iai_sub->getID());
-          res.success = true;
-          return true;
+        res.success = true;
+        return true;
       }
     }
     // add new subscriber
-    updateCamera(req,res);
+    updateCamera(req, res);
     subs_.push_back(iai_sub);
     ROS_DEBUG_STREAM("size of subs_: " << subs_.size());
     ROS_INFO_STREAM("Added new Subscriber: " << (iai_sub->getID()));
@@ -109,8 +110,8 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
   catch (std::bad_alloc& ba)
   {
     ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
-      res.success = false;
-      return false;
+    res.success = false;
+    return false;
   }
 }
 
@@ -120,11 +121,23 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
  * @param res success bool
  * @return true if success, false else
  */
-bool IAIConfigurator::add(iai_image_logging_msgs::UpdateRequest &req, iai_image_logging_msgs::UpdateResponse &res)
+bool IAIConfigurator::insert(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res)
 {
-  update(req, res);
+    iai_image_logging_msgs::UpdateRequest ureq;
+    iai_image_logging_msgs::UpdateResponse ures;
+
+    insertionConfigurator(req,res,ureq,ures);
+
+  update(ureq, ures);
   res.success = true;
   return true;
+}
+
+void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res,
+                           iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures)
+{
+    ROS_WARN_STREAM("I would apply the insertion configurator, if it existed yet");
+
 }
 
 /**
@@ -133,7 +146,7 @@ bool IAIConfigurator::add(iai_image_logging_msgs::UpdateRequest &req, iai_image_
 * @param res success bool
 * @return true if success, false else
 */
-bool IAIConfigurator::del(iai_image_logging_msgs::DeleteRequest &req, iai_image_logging_msgs::DeleteResponse &res)
+bool IAIConfigurator::remove(iai_image_logging_msgs::RemoveRequest &req, iai_image_logging_msgs::RemoveResponse &res)
 {
   try
   {
@@ -162,10 +175,12 @@ bool IAIConfigurator::del(iai_image_logging_msgs::DeleteRequest &req, iai_image_
   }
 }
 
-bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res){
-  for (auto it = subs_.begin(); it != subs_.end(); ++it){
-
-    if ((*it)->getID() == req.iai_id){
+bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res)
+{
+  for (auto it = subs_.begin(); it != subs_.end(); ++it)
+  {
+    if ((*it)->getID() == req.iai_id)
+    {
       (*it)->setRate_(req.rate);
       (*it)->setMotion_(req.motion);
       (*it)->setBlur_(req.blur);
@@ -176,9 +191,8 @@ bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_ima
       ROS_WARN_STREAM("Similar: " << std::to_string((*it)->isSimilar_()));
 
       res.success = true;
-    return true;
+      return true;
     }
-
   }
 }
 

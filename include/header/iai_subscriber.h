@@ -46,6 +46,7 @@ public:
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     topic_ = "/camera/rgb/image_raw";
+    mode_str = "";
     mode_ = 0;
     id_ = "00_ID";
     collection_ = "db.standard";  // adds mode and cam# as suffix
@@ -70,15 +71,14 @@ public:
   }
 
   IAISubscriber(DBClientConnection& connection, iai_image_logging_msgs::UpdateRequest& req, double rate = 3.0,
-             bool motion = false, bool blur = false, bool similar = false)
+                bool motion = false, bool blur = false, bool similar = false)
   {
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     // concatenate base topic and mode string
     topic_ = req.topic + getModeString(req.mode);
-    mode_ = req.mode;
-    id_ = generateID(req.topic, getModeString(req.mode));
+    id_ = generateID(req.topic, mode_str);
     collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = req.rate;
     motion_ = req.motion;
@@ -91,8 +91,8 @@ public:
     blur_detected_ = false;
     similar_detected_ = false;
     // create actual subscriber
-    createSubscriber(mode_);
-    createPublisher(mode_);
+    createSubscriber(getNumberFromModeString(mode_str));
+    createPublisher(getNumberFromModeString(mode_str));
   }
   //~IAISubscriber(){};
 
@@ -104,12 +104,12 @@ private:
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
-  string topic_, collection_, id_;
-  int  mode_;
+  string topic_, mode_str, collection_, id_;
+  int mode_;
   double rate_;
   bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;
 
-    sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
+  sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
   sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
@@ -135,7 +135,10 @@ public:
 
   void createPublisher(int mode);
 
-  string addIdentifier(string collection);
+    int getNumberFromModeString( string mode );
+
+
+    string addIdentifier(string collection);
 
   string getModeString(int mode);
 
@@ -149,21 +152,21 @@ public:
 
   const string& getID() const;
 
-    double getRate_() const;
+  double getRate_() const;
 
-    void setRate_(double rate_);
+  void setRate_(double rate_);
 
-    bool isMotion_() const;
+  bool isMotion_() const;
 
-    void setMotion_(bool motion_);
+  void setMotion_(bool motion_);
 
-    bool isBlur_() const;
+  bool isBlur_() const;
 
-    void setBlur_(bool blur_);
+  void setBlur_(bool blur_);
 
-    bool isSimilar_() const;
+  bool isSimilar_() const;
 
-    void setSimilar_(bool similar_);
+  void setSimilar_(bool similar_);
 };
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_SUB_H

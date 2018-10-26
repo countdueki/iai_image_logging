@@ -4,6 +4,8 @@
 
 #ifndef IAI_IMAGE_LOGGING_SIMILARITY_DETECTOR_H
 #define IAI_IMAGE_LOGGING_SIMILARITY_DETECTOR_H
+
+#include <ros/ros.h>
 #include "opencv2/opencv_modules.hpp"
 #include <stdio.h>
 #include <sensor_msgs/Image.h>
@@ -13,140 +15,78 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/features2d.hpp"
 
-using namespace cv;
 class SimilarityDetector
 {
+private:
+  double threshold;
+
 public:
-  SimilarityDetector(){};
-
-  bool detectBRISK(sensor_msgs::ImageConstPtr prev, sensor_msgs::ImageConstPtr curr)
-  {
-    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
-    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
-
-    cv::Mat src = prev_image->image;
-    cv::Mat dst = curr_image->image;
-
-    //-- Step 1: Detect the keypoints using SURF Detector
-    int minHessian = 400;
-
-    Ptr<BRISK> detector = BRISK::create();
-
-    std::vector<KeyPoint> keypoints_1, keypoints_2;
-
-    detector->detect(src, keypoints_1);
-    detector->detect(dst, keypoints_2);
-
-    //-- Step 2: Calculate descriptors (feature vectors)
-
-    Mat descriptors_1, descriptors_2;
-    Ptr<DescriptorExtractor> extractor = BRISK::create();
-    extractor->compute(src, keypoints_1, descriptors_1);
-    extractor->compute(dst, keypoints_2, descriptors_2);
-
-    //-- Step 3: Matching descriptor vectors using FLANN matcher
-    Ptr<DescriptorMatcher> matcher = BFMatcher::create();
-    std::vector<DMatch> matches;
-    matcher->match(descriptors_1, descriptors_2, matches);
-
-    //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist,
-    //-- or a small arbitary value ( 0.02 ) in the event that min_dist is very
-    //-- small)
-    //-- PS.- radiusMatch can also be used here.
-    std::vector<DMatch> good_matches;
-
-    //-- Draw only "good" matches
-    Mat img_matches;
-    drawMatches(src, keypoints_1, dst, keypoints_2, good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-                std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
-    int thresh = 100;
-
-    if ((keypoints_1.size() > (keypoints_2.size() - thresh)) || (keypoints_1.size() < (keypoints_2.size() + thresh)))
-    {
-      std::cout << keypoints_1.size() << std::endl;
-      std::cout << keypoints_2.size() << std::endl;
-      return true;
-    }
-    else
-    {
-      std::cout << keypoints_1.size() << std::endl;
-      std::cout << keypoints_2.size() << std::endl;
-      return false;
-    }
-
-    /*
-    //-- Show detected matches
-    imshow("Good Matches", img_matches);
-
-    for (int i = 0; i < (int)good_matches.size(); i++)
-    {
-      printf("-- Good Match [%d] Keypoint 1: %d  -- Keypoint 2: %d  \n", i, good_matches[i].queryIdx,
-             good_matches[i].trainIdx);
-    }
-       waitKey(0);
- */
-  }
+  SimilarityDetector() : threshold(50.0){};
 
   bool detectMSE(sensor_msgs::ImageConstPtr prev, sensor_msgs::ImageConstPtr curr)
   {
-    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
-    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
-
-    cv::Mat src = prev_image->image;
-    cv::Mat dst = curr_image->image;
-
-    cv::Mat diffImage;
-    cv::absdiff(src, dst, diffImage);
-
-    cv::Mat square_diffImage = diffImage.mul(diffImage);
-
-    double thresh = 80.0;
-    double mse = 0.0;
-    square_diffImage.convertTo(square_diffImage, CV_32F);
-    Scalar sum = cv::sum(square_diffImage);
-
-    mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
-    if (mse < thresh)
+    try
     {
-      std::cout << mse << std::endl;
-      return true;
+      cv::Mat prev_grey, curr_grey, diffImage;
+      double mse;
+
+      cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
+      cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
+
+      // convert to greyscale
+      cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
+      cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+
+      cv::norm(prev_grey, curr_grey, cv::NORM_L2);
+
+      cv::absdiff(prev_grey, curr_grey, diffImage);
+
+      cv::Mat square_diffImage = diffImage.mul(diffImage);
+
+      square_diffImage.convertTo(square_diffImage, CV_32F);
+      cv::Scalar sum = cv::sum(square_diffImage);
+
+      mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (prev_grey.channels() * prev_grey.total());
+
+      ROS_DEBUG_STREAM("Mean Squared Error of similar images: " << mse << " (threshold: " << threshold << ")");
+
+      return mse < threshold;
     }
-    else
+    catch (cv::Exception e)
     {
-      std::cout << mse << std::endl;
-      return false;
+      ROS_ERROR_STREAM("Error calculating MSE: " << e.what());
     }
   }
 
   bool detectMSE(sensor_msgs::CompressedImageConstPtr prev, sensor_msgs::CompressedImageConstPtr curr)
   {
-    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
-    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
-
-    cv::Mat src = prev_image->image;
-    cv::Mat dst = curr_image->image;
-
-    cv::Mat diffImage;
-    cv::absdiff(src, dst, diffImage);
-
-    cv::Mat square_diffImage = diffImage.mul(diffImage);
-
-    double thresh = 80.0;
-    double mse = 0.0;
-    square_diffImage.convertTo(square_diffImage, CV_32F);
-    Scalar sum = cv::sum(square_diffImage);
-
-    mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (src.channels() * src.total());
-    if (mse < thresh)
+    try
     {
-      // std::cout << mse << std::endl;
-      return true;
+      cv::Mat prev_grey, curr_grey, diffImage;
+      double mse;
+
+      cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
+      cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
+
+      // convert to greyscale
+      cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
+      cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+
+      cv::absdiff(prev_grey, curr_grey, diffImage);
+
+      cv::Mat square_diffImage = diffImage.mul(diffImage);
+
+      square_diffImage.convertTo(square_diffImage, CV_32F);
+      cv::Scalar sum = cv::sum(square_diffImage);
+
+      mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (prev_grey.channels() * prev_grey.total());
+
+      ROS_DEBUG_STREAM("Mean Squared Error of similar images: " << mse << " (threshold: " << threshold << ")");
+      return mse < threshold;
     }
-    else
+    catch (cv::Exception e)
     {
-      // std::cout << mse << std::endl;
-      return false;
+      ROS_ERROR_STREAM("Error calculating MSE: " << e.what());
     }
   }
 };

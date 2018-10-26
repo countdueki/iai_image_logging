@@ -11,7 +11,8 @@
 #include <iostream>
 #include <mongo/client/dbclient.h>
 #include <iai_image_logging_msgs/Update.h>
-#include <iai_image_logging_msgs/Delete.h>
+#include <iai_image_logging_msgs/Insert.h>
+#include <iai_image_logging_msgs/Remove.h>
 #include <iai_image_logging_msgs/Behave.h>
 #include "../../src/iai_subscriber.cpp"
 
@@ -41,7 +42,7 @@ public:
 private:
   IAIConfigurator()
   {
-      string node_name = "iai_configurator";
+    string node_name = "iai_configurator";
     db_host_ = "localhost";
     // establish MongoDB connection
     string errmsg;
@@ -53,9 +54,9 @@ private:
 
     // start storage services
     update_config = nh_.advertiseService(node_name + "/update", &IAIConfigurator::update, this);
-    add_service = nh_.advertiseService(node_name + "/add", &IAIConfigurator::add, this);
-      del_service = nh_.advertiseService(node_name + "/del", &IAIConfigurator::del, this);
-      behave_service = nh_.advertiseService(node_name + "/behave", &IAIConfigurator::behave, this);
+    add_service = nh_.advertiseService(node_name + "/insert", &IAIConfigurator::insert, this);
+    del_service = nh_.advertiseService(node_name + "/remove", &IAIConfigurator::remove, this);
+    behave_service = nh_.advertiseService(node_name + "/behave", &IAIConfigurator::behave, this);
   }
 
   IAIConfigurator(const IAIConfigurator& old);
@@ -74,12 +75,13 @@ private:
 public:
   void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
-  bool add(iai_image_logging_msgs::UpdateRequest &req, iai_image_logging_msgs::UpdateResponse &res);
-  bool del(iai_image_logging_msgs::DeleteRequest &req, iai_image_logging_msgs::DeleteResponse &res);
-    bool behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res);
+  bool insert(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res);
+  void insertionConfigurator(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res,
+            iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures);
+  bool remove(iai_image_logging_msgs::RemoveRequest &req, iai_image_logging_msgs::RemoveResponse &res);
+  bool behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res);
 
-
-    const NodeHandle& getNodeHandle() const;
+  const NodeHandle& getNodeHandle() const;
 
   const StorageSubVector& getSubscribers() const;
 };

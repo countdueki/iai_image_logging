@@ -25,7 +25,7 @@ include_directories(
 add_library(iai_subscriber
         src/iai_subscriber.cpp
         include/header/iai_subscriber.h
-        include/features/blur_detector.h include/features/similarity_detector.h)
+        include/features/blur_detector.h include/features/similarity_detector.h include/features/motion_detector.h)
 
 add_executable(iai_updater
         src/iai_updater.cpp
@@ -56,6 +56,6 @@ install(PROGRAMS
         # scripts/config_client.py
         scripts/add.py
         scripts/add_yaml.py
-        scripts/WIP/add_conf.py
+        scripts/WIP/insert.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )
