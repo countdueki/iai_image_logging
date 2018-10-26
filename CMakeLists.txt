@@ -54,8 +54,8 @@ target_link_libraries(iai_configurator
 # add python scripts
 install(PROGRAMS
         # scripts/config_client.py
-        scripts/add.py
-        scripts/add_yaml.py
-        scripts/WIP/insert.py
+        scripts/insert.py
+        scripts/remove.py
+        scripts/behave.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )

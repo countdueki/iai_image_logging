@@ -73,13 +73,13 @@ private:
   DBClientConnection* client_connection_ = new DBClientConnection(true);
 
 public:
-  void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
-  bool insert(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res);
-  void insertionConfigurator(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res,
-            iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures);
-  bool remove(iai_image_logging_msgs::RemoveRequest &req, iai_image_logging_msgs::RemoveResponse &res);
+  bool insert(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res);
+  void insertionConfigurator(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res,
+                             iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures);
+  bool remove(iai_image_logging_msgs::RemoveRequest& req, iai_image_logging_msgs::RemoveResponse& res);
   bool behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res);
+  void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
 
   const NodeHandle& getNodeHandle() const;
 

@@ -135,24 +135,15 @@ public:
 
   void createPublisher(int mode);
 
-    int getNumberFromModeString( string mode );
-
-
-    string addIdentifier(string collection);
-
   string getModeString(int mode);
 
+  int getNumberFromModeString(string mode);
+
   string generateID(string topic, string mode_str);
-
-  void show(const sensor_msgs::ImageConstPtr& msg);
-
-  void show(const sensor_msgs::CompressedImageConstPtr& msg);
 
   const string& getTopic() const;
 
   const string& getID() const;
-
-  double getRate_() const;
 
   void setRate_(double rate_);
 
@@ -167,6 +158,12 @@ public:
   bool isSimilar_() const;
 
   void setSimilar_(bool similar_);
+
+  void show(const sensor_msgs::ImageConstPtr& msg);
+
+  void show(const sensor_msgs::CompressedImageConstPtr& msg);
+
+  string addIdentifier(string collection);
 };
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_SUB_H

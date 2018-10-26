@@ -3,64 +3,6 @@
 //
 #include "../include/header/iai_configurator.h"
 
-void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
-                                   iai_image_logging_msgs::UpdateResponse& res)
-{
-  ReconfigureRequest req_;
-  ReconfigureResponse res_;
-
-  StrParam format;
-  IntParam jpeg, png;
-  IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
-
-  format.name = "format";
-  format.value = req.format;
-
-  jpeg.name = "jpeg_quality";
-  jpeg.value = req.jpeg_quality;
-
-  png.name = "png_level";
-  png.value = req.png_level;
-
-  optimize_for.name = "optimize_for";
-  optimize_for.value = req.optimize_for;
-
-  target_bitrate.name = "target_bitrate";
-  target_bitrate.value = req.target_bitrate;
-
-  keyframe_frequency.name = "keyframe_frequency";
-  keyframe_frequency.value = req.keyframe_frequency;
-
-  quality.name = "quality";
-  quality.value = req.quality;
-
-  DoubleParam depth_max, depth_quantization;
-
-  depth_max.name = "depth_max";
-  depth_max.value = req.depth_max;
-
-  depth_quantization.name = "depth_quantization";
-  depth_quantization.value = req.depth_quantization;
-
-  // Set parameters for depth images
-  req_.config.doubles.push_back(depth_max);
-  req_.config.doubles.push_back(depth_quantization);
-
-  // Set parameters for compressed images
-  req_.config.strs.push_back(format);
-  req_.config.ints.push_back(jpeg);
-  req_.config.ints.push_back(png);
-
-  // Set parameters for theora video
-  req_.config.ints.push_back(optimize_for);
-  req_.config.ints.push_back(keyframe_frequency);
-  req_.config.ints.push_back(quality);
-  req_.config.ints.push_back(target_bitrate);
-
-  ros::service::call("/iai_updater/set_parameters", req_, res_);  // WORKS!
-  // ros::service::call("image_logger/updateCamera",req,res);
-}
-
 /**
        * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a
  * mmap<Subscriber,mode>)
@@ -121,23 +63,27 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
  * @param res success bool
  * @return true if success, false else
  */
-bool IAIConfigurator::insert(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res)
+bool IAIConfigurator::insert(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res)
 {
-    iai_image_logging_msgs::UpdateRequest ureq;
-    iai_image_logging_msgs::UpdateResponse ures;
+  iai_image_logging_msgs::UpdateRequest ureq;
+  iai_image_logging_msgs::UpdateResponse ures;
 
-    insertionConfigurator(req,res,ureq,ures);
+  insertionConfigurator(req, res, ureq, ures);
 
   update(ureq, ures);
   res.success = true;
   return true;
 }
 
-void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertRequest &req, iai_image_logging_msgs::InsertResponse &res,
-                           iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures)
+void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertRequest& req,
+                                            iai_image_logging_msgs::InsertResponse& res,
+                                            iai_image_logging_msgs::UpdateRequest& ureq,
+                                            iai_image_logging_msgs::UpdateResponse& ures)
 {
-    ROS_WARN_STREAM("I would apply the insertion configurator, if it existed yet");
+  // TODO calculate quality
+  // TODO update request
 
+  ROS_WARN_STREAM("I would apply the insertion configurator, if it existed yet");
 }
 
 /**
@@ -146,7 +92,7 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
 * @param res success bool
 * @return true if success, false else
 */
-bool IAIConfigurator::remove(iai_image_logging_msgs::RemoveRequest &req, iai_image_logging_msgs::RemoveResponse &res)
+bool IAIConfigurator::remove(iai_image_logging_msgs::RemoveRequest& req, iai_image_logging_msgs::RemoveResponse& res)
 {
   try
   {
@@ -194,6 +140,64 @@ bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_ima
       return true;
     }
   }
+}
+
+void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
+                                   iai_image_logging_msgs::UpdateResponse& res)
+{
+  ReconfigureRequest req_;
+  ReconfigureResponse res_;
+
+  StrParam format;
+  IntParam jpeg, png;
+  IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
+
+  format.name = "format";
+  format.value = req.format;
+
+  jpeg.name = "jpeg_quality";
+  jpeg.value = req.jpeg_quality;
+
+  png.name = "png_level";
+  png.value = req.png_level;
+
+  optimize_for.name = "optimize_for";
+  optimize_for.value = req.optimize_for;
+
+  target_bitrate.name = "target_bitrate";
+  target_bitrate.value = req.target_bitrate;
+
+  keyframe_frequency.name = "keyframe_frequency";
+  keyframe_frequency.value = req.keyframe_frequency;
+
+  quality.name = "quality";
+  quality.value = req.quality;
+
+  DoubleParam depth_max, depth_quantization;
+
+  depth_max.name = "depth_max";
+  depth_max.value = req.depth_max;
+
+  depth_quantization.name = "depth_quantization";
+  depth_quantization.value = req.depth_quantization;
+
+  // Set parameters for depth images
+  req_.config.doubles.push_back(depth_max);
+  req_.config.doubles.push_back(depth_quantization);
+
+  // Set parameters for compressed images
+  req_.config.strs.push_back(format);
+  req_.config.ints.push_back(jpeg);
+  req_.config.ints.push_back(png);
+
+  // Set parameters for theora video
+  req_.config.ints.push_back(optimize_for);
+  req_.config.ints.push_back(keyframe_frequency);
+  req_.config.ints.push_back(quality);
+  req_.config.ints.push_back(target_bitrate);
+
+  ros::service::call("/iai_updater/set_parameters", req_, res_);  // WORKS!
+  // ros::service::call("image_logger/updateCamera",req,res);
 }
 
 const NodeHandle& IAIConfigurator::getNodeHandle() const

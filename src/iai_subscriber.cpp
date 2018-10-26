@@ -115,7 +115,6 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   r.sleep();
 }
 
-
 void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   try
@@ -313,30 +312,6 @@ void IAISubscriber::createPublisher(int mode)
   }
 }
 
-string IAISubscriber::addIdentifier(string collection)
-{ /**
-   switch (mode_)
-   {
-     case (RAW):
-       collection = collection + "_raw" + "_cam_" + std::to_string(cam_);
-       break;
-     case (COMPRESSED):
-       collection = collection + "_compressed" + "_cam_" + std::to_string(cam_);
-       break;
-     case (THEORA):
-       collection = collection + "_theora" + "_cam_" + std::to_string(cam_);
-       break;
-     case (DEPTH):
-       collection = collection + "_depth" + "_cam_" + std::to_string(cam_);
-       break;
-     case (COMPRESSED_DEPTH):
-       collection = collection + "_compressedDepth" + "_cam_" + std::to_string(cam_);
-       break;
-     default:
-       collection = collection;
-       break;
-   }**/
-}
 string IAISubscriber::getModeString(int mode)
 {
   switch (mode)
@@ -356,14 +331,18 @@ string IAISubscriber::getModeString(int mode)
   }
 }
 
-int IAISubscriber::getNumberFromModeString( string mode )
+int IAISubscriber::getNumberFromModeString(string mode)
 {
-    if (mode.find("raw") != std::string::npos) return RAW;
-    if (mode.find("compressed") != std::string::npos) return COMPRESSED;
-    if (mode.find("theora") != std::string::npos) return THEORA;
-    if (mode.find("depth") != std::string::npos) return DEPTH;
-    if (mode.find("compressedDepth") != std::string::npos) return COMPRESSED_DEPTH;
-
+  if (mode.find("raw") != std::string::npos)
+    return RAW;
+  if (mode.find("compressed") != std::string::npos)
+    return COMPRESSED;
+  if (mode.find("theora") != std::string::npos)
+    return THEORA;
+  if (mode.find("depth") != std::string::npos)
+    return DEPTH;
+  if (mode.find("compressedDepth") != std::string::npos)
+    return COMPRESSED_DEPTH;
 }
 string IAISubscriber::generateID(string topic, string mode_str)
 {
@@ -398,22 +377,6 @@ string IAISubscriber::generateID(string topic, string mode_str)
   return result;
 }
 
-void IAISubscriber::show(const sensor_msgs::ImageConstPtr& msg)
-{
-  cv_bridge::CvImagePtr img;
-  img = cv_bridge::toCvCopy(msg);
-  cv::imshow("Image recorded", img->image);
-  cv::waitKey(1);
-}
-void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
-{
-  cv::namedWindow("Compressed image recorded");
-  cv_bridge::CvImageConstPtr img;
-  img = cv_bridge::toCvCopy(msg);
-  cv::imshow("Compressed image recorded", img->image);
-  cv::waitKey(1);
-}
-
 const string& IAISubscriber::getTopic() const
 {
   return topic_;
@@ -422,11 +385,6 @@ const string& IAISubscriber::getTopic() const
 const string& IAISubscriber::getID() const
 {
   return id_;
-}
-
-double IAISubscriber::getRate_() const
-{
-  return rate_;
 }
 
 void IAISubscriber::setRate_(double rate_)
@@ -462,4 +420,45 @@ bool IAISubscriber::isSimilar_() const
 void IAISubscriber::setSimilar_(bool similar_)
 {
   IAISubscriber::similar_ = similar_;
+}
+
+void IAISubscriber::show(const sensor_msgs::ImageConstPtr& msg)
+{
+  cv_bridge::CvImagePtr img;
+  img = cv_bridge::toCvCopy(msg);
+  cv::imshow("Image recorded", img->image);
+  cv::waitKey(1);
+}
+void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
+{
+  cv::namedWindow("Compressed image recorded");
+  cv_bridge::CvImageConstPtr img;
+  img = cv_bridge::toCvCopy(msg);
+  cv::imshow("Compressed image recorded", img->image);
+  cv::waitKey(1);
+}
+
+string IAISubscriber::addIdentifier(string collection)
+{ /**
+   switch (mode_)
+   {
+     case (RAW):
+       collection = collection + "_raw" + "_cam_" + std::to_string(cam_);
+       break;
+     case (COMPRESSED):
+       collection = collection + "_compressed" + "_cam_" + std::to_string(cam_);
+       break;
+     case (THEORA):
+       collection = collection + "_theora" + "_cam_" + std::to_string(cam_);
+       break;
+     case (DEPTH):
+       collection = collection + "_depth" + "_cam_" + std::to_string(cam_);
+       break;
+     case (COMPRESSED_DEPTH):
+       collection = collection + "_compressedDepth" + "_cam_" + std::to_string(cam_);
+       break;
+     default:
+       collection = collection;
+       break;
+   }**/
 }
