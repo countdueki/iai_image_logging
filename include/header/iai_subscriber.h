@@ -77,7 +77,7 @@ public:
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     // concatenate base topic and mode string
-    topic_ = req.topic + getModeString(req.mode);
+    topic_ = req.topic + req.mode;
     id_ = generateID(req.topic, mode_str);
     collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
     rate_ = req.rate;
