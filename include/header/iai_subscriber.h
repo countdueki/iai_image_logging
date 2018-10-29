@@ -77,7 +77,7 @@ public:
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     mode_str = req.mode;
-    topic_ = req.topic + req.mode; // concatenate base topic and mode string
+    topic_ = req.topic;  // concatenate base topic and mode string
     id_ = generateID(req.topic, mode_str);
     collection_ = req.collection;
     rate_ = req.rate;
@@ -105,6 +105,11 @@ private:
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
   string topic_, mode_str, collection_, id_;
+
+public:
+  const string& getTopic() const;
+
+private:
   int mode_;
   double rate_;
   bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;

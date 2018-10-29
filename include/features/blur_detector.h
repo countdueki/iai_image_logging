@@ -25,7 +25,7 @@ private:
   bool blurred;
 
 public:
-  BlurDetector() : threshold(12.0){};
+  BlurDetector() : threshold(80.0){};
 
   /**
    * Based on the blur filter MIS05
@@ -45,7 +45,7 @@ public:
 
       // Apply Sobel filter on both gradients
       cv::Scharr(img, grad_x, ddepth, 1, 0);
-        cv::Scharr(img, grad_y, ddepth, 1, 0);
+      cv::Scharr(img, grad_y, ddepth, 1, 0);
 
       cv::norm(grad_x, grad_y, cv::NORM_L2);
       // cv::norm( grad_y, cv::NORM_L2);
@@ -60,12 +60,11 @@ public:
       }
       stddev_d = stddev_d / stddev.size();
 
-      std::cout << "Result of std deviation: " << stddev_d << std::endl;
       /* cv::imshow("depth", grad_norm);
        cv::waitKey();*/
       blur_result = stddev_d;
 
-      ROS_WARN_STREAM("Sobel filtered stddev of image: " << blur_result << " (threshold: " << threshold << ")");
+      ROS_DEBUG_STREAM("Sobel filtered stddev of image: " << blur_result << " (threshold: " << threshold << ")");
 
       return blur_result;
     }
@@ -79,6 +78,7 @@ public:
   {
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg);
     cv::Mat grey;
+    // TODO investigate failure of cvtColor
     cv::cvtColor(image->image, grey, CV_BGR2GRAY);
 
     double result = spatialFrequency(grey);
@@ -89,12 +89,21 @@ public:
 
   bool detectBlur(const sensor_msgs::CompressedImageConstPtr& c_msg)
   {
+    double result;
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(c_msg);
 
     cv::Mat grey;
-    cv::cvtColor(image->image, grey, CV_BGR2GRAY);
 
-    double result = spatialFrequency(grey);
+    if (image->image.channels() > 2)
+    {
+      cv::cvtColor(image->image, grey, CV_BGR2GRAY);
+    }
+    else
+    {
+      grey = image->image;
+    }
+
+    result = spatialFrequency(grey);
     blurred = detectBlur(result);
 
     return blurred;

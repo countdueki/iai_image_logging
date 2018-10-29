@@ -81,7 +81,6 @@ public:
   bool remove(iai_image_logging_msgs::RemoveRequest& req, iai_image_logging_msgs::RemoveResponse& res);
   bool behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res);
   void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
-
   const NodeHandle& getNodeHandle() const;
 
   const StorageSubVector& getSubscribers() const;

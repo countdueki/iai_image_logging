@@ -33,10 +33,18 @@ public:
       cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
       cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
 
-      // convert to greyscale
-      cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
-      cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+      // convert to greyscale if neccessary
 
+      if (prev_image->image.channels() > 2 && curr_image->image.channels() > 2)
+      {
+        cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
+        cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+      }
+      else
+      {
+        prev_grey = prev_image->image;
+        curr_grey = curr_image->image;
+      }
       cv::norm(prev_grey, curr_grey, cv::NORM_L2);
 
       cv::absdiff(prev_grey, curr_grey, diffImage);
@@ -68,10 +76,18 @@ public:
       cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
       cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
 
-      // convert to greyscale
-      cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
-      cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+      // convert to greyscale if neccessary
 
+      if (prev_image->image.channels() > 2 && curr_image->image.channels() > 2)
+      {
+        cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
+        cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
+      }
+      else
+      {
+        prev_grey = prev_image->image;
+        curr_grey = curr_image->image;
+      }
       cv::norm(prev_grey, curr_grey, cv::NORM_L2);
 
       cv::absdiff(prev_grey, curr_grey, diffImage);

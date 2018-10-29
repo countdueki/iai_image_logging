@@ -6,8 +6,9 @@
 
 void IAISubscriber::start()
 {
-  spinner_->start();
-  queue_.callAvailable();
+  if (spinner_->canStart())
+    spinner_->start();
+  // queue_.callAvailable();
 }
 void IAISubscriber::destroy()
 {
@@ -65,9 +66,7 @@ void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
  */
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-    ROS_WARN_STREAM("in image callback");
-
-    ros::Rate r(rate_);
+  ros::Rate r(rate_);
   if (motion_)
   {
     if (motion_detected_)
@@ -111,9 +110,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-      ROS_WARN_STREAM("saving image");
-
-      saveImage(msg);
+    saveImage(msg);
     pub_.publish(msg);
     // show(msg);
   }
@@ -174,10 +171,8 @@ void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstP
  */
 void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
-    ROS_WARN_STREAM("in compressed image callback");
-
-    ros::Rate r(rate_);
-
+  ros::Rate r(rate_);
+  ROS_WARN_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
   if (motion_)
   {
     if (motion_detected_)
@@ -220,9 +215,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-      ROS_WARN_STREAM("saving compressed image");
-
-      saveCompressedImage(msg);
+    saveCompressedImage(msg);
     pub_.publish(msg);
     // show(msg);
   }
@@ -276,7 +269,7 @@ void IAISubscriber::createSubscriber(int mode)
 
     case (COMPRESSED):
     case (COMPRESSED_DEPTH):
-      ops_.template init<sensor_msgs::CompressedImage>(topic_, 1,
+      ops_.template init<sensor_msgs::CompressedImage>(topic_ + "/compressed", 1,
                                                        boost::bind(&IAISubscriber::compressedImageCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
@@ -284,7 +277,7 @@ void IAISubscriber::createSubscriber(int mode)
       break;
 
     case (THEORA):
-      ops_.template init<theora_image_transport::Packet>(topic_, 1,
+      ops_.template init<theora_image_transport::Packet>(topic_ + "/theora", 1,
                                                          boost::bind(&IAISubscriber::theoraCallback, this, _1));
       ops_.transport_hints = ros::TransportHints();
       ops_.allow_concurrent_callbacks = true;
@@ -386,10 +379,14 @@ string IAISubscriber::generateID(string topic, string mode_str)
   return result;
 }
 
-
 const string& IAISubscriber::getID() const
 {
   return id_;
+}
+
+const string& IAISubscriber::getTopic() const
+{
+  return topic_;
 }
 
 void IAISubscriber::setRate_(double rate_)

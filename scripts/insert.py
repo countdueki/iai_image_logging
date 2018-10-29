@@ -17,6 +17,7 @@ similar = False
 collection = "db.standard"
 host = "localhost"
 
+
 def insert_client(insert):
     rospy.wait_for_service('iai_configurator/insert')
     try:
@@ -24,10 +25,11 @@ def insert_client(insert):
         result = insertion(insert)
         return result
     except rospy.ServiceException as e:
-        print ("Service call failed: %s"%e)
+        print("Service call failed: %s" % e)
+
 
 def usage():
-    print("insert.py [topic=base_topic\n" 
+    print("insert.py [topic=base_topic\n"
           "mode=raw/compressed/compressedDepth/theora\n"
           "quality=good/medium/base\n"
           "rate=rate(double)\n"
@@ -37,15 +39,17 @@ def usage():
           "collection=db_name.collection\n"
           "db_host=host\n")
 
+
 def fill(insert):
-    insert.topic =      topic
-    insert.mode =       mode
-    insert.rate =       rate
-    insert.motion =     bool(motion)
-    insert.blur =       bool(blur)
-    insert.similar =    bool(similar)
+    insert.topic = topic
+    insert.mode = mode
+    insert.rate = rate
+    insert.motion = motion
+    insert.blur = blur
+    insert.similar = similar
     insert.collection = collection
-    insert.db_host =    host
+    insert.db_host = host
+
 
 if __name__ == "__main__":
     # parser = argparse.ArgumentParser()
@@ -69,16 +73,25 @@ if __name__ == "__main__":
             quality = argument[8:]
             insert.quality = quality
         if argument.startswith('rate='):
-            rate = argument[5:]
+            rate = float(argument[5:])
             insert.rate = rate
         if argument.startswith('motion='):
-            motion = argument[7:]
+            if (argument[7:] == 'True') | (argument[7:] == 'true'):
+                motion = True
+            else:
+                motion = False
             insert.motion = motion
         if argument.startswith('blur='):
-            blur = argument[5:]
+            if (argument[5:] == 'True') | (argument[5:] == 'true'):
+                blur = True
+            else:
+                blur = False
             insert.blur = blur
         if argument.startswith('similar='):
-            similar = argument[8:]
+            if (argument[8:] == 'True') | (argument[8:] == 'true'):
+                similar = True
+            else:
+                similar = False
             insert.similar = similar
         if argument.startswith('collection='):
             collection = argument[10:]
@@ -87,23 +100,23 @@ if __name__ == "__main__":
             host = argument[8:]
             insert.db_host = host
 
+    if len(sys.argv) == 2:
+        yaml_config = sys.argv[1]
+
+        with open(yaml_config, 'r') as conf_txt:
+            try:
+                yaml_data = yaml.load(conf_txt)
+                insert.topic = yaml_data["topic"]
+                insert.quality = yaml_data["quality"]
+                insert.collection = yaml_data["collection"]
+                insert.db_host = yaml_data["db_host"]
+                insert.rate = yaml_data["rate"]
+                insert.similar = yaml_data["similar"]
+                insert.blur = yaml_data["blur"]
+                insert.motion = yaml_data["motion"]
+            except yaml.YAMLError as exc:
+                print(exc)
     insert_client(insert)
 
     print("client updated")
     sys.exit(1)
-
-    # if len(sys.argv) == 2:
-    #     yaml_config = sys.argv[1]
-    #
-    #     with open(yaml_config, 'r') as conf_txt:
-    #         try:
-    #             yaml_data = yaml.load(conf_txt)
-    #             update = UpdateRequest(yaml_data)
-    #             # TODO load yaml data into update
-    #             print (update.collection)
-    #
-    #         except yaml.YAMLError as exc:
-    #             print(exc)
-    # if sys.argv[1] == '-h':
-    #     print (usage())
-    #     sys.exit(1)

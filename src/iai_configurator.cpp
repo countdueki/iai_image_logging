@@ -23,7 +23,8 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
     for (auto it = subs_.begin(); it != subs_.end(); ++it)
     {
       ROS_DEBUG_STREAM("checking sub: " << (*it)->getID());
-      ROS_WARN_STREAM("iai_id: " << (*it)->getID() << ", reqid: " << iai_sub->getID());
+      ROS_WARN_STREAM("iai_id: " << (*it)->getID() << " with topic: " << iai_sub->getTopic()
+                                 << ", reqid: " << iai_sub->getID());
       if ((*it)->getID() == iai_sub->getID())
       {
         // shutdown and delete old subscriber
@@ -80,71 +81,83 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
                                             iai_image_logging_msgs::UpdateRequest& ureq,
                                             iai_image_logging_msgs::UpdateResponse& ures)
 {
-
-    ROS_WARN_STREAM("Parameters: " << req.rate << req.topic << req.collection);
+  ROS_WARN_STREAM("Parameters: " << req.rate << req.topic << req.collection);
   // calculate quality
-  switch(getNumberFromModeString(req.mode)){
-      case(RAW): ureq.mode = "raw";
+  switch (getNumberFromModeString(req.mode))
+  {
+    case (RAW):
+      ureq.mode = "raw";
       break;
-      case(DEPTH): ureq.mode = "depth";
-        break;
-      case(COMPRESSED):
-        ureq.mode = "compressed";
-        if (req.quality == "good") {
-          ureq.jpeg_quality = 100;
-          ureq.png_level = 1;
-        } else if (req.quality == "medium")
-        {
-          ureq.jpeg_quality = 80;
-          ureq.png_level = 5;
-        } else if (req.quality == "base")
-        {
-          ureq.jpeg_quality = 40;
-          ureq.png_level = 9;
-        } else
-        {
-          ROS_ERROR("Wrong quality parameter");
-        }
-        break;
-    case(THEORA):
+    case (DEPTH):
+      ureq.mode = "depth";
+      break;
+    case (COMPRESSED):
+      ureq.mode = "compressed";
+      if (req.quality == "good")
+      {
+        ureq.jpeg_quality = 100;
+        ureq.png_level = 1;
+      }
+      else if (req.quality == "medium")
+      {
+        ureq.jpeg_quality = 80;
+        ureq.png_level = 5;
+      }
+      else if (req.quality == "base")
+      {
+        ureq.jpeg_quality = 40;
+        ureq.png_level = 9;
+      }
+      else
+      {
+        ROS_ERROR("Wrong quality parameter");
+      }
+      break;
+    case (THEORA):
       ureq.mode = "theora";
-          if (req.quality == "good") {
-            ureq.quality = 63;
-          } else if (req.quality == "medium")
-          {
-            ureq.quality = 48;
+      if (req.quality == "good")
+      {
+        ureq.quality = 63;
+      }
+      else if (req.quality == "medium")
+      {
+        ureq.quality = 48;
+      }
+      else if (req.quality == "base")
+      {
+        ureq.quality = 20;
+      }
+      else
+      {
+        ROS_ERROR("Wrong quality parameter");
+      }
+      break;
 
-          } else if (req.quality == "base")
-          {
-            ureq.quality = 20;
-
-          } else
-          {
-            ROS_ERROR("Wrong quality parameter");
-          }
-          break;
-
-    case(COMPRESSED_DEPTH):
+    case (COMPRESSED_DEPTH):
       ureq.mode = "compressedDepth";
-          if (req.quality == "good") {
-            ureq.jpeg_quality = 100;
-            ureq.png_level = 1;
-          } else if (req.quality == "medium")
-          {
-            ureq.jpeg_quality = 80;
-            ureq.png_level = 5;
-          } else if (req.quality == "base")
-          {
-            ureq.jpeg_quality = 40;
-            ureq.png_level = 9;
-          } else
-          {
-            ROS_ERROR("Wrong quality parameter");
-          }
-          break;
+      if (req.quality == "good")
+      {
+        ureq.jpeg_quality = 100;
+        ureq.png_level = 1;
+      }
+      else if (req.quality == "medium")
+      {
+        ureq.jpeg_quality = 80;
+        ureq.png_level = 5;
+      }
+      else if (req.quality == "base")
+      {
+        ureq.jpeg_quality = 40;
+        ureq.png_level = 9;
+      }
+      else
+      {
+        ROS_ERROR("Wrong quality parameter");
+      }
+      break;
   }
-    // update subscriber
-    ureq.topic = req.topic;
+  // update subscriber
+  ureq.topic = req.topic;
   ureq.collection = req.collection;
   ureq.db_host = req.db_host;
   ureq.motion = req.motion;
@@ -153,10 +166,7 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
   ureq.rate = req.rate;
   ureq.format = "jpeg";
 
-
-  update(ureq,ures);
-
-
+  update(ureq, ures);
 
   ROS_WARN_STREAM("Insertion done");
 }
@@ -196,15 +206,18 @@ bool IAIConfigurator::remove(iai_image_logging_msgs::RemoveRequest& req, iai_ima
         (*it)->destroy();
         subs_.erase(it);
         ROS_INFO_STREAM("Deleted Subscriber: " << (*it)->getID());
+        res.success = true;
         return true;
       }
     }
     ROS_ERROR_STREAM("Error: Subscriber not found");
+    res.success = true;
     return true;
   }
   catch (std::bad_alloc& ba)
   {
     ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
+    res.success = false;
     return false;
   }
 }
@@ -228,6 +241,10 @@ bool IAIConfigurator::behave(iai_image_logging_msgs::BehaveRequest& req, iai_ima
       return true;
     }
   }
+
+  ROS_WARN_STREAM("No Subscriber with this ID has been found");
+  res.success = false;
+  return false;
 }
 
 void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
@@ -310,11 +327,12 @@ int main(int argc, char** argv)
   {
     ros::console::notifyLoggerLevelsChanged();
   }
-  ros::init(argc, argv, "storage");
+  ros::init(argc, argv, "iai_configurator");
 
   // create storage and initialize
   IAIConfigurator* storage = &IAIConfigurator::Instance();
 
+  // storage->init();
   while (storage->getNodeHandle().ok())
   {
     for (auto s : storage->getSubscribers())
