@@ -7,11 +7,12 @@
 void IAISubscriber::start()
 {
   spinner_->start();
-  // queue_.callAvailable();
+  queue_.callAvailable();
 }
 void IAISubscriber::destroy()
 {
   sub_.shutdown();
+  // delete this;
 }
 
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
@@ -64,7 +65,9 @@ void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
  */
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-  ros::Rate r(rate_);
+    ROS_WARN_STREAM("in image callback");
+
+    ros::Rate r(rate_);
   if (motion_)
   {
     if (motion_detected_)
@@ -108,7 +111,9 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-    saveImage(msg);
+      ROS_WARN_STREAM("saving image");
+
+      saveImage(msg);
     pub_.publish(msg);
     // show(msg);
   }
@@ -169,7 +174,9 @@ void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstP
  */
 void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
-  ros::Rate r(rate_);
+    ROS_WARN_STREAM("in compressed image callback");
+
+    ros::Rate r(rate_);
 
   if (motion_)
   {
@@ -213,7 +220,9 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-    saveCompressedImage(msg);
+      ROS_WARN_STREAM("saving compressed image");
+
+      saveCompressedImage(msg);
     pub_.publish(msg);
     // show(msg);
   }
@@ -377,10 +386,6 @@ string IAISubscriber::generateID(string topic, string mode_str)
   return result;
 }
 
-const string& IAISubscriber::getTopic() const
-{
-  return topic_;
-}
 
 const string& IAISubscriber::getID() const
 {

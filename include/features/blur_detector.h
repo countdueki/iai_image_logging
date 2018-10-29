@@ -44,8 +44,8 @@ public:
       // cv::Laplacian(img,dst,ddepth, 1, delta,scale, cv::BORDER_DEFAULT);
 
       // Apply Sobel filter on both gradients
-      cv::Sobel(img, grad_x, ddepth, 1, 0, 3);
-      cv::Sobel(img, grad_y, ddepth, 0, 1, 3);
+      cv::Scharr(img, grad_x, ddepth, 1, 0);
+        cv::Scharr(img, grad_y, ddepth, 1, 0);
 
       cv::norm(grad_x, grad_y, cv::NORM_L2);
       // cv::norm( grad_y, cv::NORM_L2);

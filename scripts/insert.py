@@ -37,7 +37,6 @@ def usage():
           "collection=db_name.collection\n"
           "db_host=host\n")
 
-
 def fill(insert):
     insert.topic =      topic
     insert.mode =       mode
@@ -53,7 +52,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     insert = InsertRequest()
-
+    fill(insert)
 
     if sys.argv[1] == '-h':
         usage()
@@ -61,25 +60,33 @@ if __name__ == "__main__":
 
     for argument in sys.argv:
         if argument.startswith('topic='):
-            topic = argument[5:]
+            topic = argument[6:]
+            insert.topic = topic
         if argument.startswith('mode='):
-            mode = argument[4:]
+            mode = argument[5:]
+            insert.mode = mode
         if argument.startswith('quality='):
-            quality = argument[4:]
+            quality = argument[8:]
+            insert.quality = quality
         if argument.startswith('rate='):
-            rate = argument[4:]
+            rate = argument[5:]
+            insert.rate = rate
         if argument.startswith('motion='):
-            motion = argument[6:]
+            motion = argument[7:]
+            insert.motion = motion
         if argument.startswith('blur='):
-            blur = argument[4:]
+            blur = argument[5:]
+            insert.blur = blur
         if argument.startswith('similar='):
-            similar = argument[7:]
+            similar = argument[8:]
+            insert.similar = similar
         if argument.startswith('collection='):
-            collection = argument[9:]
+            collection = argument[10:]
+            insert.collection = collection
         if argument.startswith('db_host='):
-            host = argument[7:]
+            host = argument[8:]
+            insert.db_host = host
 
-    fill(insert)
     insert_client(insert)
 
     print("client updated")

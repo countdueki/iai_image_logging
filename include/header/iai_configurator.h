@@ -77,6 +77,7 @@ public:
   bool insert(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res);
   void insertionConfigurator(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res,
                              iai_image_logging_msgs::UpdateRequest& ureq, iai_image_logging_msgs::UpdateResponse& ures);
+  int getNumberFromModeString(string mode);
   bool remove(iai_image_logging_msgs::RemoveRequest& req, iai_image_logging_msgs::RemoveResponse& res);
   bool behave(iai_image_logging_msgs::BehaveRequest& req, iai_image_logging_msgs::BehaveResponse& res);
   void updateCamera(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);

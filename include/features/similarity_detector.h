@@ -72,6 +72,8 @@ public:
       cv::cvtColor(prev_image->image, prev_grey, CV_BGR2GRAY);
       cv::cvtColor(curr_image->image, curr_grey, CV_BGR2GRAY);
 
+      cv::norm(prev_grey, curr_grey, cv::NORM_L2);
+
       cv::absdiff(prev_grey, curr_grey, diffImage);
 
       cv::Mat square_diffImage = diffImage.mul(diffImage);

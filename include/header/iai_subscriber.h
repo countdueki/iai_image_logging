@@ -76,10 +76,10 @@ public:
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
-    // concatenate base topic and mode string
-    topic_ = req.topic + req.mode;
+    mode_str = req.mode;
+    topic_ = req.topic + req.mode; // concatenate base topic and mode string
     id_ = generateID(req.topic, mode_str);
-    collection_ = req.collection;  // addIdentifier(req.collection);  // adds mode and cam# as suffix
+    collection_ = req.collection;
     rate_ = req.rate;
     motion_ = req.motion;
     blur_ = req.blur;
@@ -140,8 +140,6 @@ public:
   int getNumberFromModeString(string mode);
 
   string generateID(string topic, string mode_str);
-
-  const string& getTopic() const;
 
   const string& getID() const;
 

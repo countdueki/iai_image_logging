@@ -23,8 +23,8 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
     for (auto it = subs_.begin(); it != subs_.end(); ++it)
     {
       ROS_DEBUG_STREAM("checking sub: " << (*it)->getID());
-      ROS_DEBUG_STREAM("iai_id: " << (*it)->getID() << ", reqid: " << req.iai_id);
-      if ((*it)->getID() == req.iai_id)
+      ROS_WARN_STREAM("iai_id: " << (*it)->getID() << ", reqid: " << iai_sub->getID());
+      if ((*it)->getID() == iai_sub->getID())
       {
         // shutdown and delete old subscriber
         ROS_DEBUG_STREAM("...Found topic, deleting...");
@@ -69,7 +69,7 @@ bool IAIConfigurator::insert(iai_image_logging_msgs::InsertRequest& req, iai_ima
   iai_image_logging_msgs::UpdateResponse ures;
 
   insertionConfigurator(req, res, ureq, ures);
-
+  ROS_WARN_STREAM("configured insertion");
   update(ureq, ures);
   res.success = true;
   return true;
@@ -80,10 +80,98 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
                                             iai_image_logging_msgs::UpdateRequest& ureq,
                                             iai_image_logging_msgs::UpdateResponse& ures)
 {
-  // TODO calculate quality
-  // TODO update request
 
-  ROS_WARN_STREAM("I would apply the insertion configurator, if it existed yet");
+    ROS_WARN_STREAM("Parameters: " << req.rate << req.topic << req.collection);
+  // calculate quality
+  switch(getNumberFromModeString(req.mode)){
+      case(RAW): ureq.mode = "raw";
+      break;
+      case(DEPTH): ureq.mode = "depth";
+        break;
+      case(COMPRESSED):
+        ureq.mode = "compressed";
+        if (req.quality == "good") {
+          ureq.jpeg_quality = 100;
+          ureq.png_level = 1;
+        } else if (req.quality == "medium")
+        {
+          ureq.jpeg_quality = 80;
+          ureq.png_level = 5;
+        } else if (req.quality == "base")
+        {
+          ureq.jpeg_quality = 40;
+          ureq.png_level = 9;
+        } else
+        {
+          ROS_ERROR("Wrong quality parameter");
+        }
+        break;
+    case(THEORA):
+      ureq.mode = "theora";
+          if (req.quality == "good") {
+            ureq.quality = 63;
+          } else if (req.quality == "medium")
+          {
+            ureq.quality = 48;
+
+          } else if (req.quality == "base")
+          {
+            ureq.quality = 20;
+
+          } else
+          {
+            ROS_ERROR("Wrong quality parameter");
+          }
+          break;
+
+    case(COMPRESSED_DEPTH):
+      ureq.mode = "compressedDepth";
+          if (req.quality == "good") {
+            ureq.jpeg_quality = 100;
+            ureq.png_level = 1;
+          } else if (req.quality == "medium")
+          {
+            ureq.jpeg_quality = 80;
+            ureq.png_level = 5;
+          } else if (req.quality == "base")
+          {
+            ureq.jpeg_quality = 40;
+            ureq.png_level = 9;
+          } else
+          {
+            ROS_ERROR("Wrong quality parameter");
+          }
+          break;
+  }
+    // update subscriber
+    ureq.topic = req.topic;
+  ureq.collection = req.collection;
+  ureq.db_host = req.db_host;
+  ureq.motion = req.motion;
+  ureq.blur = req.blur;
+  ureq.similar = req.similar;
+  ureq.rate = req.rate;
+  ureq.format = "jpeg";
+
+
+  update(ureq,ures);
+
+
+
+  ROS_WARN_STREAM("Insertion done");
+}
+int IAIConfigurator::getNumberFromModeString(string mode)
+{
+  if (mode.find("raw") != std::string::npos)
+    return RAW;
+  if (mode.find("compressed") != std::string::npos)
+    return COMPRESSED;
+  if (mode.find("theora") != std::string::npos)
+    return THEORA;
+  if (mode.find("depth") != std::string::npos)
+    return DEPTH;
+  if (mode.find("compressedDepth") != std::string::npos)
+    return COMPRESSED_DEPTH;
 }
 
 /**
@@ -232,7 +320,7 @@ int main(int argc, char** argv)
     for (auto s : storage->getSubscribers())
     {
       s->start();
-      ROS_DEBUG_STREAM("Topic: " << s->getTopic());
+      ROS_DEBUG_STREAM("Topic: " << s->getID());
     }
     ROS_DEBUG_STREAM("storage spinned");
     ros::spinOnce();

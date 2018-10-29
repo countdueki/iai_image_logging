@@ -17,7 +17,7 @@ def remove(req):
         print ("Service call failed: %s"%e)
 
 def usage():
-    return "behave.py [iai_id, rate, motion, blur, similar]"
+    return "remove.py IAI_ID"
 
 
 if __name__ == "__main__":
