@@ -240,6 +240,23 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
   document.append("size", (int)msg->data.size());
   document.append("type", type);
   document.append("mode_", "theora");
+
+  mongo::BSONObjBuilder meta;
+
+  ros::Time now = ros::Time::now();
+  mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
+  meta.append("inserted_at", nowDate);
+
+  meta.append("stored_type", type);
+  meta.append("topic", topic_);
+
+  size_t slashIndex = type.find('/');
+  std::string package = type.substr(0, slashIndex);
+  std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
+  std::string pythonName = package + ".msg._" + name + "." + name;
+  meta.append("stored_class", pythonName);
+
+  document.append("_meta", meta.obj());
   client_connection_->insert(collection_, document.obj());
 }
 
@@ -439,6 +456,7 @@ void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
   cv::imshow("Compressed image recorded", img->image);
   cv::waitKey(1);
 }
+
 
 string IAISubscriber::addIdentifier(string collection)
 { /**

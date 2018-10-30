@@ -8,8 +8,8 @@
 #include <ros/ros.h>
 #include <ros/subscribe_options.h>
 #include <ros/callback_queue.h>
-
 #include <theora_image_transport/Packet.h>
+#include <mongodb_store/message_store.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/Image.h>
 
@@ -46,9 +46,10 @@ public:
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
     topic_ = "/camera/rgb/image_raw";
-    mode_str = "";
+    mode_str_ = "raw";
+    mode_ = getNumberFromModeString(mode_str_);
     mode_ = 0;
-    id_ = "00_ID";
+    id_ = generateID(topic_, mode_str_);
     collection_ = "db.standard";  // adds mode and cam# as suffix
     rate_ = 1.0;
     motion_ = false;
@@ -76,9 +77,10 @@ public:
     nh_.setCallbackQueue(&queue_);
     spinner_ = new AsyncSpinner(1, &queue_);
     client_connection_ = &connection;
-    mode_str = req.mode;
+    mode_str_ = req.mode;
+    mode_ = getNumberFromModeString(mode_str_);
     topic_ = req.topic;  // concatenate base topic and mode string
-    id_ = generateID(req.topic, mode_str);
+    id_ = generateID(req.topic, mode_str_);
     collection_ = req.collection;
     rate_ = req.rate;
     motion_ = req.motion;
@@ -91,8 +93,8 @@ public:
     blur_detected_ = false;
     similar_detected_ = false;
     // create actual subscriber
-    createSubscriber(getNumberFromModeString(mode_str));
-    createPublisher(getNumberFromModeString(mode_str));
+    createSubscriber(getNumberFromModeString(mode_str_));
+    createPublisher(getNumberFromModeString(mode_str_));
   }
   //~IAISubscriber(){};
 
@@ -104,7 +106,7 @@ private:
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
-  string topic_, mode_str, collection_, id_;
+  string topic_, mode_str_, collection_, id_;
 
 public:
   const string& getTopic() const;
