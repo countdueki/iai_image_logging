@@ -457,7 +457,6 @@ void IAISubscriber::show(const sensor_msgs::CompressedImageConstPtr& msg)
   cv::waitKey(1);
 }
 
-
 string IAISubscriber::addIdentifier(string collection)
 { /**
    switch (mode_)

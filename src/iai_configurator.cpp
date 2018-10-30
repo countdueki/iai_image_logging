@@ -1,16 +1,10 @@
-//
-// Created by tammo on 13.09.18.
-//
+/**
+ * Created by Tammo Wübbena on 13/09/2018
+ * All documentation information is found in the header file (except for @function main).
+ */
+
 #include "../include/header/iai_configurator.h"
 
-/**
-       * Service: Updates the requested topic of a 'camera' in a list of 'cameras' (a vector of a
- * mmap<Subscriber,mode>)
-       * If the requested topic is not found, it is added. If the camera isn't found, it is added
-       * @param req Topic and database info to update
-       * @param res success bool
-       * @return true, if update was successfull, false else
-       */
 bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res)
 {
   try
@@ -58,12 +52,6 @@ bool IAIConfigurator::update(iai_image_logging_msgs::UpdateRequest& req, iai_ima
   }
 }
 
-/**
- * Adding a Configuration (i.e. camera + topic and parameters)
- * @param req requested configuration
- * @param res success bool
- * @return true if success, false else
- */
 bool IAIConfigurator::insert(iai_image_logging_msgs::InsertRequest& req, iai_image_logging_msgs::InsertResponse& res)
 {
   iai_image_logging_msgs::UpdateRequest ureq;
@@ -170,26 +158,7 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
 
   ROS_WARN_STREAM("Insertion done");
 }
-int IAIConfigurator::getNumberFromModeString(string mode)
-{
-  if (mode.find("raw") != std::string::npos)
-    return RAW;
-  if (mode.find("compressed") != std::string::npos)
-    return COMPRESSED;
-  if (mode.find("theora") != std::string::npos)
-    return THEORA;
-  if (mode.find("depth") != std::string::npos)
-    return DEPTH;
-  if (mode.find("compressedDepth") != std::string::npos)
-    return COMPRESSED_DEPTH;
-}
 
-/**
-* Deleting a Configiguration (i.e. camera + topic)
-* @param req requested configuration
-* @param res success bool
-* @return true if success, false else
-*/
 bool IAIConfigurator::remove(iai_image_logging_msgs::RemoveRequest& req, iai_image_logging_msgs::RemoveResponse& res)
 {
   try
@@ -305,6 +274,20 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
   // ros::service::call("image_logger/updateCamera",req,res);
 }
 
+int IAIConfigurator::getNumberFromModeString(string mode)
+{
+  if (mode.find("raw") != std::string::npos)
+    return RAW;
+  if (mode.find("compressed") != std::string::npos)
+    return COMPRESSED;
+  if (mode.find("theora") != std::string::npos)
+    return THEORA;
+  if (mode.find("depth") != std::string::npos)
+    return DEPTH;
+  if (mode.find("compressedDepth") != std::string::npos)
+    return COMPRESSED_DEPTH;
+}
+
 const NodeHandle& IAIConfigurator::getNodeHandle() const
 {
   return nh_;
@@ -316,10 +299,11 @@ const StorageSubVector& IAIConfigurator::getSubscribers() const
 }
 
 /**
- * Start storage node
+ * Starts the configuration node and sets up logger levels. The spin constantly checks for new subscribers
+ * and starts them eventually
  * @param argc
  * @param argv
- * @return
+ * @return 0 on normal exit
  */
 int main(int argc, char** argv)
 {
@@ -332,7 +316,6 @@ int main(int argc, char** argv)
   // create storage and initialize
   IAIConfigurator* storage = &IAIConfigurator::Instance();
 
-  // storage->init();
   while (storage->getNodeHandle().ok())
   {
     for (auto s : storage->getSubscribers())
