@@ -16,54 +16,6 @@ void IAISubscriber::destroy()
   // delete this;
 }
 
-void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
-{
-  mongo::BSONObjBuilder document;
-  mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-  document.append("encoding", msg->encoding);
-  document.append("width", msg->width);
-  document.append("height", msg->height);
-  document.append("is_bigendian", msg->is_bigendian);
-  document.append("step", msg->step);
-
-  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-  std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
-  document.append("type", type);
-  document.append("size", (int)msg->data.size());
-  if (mode_ == RAW)
-  {
-    document.append("mode_", "raw");
-  }
-  else if (mode_ == DEPTH)
-  {
-    document.append("mode_", "depth");
-  }
-
-  mongo::BSONObjBuilder meta;
-
-  ros::Time now = ros::Time::now();
-  mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
-  meta.append("inserted_at", nowDate);
-
-  meta.append("stored_type", type);
-  meta.append("topic", topic_);
-
-  size_t slashIndex = type.find('/');
-  std::string package = type.substr(0, slashIndex);
-  std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
-  std::string pythonName = package + ".msg._" + name + "." + name;
-  meta.append("stored_class", pythonName);
-
-  document.append("_meta", meta.obj());
-
-  client_connection_->insert(collection_, document.obj());
-}
-
-/**
- * image callback to save raw and depth images
- * @param msg raw and depth images
- */
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
   ros::Rate r(rate_);
@@ -117,58 +69,6 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   r.sleep();
 }
 
-void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
-{
-  try
-  {
-    mongo::BSONObjBuilder document;
-    document.append("iai_id", id_);
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("format", msg->format);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
-
-    if (mode_ == COMPRESSED)
-    {
-      document.append("mode_", "compressed");
-    }
-    else if (mode_ == COMPRESSED_DEPTH)
-    {
-      document.append("mode_", "compressed_depth");
-    }
-
-    mongo::BSONObjBuilder meta;
-
-    ros::Time now = ros::Time::now();
-    mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
-    meta.append("inserted_at", nowDate);
-
-    meta.append("stored_type", type);
-    meta.append("topic", topic_);
-
-    size_t slashIndex = type.find('/');
-    std::string package = type.substr(0, slashIndex);
-    std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
-    std::string pythonName = package + ".msg._" + name + "." + name;
-    meta.append("stored_class", pythonName);
-
-    document.append("_meta", meta.obj());
-    client_connection_->insert(collection_, document.obj());
-  }
-
-  catch (std::bad_alloc& ba)
-  {
-    ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
-  }
-}
-
-/**
- * CompressedImage callback to save compressed images and compressed depth images
- * @param msg compressed image
- */
 void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   ros::Rate r(rate_);
@@ -223,6 +123,106 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   r.sleep();
 }
 
+void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
+{
+  ROS_WARN_STREAM("saving theora image");
+  ros::Rate r(rate_);
+  saveTheora(msg);
+  r.sleep();
+}
+
+void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
+{
+  mongo::BSONObjBuilder document;
+  mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+  document.append("encoding", msg->encoding);
+  document.append("width", msg->width);
+  document.append("height", msg->height);
+  document.append("is_bigendian", msg->is_bigendian);
+  document.append("step", msg->step);
+
+  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+  std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
+  document.append("type", type);
+  document.append("size", (int)msg->data.size());
+  if (mode_ == RAW)
+  {
+    document.append("mode_", "raw");
+  }
+  else if (mode_ == DEPTH)
+  {
+    document.append("mode_", "depth");
+  }
+
+  mongo::BSONObjBuilder meta;
+
+  ros::Time now = ros::Time::now();
+  mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
+  meta.append("inserted_at", nowDate);
+
+  meta.append("stored_type", type);
+  meta.append("topic", topic_);
+
+  size_t slashIndex = type.find('/');
+  std::string package = type.substr(0, slashIndex);
+  std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
+  std::string pythonName = package + ".msg._" + name + "." + name;
+  meta.append("stored_class", pythonName);
+
+  document.append("_meta", meta.obj());
+
+  client_connection_->insert(collection_, document.obj());
+}
+
+void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
+{
+  try
+  {
+    mongo::BSONObjBuilder document;
+    document.append("iai_id", id_);
+    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
+    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
+    document.append("format", msg->format);
+    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
+    document.append("type", type);
+    document.append("size", (int)msg->data.size());
+
+    if (mode_ == COMPRESSED)
+    {
+      document.append("mode_", "compressed");
+    }
+    else if (mode_ == COMPRESSED_DEPTH)
+    {
+      document.append("mode_", "compressed_depth");
+    }
+
+    mongo::BSONObjBuilder meta;
+
+    ros::Time now = ros::Time::now();
+    mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
+    meta.append("inserted_at", nowDate);
+
+    meta.append("stored_type", type);
+    meta.append("topic", topic_);
+
+    size_t slashIndex = type.find('/');
+    std::string package = type.substr(0, slashIndex);
+    std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
+    std::string pythonName = package + ".msg._" + name + "." + name;
+    meta.append("stored_class", pythonName);
+
+    document.append("_meta", meta.obj());
+    client_connection_->insert(collection_, document.obj());
+  }
+
+  catch (std::bad_alloc& ba)
+  {
+    ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
+  }
+}
+
 void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg)
 {
   mongo::BSONObjBuilder document;
@@ -258,18 +258,6 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
 
   document.append("_meta", meta.obj());
   client_connection_->insert(collection_, document.obj());
-}
-
-/**
- * Theora Callback to save video packets
- * @param msg theora video
- */
-void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
-{
-  ROS_WARN_STREAM("saving theora image");
-  ros::Rate r(rate_);
-  saveTheora(msg);
-  r.sleep();
 }
 
 void IAISubscriber::createSubscriber(int mode)
@@ -331,38 +319,6 @@ void IAISubscriber::createPublisher(int mode)
   }
 }
 
-string IAISubscriber::getModeString(int mode)
-{
-  switch (mode)
-  {
-    case (RAW):
-      return "";
-    case (COMPRESSED):
-      return "/compressed";
-    case (THEORA):
-      return "/theora";
-    case (DEPTH):
-      return "";
-    case (COMPRESSED_DEPTH):
-      return "/compressedDepth";
-    default:
-      break;
-  }
-}
-
-int IAISubscriber::getNumberFromModeString(string mode)
-{
-  if (mode.find("raw") != std::string::npos)
-    return RAW;
-  if (mode.find("compressed") != std::string::npos)
-    return COMPRESSED;
-  if (mode.find("theora") != std::string::npos)
-    return THEORA;
-  if (mode.find("depth") != std::string::npos)
-    return DEPTH;
-  if (mode.find("compressedDepth") != std::string::npos)
-    return COMPRESSED_DEPTH;
-}
 string IAISubscriber::generateID(string topic, string mode_str)
 {
   string result;
@@ -394,6 +350,39 @@ string IAISubscriber::generateID(string topic, string mode_str)
   result += topic + "__" + mode_str;
 
   return result;
+}
+
+int IAISubscriber::getNumberFromModeString(string mode)
+{
+  if (mode.find("raw") != std::string::npos)
+    return RAW;
+  if (mode.find("compressed") != std::string::npos)
+    return COMPRESSED;
+  if (mode.find("theora") != std::string::npos)
+    return THEORA;
+  if (mode.find("depth") != std::string::npos)
+    return DEPTH;
+  if (mode.find("compressedDepth") != std::string::npos)
+    return COMPRESSED_DEPTH;
+}
+
+string IAISubscriber::getModeString(int mode)
+{
+  switch (mode)
+  {
+    case (RAW):
+      return "";
+    case (COMPRESSED):
+      return "/compressed";
+    case (THEORA):
+      return "/theora";
+    case (DEPTH):
+      return "";
+    case (COMPRESSED_DEPTH):
+      return "/compressedDepth";
+    default:
+      break;
+  }
 }
 
 const string& IAISubscriber::getID() const

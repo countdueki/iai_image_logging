@@ -20,6 +20,7 @@
 #include "../features/similarity_detector.h"
 
 #include <string>
+
 using ros::Subscriber;
 using ros::SubscribeOptions;
 using ros::NodeHandle;
@@ -126,27 +127,27 @@ public:
 
   void destroy();
 
-  void saveImage(const sensor_msgs::ImageConstPtr& msg);
-
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-
-  void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg);
 
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg);
 
-  void saveTheora(const theora_image_transport::PacketConstPtr& msg);
-
   void theoraCallback(const theora_image_transport::PacketConstPtr& msg);
+
+  void saveImage(const sensor_msgs::ImageConstPtr& msg);
+
+  void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg);
+
+  void saveTheora(const theora_image_transport::PacketConstPtr& msg);
 
   void createSubscriber(int mode);
 
   void createPublisher(int mode);
 
-  string getModeString(int mode);
-
   int getNumberFromModeString(string mode);
 
   string generateID(string topic, string mode_str);
+
+  string getModeString(int mode);
 
   const string& getID() const;
 

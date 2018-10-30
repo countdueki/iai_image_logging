@@ -30,6 +30,11 @@ using dynamic_reconfigure::ReconfigureResponse;
 typedef dynamic_reconfigure::StrParameter StrParam;
 typedef dynamic_reconfigure::IntParameter IntParam;
 typedef dynamic_reconfigure::DoubleParameter DoubleParam;
+
+/**
+ * Constructor (singleton) handles the connection to the mongoDB database and set up for the services to
+ * insert and remove IAISubscribers as well as change their behavior
+ */
 class IAIConfigurator
 {
 public:
