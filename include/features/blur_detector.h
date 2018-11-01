@@ -25,7 +25,7 @@ private:
   bool blurred;
 
 public:
-  BlurDetector() : threshold(80.0){};
+  BlurDetector() : threshold(100.0){};
 
   /**
    * Based on the blur filter MIS05

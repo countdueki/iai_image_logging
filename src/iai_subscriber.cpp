@@ -18,12 +18,15 @@ void IAISubscriber::destroy()
 
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-  ros::Rate r(rate_);
+    ROS_WARN_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
+
+    ros::Rate r(rate_);
   if (motion_)
   {
+      motion_detected_ = motion_detector.detectMotion(tf_msg_, "/base", "/pico_flexx_optical_frame");
     if (motion_detected_)
     {
-      ROS_DEBUG_STREAM("motion detected");
+      ROS_WARN_STREAM("motion detected");
       return;
     }
   }
@@ -72,21 +75,22 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   ros::Rate r(rate_);
-  ROS_WARN_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
+  ROS_DEBUG_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
   if (motion_)
   {
-    if (motion_detected_)
-    {
-      ROS_DEBUG_STREAM("motion detected");
-      return;
-    }
+      motion_detected_ = motion_detector.detectMotion(tf_msg_, "/base", "/pico_flexx_optical_frame");
+      if (motion_detected_)
+      {
+          ROS_WARN_STREAM("motion detected");
+          return;
+      }
   }
   if (blur_)
   {
     blur_detected_ = blur_detector.detectBlur(msg);
     if (blur_detected_)
     {
-      ROS_DEBUG_STREAM("blur detected");
+      ROS_WARN_STREAM("blur detected");
       return;
     }
   }
@@ -98,7 +102,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
       similar_detected_ = sim_detector.detectMSE(sim_prev_c_, sim_curr_c_);
       if (similar_detected_)
       {
-        ROS_DEBUG_STREAM("similar image detected");
+        ROS_WARN_STREAM("similar image detected");
         sim_prev_c_ = sim_curr_c_;
         return;
       }
@@ -116,7 +120,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
     saveCompressedImage(msg);
-    pub_.publish(msg);
+    pub_.publish(*msg);
     // show(msg);
   }
 
@@ -125,12 +129,15 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
 
 void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
 {
-  ROS_WARN_STREAM("saving theora image");
+    ROS_WARN_STREAM("saving theora image");
   ros::Rate r(rate_);
   saveTheora(msg);
   r.sleep();
 }
 
+void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg){
+    tf_msg_ = msg;
+}
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
   mongo::BSONObjBuilder document;
@@ -262,6 +269,8 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
 
 void IAISubscriber::createSubscriber(int mode)
 {
+    tf_sub_ = nh_.subscribe("/tf",1,&IAISubscriber::tfCallback, this);
+
   switch (mode)
   {
     case (RAW):

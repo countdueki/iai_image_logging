@@ -18,6 +18,7 @@
 
 #include "../features/blur_detector.h"
 #include "../features/similarity_detector.h"
+#include "../features/motion_detector.h"
 
 #include <string>
 
@@ -102,12 +103,13 @@ public:
 private:
   NodeHandle nh_;
   CallbackQueue queue_;
-  Subscriber sub_;
+  Subscriber sub_, tf_sub_;
   ros::Publisher pub_;
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
   string topic_, mode_str_, collection_, id_;
+  tf::tfMessageConstPtr tf_msg_;
 
 public:
   const string& getTopic() const;
@@ -121,6 +123,7 @@ private:
   sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;
   BlurDetector blur_detector;
   SimilarityDetector sim_detector;
+  MotionDetector motion_detector;
 
 public:
   void start();
@@ -132,6 +135,8 @@ public:
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg);
 
   void theoraCallback(const theora_image_transport::PacketConstPtr& msg);
+
+  void tfCallback(const tf::tfMessageConstPtr& msg);
 
   void saveImage(const sensor_msgs::ImageConstPtr& msg);
 

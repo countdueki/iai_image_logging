@@ -13,6 +13,8 @@ find_package(catkin REQUIRED
         iai_image_logging_msgs
         mongodb_store
         )
+find_package(Boost COMPONENTS
+        unit_test_framework REQUIRED)
 
 catkin_package(CATKIN_DEPENDS
         iai_image_logging_msgs
@@ -21,11 +23,15 @@ catkin_package(CATKIN_DEPENDS
 include_directories(
         ${catkin_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
         )
+add_definitions (-DBOOST_TEST_DYN_LINK)
 add_library(iai_subscriber
         src/iai_subscriber.cpp
         include/header/iai_subscriber.h
-        include/features/blur_detector.h include/features/similarity_detector.h include/features/motion_detector.h)
+        include/features/blur_detector.h
+        include/features/similarity_detector.h
+        include/features/motion_detector.h)
 
 add_executable(iai_updater
         src/iai_updater.cpp
@@ -39,18 +45,37 @@ target_link_libraries(iai_updater
 add_executable(iai_configurator
         src/iai_configurator.cpp
         include/header/iai_configurator.h
-
-
         )
+
+add_library(iai_conf_test
+        src/iai_configurator.cpp
+        include/header/iai_configurator.h)
 target_link_libraries(iai_configurator
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         iai_subscriber
 
         )
+add_executable(conf_test
+
+        test/configurator_test.cpp
+
+        )
+
+target_link_libraries(conf_test
+        ${OpenCV_LIBRARIES}
+        ${catkin_LIBRARIES}
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+        iai_conf_test
+
+
+        )
+enable_testing()
+add_test(NAME my_conf_test COMMAND conf_test)
 
 # -- INSTALL -- #
-
 # add python scripts
 install(PROGRAMS
         # scripts/config_client.py

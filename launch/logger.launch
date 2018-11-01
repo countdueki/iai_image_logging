@@ -1,6 +1,4 @@
 <launch>
-
-        <node name="image_logger" pkg="iai_image_logging" type="image_logger" output="screen"/>
-        <node name="storage" pkg="iai_image_logging" type="storage" output="screen"/>
-
+ <node name="iai_updater" pkg="iai_image_logging" type="iai_updater" output="screen"/>
+        <node name="iai_configurator" pkg="iai_image_logging" type="iai_configurator" output="screen"/>
 </launch>

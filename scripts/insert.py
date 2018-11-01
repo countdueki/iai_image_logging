@@ -94,7 +94,7 @@ if __name__ == "__main__":
                 similar = False
             insert.similar = similar
         if argument.startswith('collection='):
-            collection = argument[10:]
+            collection = argument[11:]
             insert.collection = collection
         if argument.startswith('db_host='):
             host = argument[8:]
