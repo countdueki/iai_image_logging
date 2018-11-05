@@ -23,7 +23,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     ros::Rate r(rate_);
   if (motion_)
   {
-      motion_detected_ = motion_detector.detectMotion(tf_msg_, "/base", "/pico_flexx_optical_frame");
+      motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
     if (motion_detected_)
     {
       ROS_WARN_STREAM("motion detected");
@@ -78,7 +78,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   ROS_DEBUG_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
   if (motion_)
   {
-      motion_detected_ = motion_detector.detectMotion(tf_msg_, "/base", "/pico_flexx_optical_frame");
+      motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
       if (motion_detected_)
       {
           ROS_WARN_STREAM("motion detected");
@@ -136,8 +136,15 @@ void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr&
 }
 
 void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg){
-    tf_msg_ = msg;
+    if (tf_msg_.use_count() == 0){
+        tf_msg_ = msg;
+    } else
+    {
+        tf_msg_prev_ = tf_msg_;
+        tf_msg_ = msg;
+    }
 }
+
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
   mongo::BSONObjBuilder document;

@@ -16,6 +16,9 @@ blur = False
 similar = False
 collection = "db.standard"
 host = "localhost"
+tf_msg_str = "tf_static"
+tf_base = "map"
+tf_cam = "head_mount_kinect_rgb_optical_frame"
 
 
 def insert_client(insert):
@@ -37,7 +40,10 @@ def usage():
           "blur=true/false\n"
           "similar=true/false\n"
           "collection=db_name.collection\n"
-          "db_host=host\n")
+          "db_host=host\n"
+          "tf=TF_TOPIC\n"
+          "tf_base=TF_BASE\n"
+          "tf_cam=TF_CAMERA\n")
 
 
 def fill(insert):
@@ -49,6 +55,10 @@ def fill(insert):
     insert.similar = similar
     insert.collection = collection
     insert.db_host = host
+    insert.tf_msg_str = tf_msg_str
+    insert.tf_base = tf_base
+    insert.tf_cam = tf_cam
+
 
 
 if __name__ == "__main__":
@@ -99,6 +109,15 @@ if __name__ == "__main__":
         if argument.startswith('db_host='):
             host = argument[8:]
             insert.db_host = host
+        if argument.startswith('tf='):
+            tf_msg_str = argument[3:]
+            insert.tf_msg_str = tf_msg_str
+        if argument.startswith('tf_base='):
+            tf_base = argument[8:]
+            insert.tf_base = tf_base
+        if argument.startswith('tf_cam='):
+            tf_cam = argument[7:]
+            insert.db_host = tf_cam
 
     if len(sys.argv) == 2:
         yaml_config = sys.argv[1]
@@ -114,6 +133,9 @@ if __name__ == "__main__":
                 insert.similar = yaml_data["similar"]
                 insert.blur = yaml_data["blur"]
                 insert.motion = yaml_data["motion"]
+                insert.tf_msg_str = yaml_data["tf_msg_str"]
+                insert.tf_base = yaml_data["tf_base"]
+                insert.tf_cam = yaml_data["tf_cam"]
             except yaml.YAMLError as exc:
                 print(exc)
     insert_client(insert)

@@ -17,19 +17,20 @@ private:
 public:
     MotionDetector() : threshold(1.0) {};
 
-    bool detectMotion(const tf::tfMessageConstPtr& transforms, std::string reference, std::string camera){
-        geometry_msgs::Transform ref_point, cam_point;
-        double ref_euclid, cam_euclid;
+    bool detectMotion(const tf::tfMessageConstPtr& tf, tf::tfMessageConstPtr tf_prev, std::string reference, std::string camera){
+        geometry_msgs::Transform ref_point, cam_point, ref_point_prev, cam_point_prev;
+        double ref_euclid, cam_euclid, ref_euclid_prev, cam_euclid_prev, abs_curr, abs_prev;
 
-        for (int i = 0; i < transforms->transforms.size(); i++){
-            if (transforms->transforms.at(i).child_frame_id.find(reference) != std::string::npos){
+        // calculate directional vector for current tf
+        for (int i = 0; i < tf->transforms.size(); i++){
+            if (tf->transforms.at(i).child_frame_id.find(reference) != std::string::npos){
                 ROS_WARN_STREAM("found ref");
-                ref_point = transforms->transforms.at(i).transform;
+                ref_point = tf->transforms.at(i).transform;
             }
-            if (transforms->transforms.at(i).child_frame_id.find(camera) != std::string::npos){
+            if (tf->transforms.at(i).child_frame_id.find(camera) != std::string::npos){
                 ROS_WARN_STREAM("found cam");
 
-                cam_point = transforms->transforms.at(i).transform;
+                cam_point = tf->transforms.at(i).transform;
             }
         }
 
@@ -39,7 +40,27 @@ public:
                           + pow(cam_point.translation.z,2.0));
         ROS_WARN_STREAM("diff motion " << ref_euclid << " and " << cam_euclid);
 
-        return (ref_euclid < cam_euclid - threshold || ref_euclid > cam_euclid + threshold);
+        abs_curr = abs(ref_euclid - cam_euclid);
+        // calculate directional vector for previous tf
+        for (int i = 0; i < tf_prev->transforms.size(); i++){
+            if (tf_prev->transforms.at(i).child_frame_id.find(reference) != std::string::npos){
+                ROS_WARN_STREAM("found ref");
+                ref_point_prev = tf_prev->transforms.at(i).transform;
+            }
+            if (tf_prev->transforms.at(i).child_frame_id.find(camera) != std::string::npos){
+                ROS_WARN_STREAM("found cam");
+
+                cam_point_prev = tf_prev->transforms.at(i).transform;
+            }
+        }
+        ref_euclid_prev = sqrt(pow(ref_point_prev.translation.x,2.0)+ pow(ref_point_prev.translation.y,2.0)
+                          + pow(ref_point_prev.translation.z,2.0));
+        cam_euclid_prev  = sqrt(pow(cam_point_prev.translation.x,2.0)+ pow(cam_point_prev.translation.y,2.0)
+                          + pow(cam_point_prev.translation.z,2.0));
+        ROS_WARN_STREAM("diff motion " << ref_euclid << " and " << cam_euclid);
+
+        abs_prev = abs(ref_euclid_prev - cam_euclid_prev);
+        return (abs_curr < abs_prev - threshold || abs_curr > abs_prev + threshold);
     }
 
 

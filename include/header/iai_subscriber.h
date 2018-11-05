@@ -88,6 +88,8 @@ public:
     motion_ = req.motion;
     blur_ = req.blur;
     similar_ = req.similar;
+    tf_base_ = req.tf_base;
+    tf_camera_ = req.tf_cam;
 
     // start condtitions
     prev_image_ = false;
@@ -97,6 +99,7 @@ public:
     // create actual subscriber
     createSubscriber(getNumberFromModeString(mode_str_));
     createPublisher(getNumberFromModeString(mode_str_));
+    tf_sub_ = nh_.subscribe(req.tf_msg_str, 1, &IAISubscriber::tfCallback, this);
   }
   //~IAISubscriber(){};
 
@@ -108,8 +111,8 @@ private:
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
-  string topic_, mode_str_, collection_, id_;
-  tf::tfMessageConstPtr tf_msg_;
+  string topic_, mode_str_, collection_, id_, tf_base_, tf_camera_;
+  tf::tfMessageConstPtr tf_msg_, tf_msg_prev_;
 
 public:
   const string& getTopic() const;
