@@ -25,7 +25,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
       motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
     if (motion_detected_)
     {
-      ROS_WARN_STREAM("motion detected");
+      ROS_DEBUG("motion detected");
       return;
     }
   }
@@ -64,6 +64,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
+    ROS_WARN_STREAM("saving raw image");
     saveImage(msg);
     pub_.publish(msg);
     // show(msg);
@@ -79,7 +80,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
       motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
       if (motion_detected_)
       {
-          ROS_WARN_STREAM("motion detected");
+          ROS_DEBUG_STREAM("motion detected");
           return;
       }
   }
@@ -117,6 +118,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
+    ROS_WARN_STREAM("saving compressed image");
     saveCompressedImage(msg);
     pub_.publish(*msg);
     // show(msg);
