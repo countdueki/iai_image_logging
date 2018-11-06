@@ -18,7 +18,6 @@ void IAISubscriber::destroy()
 
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-    ROS_WARN_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
 
     ros::Rate r(rate_);
   if (motion_)
@@ -75,7 +74,6 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   ros::Rate r(rate_);
-  ROS_DEBUG_STREAM("motion blur similar: " << motion_ << blur_ << similar_);
   if (motion_)
   {
       motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);

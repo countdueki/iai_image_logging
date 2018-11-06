@@ -117,7 +117,7 @@ if __name__ == "__main__":
             insert.tf_base = tf_base
         if argument.startswith('tf_cam='):
             tf_cam = argument[7:]
-            insert.db_host = tf_cam
+            insert.tf_cam = tf_cam
 
     if len(sys.argv) == 2:
         yaml_config = sys.argv[1]

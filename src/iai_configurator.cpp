@@ -153,6 +153,9 @@ void IAIConfigurator::insertionConfigurator(iai_image_logging_msgs::InsertReques
   ureq.similar = req.similar;
   ureq.rate = req.rate;
   ureq.format = "jpeg";
+  ureq.tf_msg_str = req.tf_msg_str;
+  ureq.tf_base = req.tf_base;
+  ureq.tf_cam = req.tf_cam;
 
   update(ureq, ures);
 
