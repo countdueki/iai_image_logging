@@ -156,8 +156,6 @@ public:
 
   string generateID(string topic, string mode_str);
 
-  string getModeString(int mode);
-
   const string& getID() const;
 
   void setRate_(double rate_);

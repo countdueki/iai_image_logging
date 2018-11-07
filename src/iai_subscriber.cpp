@@ -384,25 +384,6 @@ int IAISubscriber::getNumberFromModeString(string mode)
     return COMPRESSED_DEPTH;
 }
 
-string IAISubscriber::getModeString(int mode)
-{
-  switch (mode)
-  {
-    case (RAW):
-      return "";
-    case (COMPRESSED):
-      return "/compressed";
-    case (THEORA):
-      return "/theora";
-    case (DEPTH):
-      return "";
-    case (COMPRESSED_DEPTH):
-      return "/compressedDepth";
-    default:
-      break;
-  }
-}
-
 const string& IAISubscriber::getID() const
 {
   return id_;

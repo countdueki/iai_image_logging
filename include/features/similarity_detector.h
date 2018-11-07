@@ -50,6 +50,7 @@ public:
 
       cv::Mat square_diffImage = diffImage.mul(diffImage);
 
+      // TODO check if conversion has to be done
       square_diffImage.convertTo(square_diffImage, CV_32F);
       cv::Scalar sum = cv::sum(square_diffImage);
 
@@ -57,7 +58,7 @@ public:
 
       ROS_DEBUG_STREAM("Mean Squared Error of similar images: " << mse << " (threshold: " << threshold << ")");
 
-      return mse < threshold;
+      return mse <= threshold;
     }
     catch (cv::Exception e)
     {
