@@ -74,8 +74,8 @@ public:
 
   bool detectMSE(sensor_msgs::CompressedImageConstPtr prev, sensor_msgs::CompressedImageConstPtr curr)
   {
-    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvShare(prev);
-    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvShare(curr);
+    cv_bridge::CvImageConstPtr prev_image = cv_bridge::toCvCopy(prev);
+    cv_bridge::CvImageConstPtr curr_image = cv_bridge::toCvCopy(curr);
 
     return detectMSE(prev_image, curr_image);
   }
