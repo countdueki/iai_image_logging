@@ -53,7 +53,7 @@ public:
       square_diffImage.convertTo(square_diffImage, CV_32F);
       cv::Scalar sum = cv::sum(square_diffImage);
 
-      mse = (sum.val[0] + sum.val[1] + sum.val[2] + sum.val[3]) / (prev_grey.channels() * prev_grey.total());
+      mse = sum.val[0] / prev_grey.total();
 
       ROS_DEBUG_STREAM("Mean Squared Error of similar images: " << mse << " (threshold: " << threshold << ")");
 
