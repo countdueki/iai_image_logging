@@ -70,7 +70,7 @@ public:
     abs_prev = fabs(ref_euclid_prev - cam_euclid_prev);
     ROS_DEBUG_STREAM("absdiff previous ref and cam vector length = " << abs_prev);
 
-    return (abs_curr < (abs_prev - threshold) || abs_curr > (abs_prev + threshold));
+    return (abs_curr <= (abs_prev - threshold) || abs_curr > (abs_prev + threshold));
   }
 };
 #endif  // IAI_IMAGE_LOGGING_MOTION_DETECTOR_H
