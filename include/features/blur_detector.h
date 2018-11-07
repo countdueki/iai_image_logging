@@ -75,30 +75,30 @@ public:
   }
   bool detectBlur(cv_bridge::CvImageConstPtr msg)
   {
-      double result;
-      cv::Mat input, grey;
+    double result;
+    cv::Mat input, grey;
 
-      input = msg->image;
-      if (input.channels() > 2)
-      {
-          cv::cvtColor(input, grey, CV_BGR2GRAY);
-      }
-      else
-      {
-          grey = input;
-      }
+    input = msg->image;
+    if (input.channels() > 2)
+    {
+      cv::cvtColor(input, grey, CV_BGR2GRAY);
+    }
+    else
+    {
+      grey = input;
+    }
 
-      result = spatialFrequency(grey);
-      blurred = detectBlur(result);
+    result = spatialFrequency(grey);
+    blurred = detectBlur(result);
 
-      return blurred;
+    return blurred;
   }
 
   bool detectBlur(const sensor_msgs::ImageConstPtr& msg)
   {
-      cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(msg);
+    cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(msg);
 
-      return detectBlur(image);
+    return detectBlur(image);
   }
 
   bool detectBlur(const sensor_msgs::CompressedImageConstPtr& msg)

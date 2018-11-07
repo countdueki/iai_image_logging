@@ -18,11 +18,10 @@ void IAISubscriber::destroy()
 
 void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
-
-    ros::Rate r(rate_);
+  ros::Rate r(rate_);
   if (motion_)
   {
-      motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
+    motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
     if (motion_detected_)
     {
       ROS_DEBUG("motion detected");
@@ -77,12 +76,12 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   ros::Rate r(rate_);
   if (motion_)
   {
-      motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
-      if (motion_detected_)
-      {
-          ROS_DEBUG_STREAM("motion detected");
-          return;
-      }
+    motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
+    if (motion_detected_)
+    {
+      ROS_DEBUG_STREAM("motion detected");
+      return;
+    }
   }
   if (blur_)
   {
@@ -129,20 +128,23 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
 
 void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
 {
-    ROS_WARN_STREAM("saving theora image");
+  ROS_WARN_STREAM("saving theora image");
   ros::Rate r(rate_);
   saveTheora(msg);
   r.sleep();
 }
 
-void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg){
-    if (tf_msg_.use_count() == 0){
-        tf_msg_ = msg;
-    } else
-    {
-        tf_msg_prev_ = tf_msg_;
-        tf_msg_ = msg;
-    }
+void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg)
+{
+  if (tf_msg_.use_count() == 0)
+  {
+    tf_msg_ = msg;
+  }
+  else
+  {
+    tf_msg_prev_ = tf_msg_;
+    tf_msg_ = msg;
+  }
 }
 
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
@@ -276,7 +278,7 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
 
 void IAISubscriber::createSubscriber(int mode)
 {
-    tf_sub_ = nh_.subscribe("/tf",1,&IAISubscriber::tfCallback, this);
+  tf_sub_ = nh_.subscribe("/tf", 1, &IAISubscriber::tfCallback, this);
 
   switch (mode)
   {
