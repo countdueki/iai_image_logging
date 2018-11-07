@@ -73,40 +73,39 @@ public:
       ROS_ERROR_STREAM("Error calculating spatial Frequency: " << e.what());
     }
   }
+  bool detectBlur(cv_bridge::CvImageConstPtr msg)
+  {
+      double result;
+      cv::Mat input, grey;
+
+      input = msg->image;
+      if (input.channels() > 2)
+      {
+          cv::cvtColor(input, grey, CV_BGR2GRAY);
+      }
+      else
+      {
+          grey = input;
+      }
+
+      result = spatialFrequency(grey);
+      blurred = detectBlur(result);
+
+      return blurred;
+  }
 
   bool detectBlur(const sensor_msgs::ImageConstPtr& msg)
   {
-    cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(msg);
-    cv::Mat grey;
-    // TODO investigate failure of cvtColor
-    cv::cvtColor(image->image, grey, CV_BGR2GRAY);
+      cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(msg);
 
-    double result = spatialFrequency(grey);
-    blurred = detectBlur(result);
-
-    return blurred;
+      return detectBlur(image);
   }
 
-  bool detectBlur(const sensor_msgs::CompressedImageConstPtr& c_msg)
+  bool detectBlur(const sensor_msgs::CompressedImageConstPtr& msg)
   {
-    double result;
-    cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(c_msg);
+    cv_bridge::CvImageConstPtr image = cv_bridge::toCvCopy(msg);
 
-    cv::Mat grey;
-
-    if (image->image.channels() > 2)
-    {
-      cv::cvtColor(image->image, grey, CV_BGR2GRAY);
-    }
-    else
-    {
-      grey = image->image;
-    }
-
-    result = spatialFrequency(grey);
-    blurred = detectBlur(result);
-
-    return blurred;
+    return detectBlur(image);
   }
 
   bool detectBlur(const double result)
