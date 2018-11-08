@@ -86,7 +86,7 @@ public:
    *
    * @param req Information for the new subscriber
    * @param res success true if successful, false else
-   * @return true, if update was succesfuls, false else
+   * @return true, if update was successful, false else
    */
   bool update(iai_image_logging_msgs::UpdateRequest& req, iai_image_logging_msgs::UpdateResponse& res);
 

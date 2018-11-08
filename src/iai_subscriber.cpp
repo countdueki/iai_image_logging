@@ -149,88 +149,60 @@ void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg)
 
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
-  mongo::BSONObjBuilder document;
-  mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-  document.append("encoding", msg->encoding);
-  document.append("width", msg->width);
-  document.append("height", msg->height);
-  document.append("is_bigendian", msg->is_bigendian);
-  document.append("step", msg->step);
+  mongo::BSONObjBuilder builder;
+  string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
+  string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+  builder.append("header",
+                 BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+  builder.append("encoding", msg->encoding);
+  builder.append("width", msg->width);
+  builder.append("height", msg->height);
+  builder.append("is_bigendian", msg->is_bigendian);
+  builder.append("step", msg->step);
+  builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
-  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-  std::string type(ros::message_traits::DataType<sensor_msgs::Image>::value());
-  document.append("type", type);
-  document.append("size", (int)msg->data.size());
   if (mode_ == RAW)
   {
-    document.append("mode_", "raw");
+    builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                            << "raw"
+                                            << "size" << (int)msg->data.size()));
   }
   else if (mode_ == DEPTH)
   {
-    document.append("mode_", "depth");
+    builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                            << "depth"
+                                            << "size" << (int)msg->data.size()));
   }
 
-  mongo::BSONObjBuilder meta;
-
-  ros::Time now = ros::Time::now();
-  mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
-  meta.append("inserted_at", nowDate);
-
-  meta.append("stored_type", type);
-  meta.append("topic", topic_);
-
-  size_t slashIndex = type.find('/');
-  std::string package = type.substr(0, slashIndex);
-  std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
-  std::string pythonName = package + ".msg._" + name + "." + name;
-  meta.append("stored_class", pythonName);
-
-  document.append("_meta", meta.obj());
-
-  client_connection_->insert(collection_, document.obj());
+  client_connection_->insert(collection_, builder.obj());
 }
 
 void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
 {
   try
   {
-    mongo::BSONObjBuilder document;
-    document.append("iai_id", id_);
-    mongo::Date_t stamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-    document.append("header", BSON("seq" << msg->header.seq << "stamp" << stamp << "frame_id" << msg->header.frame_id));
-    document.append("format", msg->format);
-    document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-    std::string type(ros::message_traits::DataType<sensor_msgs::CompressedImage>::value());
-    document.append("type", type);
-    document.append("size", (int)msg->data.size());
+    mongo::BSONObjBuilder builder;
+    string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
+    string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+    builder.append("header",
+                   BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+    builder.append("format", msg->format);
+    builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
     if (mode_ == COMPRESSED)
     {
-      document.append("mode_", "compressed");
+      builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                              << "compressed"
+                                              << "size" << (int)msg->data.size()));
     }
     else if (mode_ == COMPRESSED_DEPTH)
     {
-      document.append("mode_", "compressed_depth");
+      builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                              << "compressedDepth"
+                                              << "size" << (int)msg->data.size()));
     }
 
-    mongo::BSONObjBuilder meta;
-
-    ros::Time now = ros::Time::now();
-    mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
-    meta.append("inserted_at", nowDate);
-
-    meta.append("stored_type", type);
-    meta.append("topic", topic_);
-
-    size_t slashIndex = type.find('/');
-    std::string package = type.substr(0, slashIndex);
-    std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
-    std::string pythonName = package + ".msg._" + name + "." + name;
-    meta.append("stored_class", pythonName);
-
-    document.append("_meta", meta.obj());
-    client_connection_->insert(collection_, document.obj());
+    client_connection_->insert(collection_, builder.obj());
   }
 
   catch (std::bad_alloc& ba)
@@ -241,44 +213,29 @@ void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstP
 
 void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg)
 {
-  mongo::BSONObjBuilder document;
+  mongo::BSONObjBuilder builder;
 
-  mongo::Date_t timestamp = msg->header.stamp.sec * 1000.0 + msg->header.stamp.nsec / 1000000.0;
-  document.append("header",
-                  BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-  document.append("format", "theora");
-  document.append("start", msg->b_o_s);
-  document.append("end", msg->e_o_s);
-  document.append("position", (int)msg->granulepos);
-  document.append("packetno", (int)msg->packetno);
-  document.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-  string type(ros::message_traits::DataType<theora_image_transport::Packet>::value());
-  document.append("size", (int)msg->data.size());
-  document.append("type", type);
-  document.append("mode_", "theora");
+  string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
+  string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+  builder.append("header",
+                 BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+  builder.append("format", "theora");
+  builder.append("start", msg->b_o_s);
+  builder.append("end", msg->e_o_s);
+  builder.append("position", (int)msg->granulepos);
+  builder.append("packetno", (int)msg->packetno);
+  builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
-  mongo::BSONObjBuilder meta;
+  builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                          << "theora"
+                                          << "size" << (int)msg->data.size()));
 
-  ros::Time now = ros::Time::now();
-  mongo::Date_t nowDate((now.sec * 1000.0) + (now.nsec / 1000000.0));
-  meta.append("inserted_at", nowDate);
-
-  meta.append("stored_type", type);
-  meta.append("topic", topic_);
-
-  size_t slashIndex = type.find('/');
-  std::string package = type.substr(0, slashIndex);
-  std::string name = type.substr(slashIndex + 1, type.length() - slashIndex - 1);
-  std::string pythonName = package + ".msg._" + name + "." + name;
-  meta.append("stored_class", pythonName);
-
-  document.append("_meta", meta.obj());
-  client_connection_->insert(collection_, document.obj());
+  client_connection_->insert(collection_, builder.obj());
 }
 
 void IAISubscriber::createSubscriber(int mode)
 {
-  tf_sub_ = nh_.subscribe("/tf", 1, &IAISubscriber::tfCallback, this);
+  tf_sub_ = nh_.subscribe(tf_msg_str_, 1, &IAISubscriber::tfCallback, this);
 
   switch (mode)
   {

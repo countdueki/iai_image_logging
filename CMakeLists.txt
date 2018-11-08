@@ -11,7 +11,7 @@ find_package(catkin REQUIRED
         image_geometry
         dynamic_reconfigure
         iai_image_logging_msgs
-        mongodb_store
+        libmongocxx_ros
         )
 find_package(Boost COMPONENTS
         unit_test_framework REQUIRED)

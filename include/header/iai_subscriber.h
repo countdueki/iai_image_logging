@@ -9,7 +9,6 @@
 #include <ros/subscribe_options.h>
 #include <ros/callback_queue.h>
 #include <theora_image_transport/Packet.h>
-#include <mongodb_store/message_store.h>
 #include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/Image.h>
 
@@ -19,7 +18,7 @@
 #include "../features/blur_detector.h"
 #include "../features/similarity_detector.h"
 #include "../features/motion_detector.h"
-
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <string>
 
 using ros::Subscriber;
@@ -88,6 +87,7 @@ public:
     motion_ = req.motion;
     blur_ = req.blur;
     similar_ = req.similar;
+    tf_msg_str_ = req.tf_msg_str;
     tf_base_ = req.tf_base;
     tf_camera_ = req.tf_cam;
 
@@ -112,7 +112,7 @@ private:
   SubscribeOptions ops_;
   AsyncSpinner* spinner_;
   DBClientConnection* client_connection_;
-  string topic_, mode_str_, collection_, id_, tf_base_, tf_camera_;
+  string topic_, mode_str_, collection_, id_, tf_msg_str_, tf_base_, tf_camera_;
   tf::tfMessageConstPtr tf_msg_, tf_msg_prev_;
 
 public:
@@ -171,12 +171,6 @@ public:
   bool isSimilar_() const;
 
   void setSimilar_(bool similar_);
-
-  void show(const sensor_msgs::ImageConstPtr& msg);
-
-  void show(const sensor_msgs::CompressedImageConstPtr& msg);
-
-  string addIdentifier(string collection);
 };
 
 #endif  // IAI_IMAGE_LOGGING_STORAGE_SUB_H
