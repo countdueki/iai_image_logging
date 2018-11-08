@@ -102,6 +102,7 @@ void IAIUpdater::mainConfigurationCb(MainConfig& cfg)
 {
   ReconfigureRequest req;
   ReconfigureResponse res;
+/*
   if (cfg.mode == COMPRESSED)
   {
     setCompressedParameters(cfg, req, res);
@@ -118,6 +119,12 @@ void IAIUpdater::mainConfigurationCb(MainConfig& cfg)
   {
     ROS_DEBUG_STREAM("Setting parameters for raw topic_: " << cfg.topic);
   }
+*/
+
+    setCompressedParameters(cfg, req, res);
+    setTheoraParameters(cfg, req, res);
+    setDepthCompressedParameters(cfg, req, res);
+
 }
 
 int main(int argc, char** argv)

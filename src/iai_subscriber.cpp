@@ -63,7 +63,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-    ROS_WARN_STREAM("saving raw image");
+    ROS_DEBUG_STREAM("saving raw image");
     saveImage(msg);
     pub_.publish(msg);
     // show(msg);
@@ -117,7 +117,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   }
   if (!motion_detected_ && !blur_detected_ && !similar_detected_)
   {
-    ROS_WARN_STREAM("saving compressed image");
+    ROS_DEBUG_STREAM("saving compressed image");
     saveCompressedImage(msg);
     pub_.publish(*msg);
     // show(msg);
@@ -128,7 +128,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
 
 void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr& msg)
 {
-  ROS_WARN_STREAM("saving theora image");
+  ROS_DEBUG_STREAM("saving theora image");
   ros::Rate r(rate_);
   saveTheora(msg);
   r.sleep();
@@ -215,7 +215,7 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
 {
   mongo::BSONObjBuilder builder;
 
-  string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
+  string type = ros::message_traits::DataType<theora_image_transport::Packet>::value();
   string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
   builder.append("header",
                  BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
