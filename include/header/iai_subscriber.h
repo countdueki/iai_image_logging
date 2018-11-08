@@ -83,7 +83,8 @@ public:
     topic_ = req.topic;  // concatenate base topic and mode string
     id_ = generateID(req.topic, mode_str_);
     collection_ = req.collection;
-    rate_ = req.rate;
+      rate_ = req.rate;
+      if (req.rate <= 0.0) rate_ = 30.0;
     motion_ = req.motion;
     blur_ = req.blur;
     similar_ = req.similar;
