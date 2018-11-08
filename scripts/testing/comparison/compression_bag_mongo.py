@@ -26,15 +26,13 @@ if __name__ == "__main__":
     format = "jpeg"
     mode = "compressed"
     collection = topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level)
-    insert_1 = subprocess.Popen(["rosrun", "iai_image_logging", "insert.py", "topic="+ topic, "mode=" + mode])
-    mongo_1 = subprocess.Popen(["rosrun",  "dynamic_reconfigure", "dynparam", "set", "/iai_updater",
-                                "{'topic':" + topic + ", 'format':" + format + " , 'jpeg_quality': " + jpeg_quality + "'collection':" + collection + " , 'mode':1}"])
-    rosbag_1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", topic_name + "__"
-                                  + format + "__" + str(jpeg_quality) + "__" + str(png_level),  "--duration=" + str(bag_duration)])
+    insert_1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                                 "{'topic':'" + topic + "', 'format':'" + format + "' , 'jpeg_quality': " + str(jpeg_quality) + ", 'collection':'db." + collection + "' , 'mode':'" + mode + "', 'db_host':'localhost'}"])
+    rosbag_1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", collection,  "--duration=" + str(bag_duration)])
     time.sleep(bag_duration)
 
-    os.kill()
-    os.kill(rosbag_1.pid, signal.SIGTERM)
+    #os.kill(insert_1.pid, signal.SIGTERM)
+    #os.kill(rosbag_1.pid, signal.SIGTERM)
     os.kill(launcher.pid, signal.SIGTERM)
     sys.exit(1)
 

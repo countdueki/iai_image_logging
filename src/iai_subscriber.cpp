@@ -235,7 +235,7 @@ void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg
 
 void IAISubscriber::createSubscriber(int mode)
 {
-  tf_sub_ = nh_.subscribe(tf_msg_str_, 1, &IAISubscriber::tfCallback, this);
+    if (!tf_msg_str_.empty()) tf_sub_ = nh_.subscribe(tf_msg_str_, 1, &IAISubscriber::tfCallback, this);
 
   switch (mode)
   {
