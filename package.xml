@@ -13,16 +13,13 @@
   <build_depend>OpenCV</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>driver_base</build_depend>
-  <build_depend>mongodb_store</build_depend>
-  <build_depend>mongodb_log</build_depend>
-
+  <build_depend>libmongocxx_ros</build_depend>
   <exec_depend>iai_image_logging_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>OpenCV</exec_depend>
   <exec_depend>dynamic_reconfigure</exec_depend>
   <exec_depend>driver_base</exec_depend>
-  <exec_depend>mongodb_store</exec_depend>
-  <exec_depend>mongodb_log</exec_depend>
+  <exec_depend>libmongocxx_ros</exec_depend>
   <export>
   </export>
 </package>

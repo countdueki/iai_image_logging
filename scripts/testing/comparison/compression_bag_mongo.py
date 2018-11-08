@@ -3,32 +3,48 @@ import sys
 import time
 import os
 import signal
+import rospy
+from iai_image_logging_msgs.srv import *
 
-topic = "/camera/rgb/image_raw"
+update = UpdateRequest()
 topic_name = "camera__rgb__image_raw"
-jpeg_quality = 100
-png_level = 9
-format = "jpeg"
-mode = "compressed"
-collection = "db.standard"
+
+update.topic = "/camera/rgb/image_raw"
+update.db_host = "localhost"
+update.jpeg_quality = 100
+update.png_level = 9
+update.format = "jpeg"
+update.mode = "compressed"
+update.collection = "db.one" #""db." + topic_name + "__" + update.mode + "__" + update.format + "__" + "JPEG" + str(update.jpeg_quality) + "__" + "PNG" + str(update.png_level)
+update.tf_msg_str = "/tf"
+update.tf_base = "/whatbase"
+update.tf_cam = "/camtf"
+update.keyframe_frequency = 120
+update.depth_max  = 10.0
+update.depth_quantization = 100.0
+update.target_bitrate = 80000
+update.optimize_for = 1
+update.quality = 34
 
 bag_duration = 10
 
 if __name__ == "__main__":
     launcher = subprocess.Popen(["roslaunch",  "iai_image_logging", "kinect_setup.launch"])
-    time.sleep(bag_duration)
+    time.sleep(5)
 
     # case 1:
-    topic = "/camera/rgb/image_raw"
-    topic_name = "camera__rgb__image_raw"
-    jpeg_quality = 100
-    png_level = 9
-    format = "jpeg"
-    mode = "compressed"
-    collection = topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level)
-    insert_1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-                                 "{'topic':'" + topic + "', 'format':'" + format + "' , 'jpeg_quality': " + str(jpeg_quality) + ", 'collection':'db." + collection + "' , 'mode':'" + mode + "', 'db_host':'localhost'}"])
-    rosbag_1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", collection,  "--duration=" + str(bag_duration)])
+
+    rospy.wait_for_service('iai_configurator/update')
+    try:
+        insertion = rospy.ServiceProxy('iai_configurator/update', Update)
+        result = insertion(update)
+        print(result)
+    except rospy.ServiceException as e:
+        print("Service call failed: %s" % e)
+
+    #insert_1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+    #                             "{'topic':'" + topic + "', 'iai_id':'"+topic_name + "', 'format':'" + format + "' , 'jpeg_quality': " + str(jpeg_quality) + ", 'collection':'db." + collection + "' , 'mode':'" + mode + "', 'db_host':'localhost'}"])
+    #rosbag_1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", collection,  "--duration=" + str(bag_duration)])
     time.sleep(bag_duration)
 
     #os.kill(insert_1.pid, signal.SIGTERM)
