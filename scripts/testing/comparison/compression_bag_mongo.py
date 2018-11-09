@@ -39,94 +39,94 @@ subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
 time.sleep(2)
 print("OK, starting...")
 
-# # jpeg cases
-# print ("Executing jpeg cases")
-# format = "jpeg"
-#
-# # jpeg case 1:
-# jpeg_quality = 100
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_j1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_j1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # jpeg case 2:
-# jpeg_quality = 66
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_j2 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_j2 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # jpeg case 3:
-# jpeg_quality = 33
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_j3 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_j3 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # jpeg case 4:
-# jpeg_quality = 1
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_j4 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_j4 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # png cases
-# print ("Executing png cases")
-# format = "png"
-#
-# # png case 1:
-# png_level = 9
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-#
-# insert_p1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                               "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_p1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # png case 2:
-# png_level = 6
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_p2 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                               "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_p2 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # png case 3:
-# png_level = 3
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_p3 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                               "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_p3 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
-#
-# # png case 4:
-# png_level = 1
-# collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
-#
-# insert_p4 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
-#                               "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
-#
-# rosbag_p4 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
-# time.sleep(bag_duration)
+# jpeg cases
+print ("Executing jpeg cases")
+format = "jpeg"
+
+# jpeg case 1:
+jpeg_quality = 100
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_j1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                             "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_j1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# jpeg case 2:
+jpeg_quality = 66
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_j2 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                             "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_j2 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# jpeg case 3:
+jpeg_quality = 33
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_j3 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                             "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_j3 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# jpeg case 4:
+jpeg_quality = 1
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_j4 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                             "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_j4 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# png cases
+print ("Executing png cases")
+format = "png"
+
+# png case 1:
+png_level = 9
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+
+insert_p1 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_p1 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# png case 2:
+png_level = 6
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_p2 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_p2 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# png case 3:
+png_level = 3
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_p3 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_p3 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
+
+# png case 4:
+png_level = 1
+collection = "db." + topic_name + "__" + mode + "__" + format + "__" + "JPEG" + str(jpeg_quality) + "__" + "PNG" + str(png_level) + "__" + "THEO" + str(quality)
+
+insert_p4 = subprocess.Popen(["rosservice", "call", "/iai_configurator/update",
+                              "{topic: '"+ topic +"', format: '" + format + "', jpeg_quality: " + str(jpeg_quality)+", png_level: "+ str(png_level) +", db_host: '"+ db_host + "', collection: '"+ collection+"', mode: '"+mode+"'}"])
+
+rosbag_p4 =  subprocess.Popen(["rosbag",  "record", topic, "-O", "bag/" +collection[3:],  "--duration=" + str(bag_duration)])
+time.sleep(bag_duration)
 
 # theora cases
 print ("Executing theora cases")

@@ -149,6 +149,7 @@ void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg)
 
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
+    try{
   mongo::BSONObjBuilder builder;
   string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
   string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
@@ -173,7 +174,9 @@ void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
                                             << "depth"
                                             << "size" << (int)msg->data.size()));
   }
-
+}catch (mongo::UserException e){
+    ROS_ERROR_STREAM(e.what());
+}
   client_connection_->insert(collection_, builder.obj());
 }
 
@@ -203,34 +206,34 @@ void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstP
     }
 
     client_connection_->insert(collection_, builder.obj());
-  }
-
-  catch (std::bad_alloc& ba)
-  {
-    ROS_ERROR_STREAM("bad_alloc caught: " << ba.what());
+  }catch (mongo::UserException e){
+      ROS_ERROR_STREAM(e.what());
   }
 }
 
 void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg)
 {
-  mongo::BSONObjBuilder builder;
+    try {
+        mongo::BSONObjBuilder builder;
 
-  string type = ros::message_traits::DataType<theora_image_transport::Packet>::value();
-  string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
-  builder.append("header",
-                 BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-  builder.append("format", "theora");
-  builder.append("start", msg->b_o_s);
-  builder.append("end", msg->e_o_s);
-  builder.append("position", (int)msg->granulepos);
-  builder.append("packetno", (int)msg->packetno);
-  builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+        string type = ros::message_traits::DataType<theora_image_transport::Packet>::value();
+        string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+        builder.append("header",
+                       BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+        builder.append("start", msg->b_o_s);
+        builder.append("end", msg->e_o_s);
+        builder.append("position", (int) msg->granulepos);
+        builder.append("packetno", (int) msg->packetno);
+        builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
-  builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
-                                          << "theora"
-                                          << "size" << (int)msg->data.size()));
+        builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                                << "theora"
+                                                << "size" << (int) msg->data.size()));
 
-  client_connection_->insert(collection_, builder.obj());
+        client_connection_->insert(collection_, builder.obj());
+    }catch (mongo::UserException e){
+        ROS_ERROR_STREAM(e.what());
+    }
 }
 
 void IAISubscriber::createSubscriber(int mode)
