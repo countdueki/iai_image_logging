@@ -225,9 +225,18 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
   ReconfigureRequest req_;
   ReconfigureResponse res_;
 
-  StrParam format;
-  IntParam jpeg, png;
+  StrParam topic, collection, db_host, format;
+  IntParam jpeg, png, mode;
   IntParam optimize_for, keyframe_frequency, quality, target_bitrate;
+
+  topic.name = "topic";
+  topic.value = req.topic;
+
+  collection.name = "collection";
+  collection.value = req.collection;
+
+  db_host.name = "db_host";
+  db_host.value = req.db_host;
 
   format.name = "format";
   format.value = req.format;
@@ -237,6 +246,9 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
 
   png.name = "png_level";
   png.value = req.png_level;
+
+  mode.name = "mode";
+  mode.value = getNumberFromModeString(req.mode);
 
   optimize_for.name = "optimize_for";
   optimize_for.value = req.optimize_for;
@@ -258,7 +270,14 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
   depth_quantization.name = "depth_quantization";
   depth_quantization.value = req.depth_quantization;
 
-  // Set parameters for depth images
+  // Set general parameters
+    req_.config.strs.push_back(topic);
+    req_.config.strs.push_back(collection);
+    req_.config.strs.push_back(db_host);
+    req_.config.ints.push_back(mode);
+
+
+    // Set parameters for depth images
   req_.config.doubles.push_back(depth_max);
   req_.config.doubles.push_back(depth_quantization);
 
