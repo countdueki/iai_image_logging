@@ -13,6 +13,7 @@ void IAISubscriber::start()
 void IAISubscriber::destroy()
 {
   sub_.shutdown();
+  tf_sub_.shutdown();
   // delete this;
 }
 
@@ -65,7 +66,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
     ROS_DEBUG_STREAM("saving raw image");
     saveImage(msg);
-    pub_.publish(msg);
+    //pub_.publish(msg);
     // show(msg);
   }
   r.sleep();
@@ -119,7 +120,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   {
     ROS_DEBUG_STREAM("saving compressed image");
     saveCompressedImage(msg);
-    pub_.publish(*msg);
+    //pub_.publish(*msg);
     // show(msg);
   }
 
@@ -174,10 +175,11 @@ void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
                                             << "depth"
                                             << "size" << (int)msg->data.size()));
   }
-}catch (mongo::UserException e){
-    ROS_ERROR_STREAM(e.what());
-}
+
   client_connection_->insert(collection_, builder.obj());
+    }catch (mongo::UserException e){
+        ROS_ERROR_STREAM(e.what());
+    }
 }
 
 void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)

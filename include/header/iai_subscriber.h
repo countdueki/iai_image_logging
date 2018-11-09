@@ -100,7 +100,7 @@ public:
     // create actual subscriber
     createSubscriber(getNumberFromModeString(mode_str_));
     createPublisher(getNumberFromModeString(mode_str_));
-    ROS_WARN_STREAM("tf topic: " << req.tf_msg_str << " | tf_base: " << tf_base_ << " | tf_cam: " << tf_camera_);
+    ROS_DEBUG_STREAM("tf topic: " << req.tf_msg_str << " | tf_base: " << tf_base_ << " | tf_cam: " << tf_camera_);
   }
   //~IAISubscriber(){};
 
