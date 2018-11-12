@@ -94,6 +94,7 @@ public:
 
     // start condtitions
     prev_image_ = false;
+    prev_tf_ = false;
     motion_detected_ = false;
     blur_detected_ = false;
     similar_detected_ = false;
@@ -121,7 +122,7 @@ public:
 private:
   int mode_;
   double rate_;
-  bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_;
+  bool motion_, blur_, similar_, motion_detected_, blur_detected_, similar_detected_, prev_image_, prev_tf_;
 
   sensor_msgs::ImageConstPtr sim_prev_, sim_curr_;
   sensor_msgs::CompressedImageConstPtr sim_prev_c_, sim_curr_c_;

@@ -25,7 +25,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
     if (motion_detected_)
     {
-      ROS_DEBUG("motion detected");
+      ROS_WARN("motion detected");
       return;
     }
   }
@@ -137,14 +137,15 @@ void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr&
 
 void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg)
 {
-  if (tf_msg_.use_count() == 0)
+  if (prev_tf_)
   {
-    tf_msg_ = msg;
+      tf_msg_prev_ = tf_msg_;
+      tf_msg_ = msg;
   }
   else
   {
-    tf_msg_prev_ = tf_msg_;
-    tf_msg_ = msg;
+      tf_msg_ = msg;
+      prev_tf_ = true;
   }
 }
 

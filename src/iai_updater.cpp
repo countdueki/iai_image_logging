@@ -27,9 +27,9 @@ void IAIUpdater::setCompressedParameters(MainConfig& cfg, ReconfigureRequest req
   png.value = cfg.png_level;
 
   // Set parameters for compressed images
-  if (!format.value.empty()) req.config.strs.push_back(format);
-  if (jpeg.value != 0) req.config.ints.push_back(jpeg);
-  if (png.value != 0) req.config.ints.push_back(png);
+  req.config.strs.push_back(format);
+  req.config.ints.push_back(jpeg);
+  req.config.ints.push_back(png);
   ROS_DEBUG_STREAM("Setting parameters for compressed topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressed/set_parameters", req, res);
 }
@@ -57,10 +57,10 @@ void IAIUpdater::setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, Re
   quality.value = cfg.quality;
 
   // Set parameters for theora video
-  if (optimize_for.value != 0)req.config.ints.push_back(optimize_for);
-  if (keyframe_frequency.value != 0)req.config.ints.push_back(keyframe_frequency);
-  if (quality.value != 0)req.config.ints.push_back(quality);
-  if (target_bitrate.value != 0)req.config.ints.push_back(target_bitrate);
+  req.config.ints.push_back(optimize_for);
+  req.config.ints.push_back(keyframe_frequency);
+  req.config.ints.push_back(quality);
+  req.config.ints.push_back(target_bitrate);
 
   ROS_DEBUG_STREAM("Setting parameters for theora topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/theora/set_parameters", req, res);
@@ -86,9 +86,9 @@ void IAIUpdater::setDepthCompressedParameters(MainConfig& cfg, ReconfigureReques
   depth_quantization.name = "depth_quantization";
   depth_quantization.value = cfg.depth_quantization;
 
-  if (png.value != 0) req.config.ints.push_back(png);
-  if (depth_max.value != 0.0)req.config.doubles.push_back(depth_max);
-  if (depth_quantization.value != 0.0)req.config.doubles.push_back(depth_quantization);
+  req.config.ints.push_back(png);
+  req.config.doubles.push_back(depth_max);
+  req.config.doubles.push_back(depth_quantization);
 
   ROS_DEBUG_STREAM("Setting parameters for compresseDepth topic_ based on: " << cfg.topic);
   ros::service::call(cfg.topic + "/compressedDepth/set_parameters", req, res);

@@ -15,7 +15,7 @@ private:
   double threshold;
 
 public:
-  MotionDetector() : threshold(0.1){};
+  MotionDetector() : threshold(0.01){};
 
   bool detectMotion(const tf::tfMessageConstPtr& tf, tf::tfMessageConstPtr tf_prev, std::string reference,
                     std::string camera)
@@ -31,7 +31,7 @@ public:
         ROS_DEBUG_STREAM("found ref");
         ref_point = tf->transforms.at(i).transform;
       }
-      if (tf->transforms.at(i).header.frame_id.find(camera) != std::string::npos)
+      if (tf->transforms.at(i).child_frame_id.find(camera) != std::string::npos)
       {
         ROS_DEBUG_STREAM("found cam");
 
@@ -55,7 +55,7 @@ public:
         ROS_DEBUG_STREAM("found ref");
         ref_point_prev = tf_prev->transforms.at(i).transform;
       }
-      if (tf_prev->transforms.at(i).header.frame_id.find(camera) != std::string::npos)
+      if (tf_prev->transforms.at(i).child_frame_id.find(camera) != std::string::npos)
       {
         ROS_DEBUG_STREAM("found cam");
 
