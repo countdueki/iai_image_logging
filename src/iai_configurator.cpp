@@ -271,13 +271,12 @@ void IAIConfigurator::updateCamera(iai_image_logging_msgs::UpdateRequest& req,
   depth_quantization.value = req.depth_quantization;
 
   // Set general parameters
-    req_.config.strs.push_back(topic);
-    req_.config.strs.push_back(collection);
-    req_.config.strs.push_back(db_host);
-    req_.config.ints.push_back(mode);
+  req_.config.strs.push_back(topic);
+  req_.config.strs.push_back(collection);
+  req_.config.strs.push_back(db_host);
+  req_.config.ints.push_back(mode);
 
-
-    // Set parameters for depth images
+  // Set parameters for depth images
   req_.config.doubles.push_back(depth_max);
   req_.config.doubles.push_back(depth_quantization);
 

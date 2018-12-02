@@ -83,8 +83,9 @@ public:
     topic_ = req.topic;  // concatenate base topic and mode string
     id_ = generateID(req.topic, mode_str_);
     collection_ = req.collection;
-      rate_ = req.rate;
-      if (req.rate <= 0.0) rate_ = 30.0;
+    rate_ = req.rate;
+    if (req.rate <= 0.0)
+      rate_ = 30.0;
     motion_ = req.motion;
     blur_ = req.blur;
     similar_ = req.similar;
@@ -131,30 +132,83 @@ private:
   MotionDetector motion_detector;
 
 public:
+    /**
+     * Start the Asynchronous spinner for the subscriber
+     */
   void start();
 
+  /**
+   * Shut the subscriber down
+   */
   void destroy();
 
+  /**
+   * Callback method for raw images
+   * @param msg raw image received
+   */
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
+  /**
+   * Callback method for compressed images
+   * @param msg compressed image received
+   */
   void compressedImageCallback(const sensor_msgs::CompressedImageConstPtr& msg);
 
+  /**
+   * Callback method for theora video streams
+   * @param msg theora packet received
+   */
   void theoraCallback(const theora_image_transport::PacketConstPtr& msg);
 
+  /**
+   * Callback method for transforms
+   * @param msg transform received
+   */
   void tfCallback(const tf::tfMessageConstPtr& msg);
 
+  /**
+   * Saves a raw image to the mongoDB
+   * @param msg raw image
+   */
   void saveImage(const sensor_msgs::ImageConstPtr& msg);
 
+  /**
+   * Saves a compressed image to the mongoDB
+   * @param msg compressed image
+   */
   void saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg);
 
+  /**
+   * Saves a theora packet to the mongoDB
+   * @param msg theora packet
+   */
   void saveTheora(const theora_image_transport::PacketConstPtr& msg);
 
+  /**
+   * Creates a subscriber defined by a certain mode.
+   * @param mode raw, compressed, depthCompressed or theora
+   */
   void createSubscriber(int mode);
 
+  /**
+   * Creates a publisher, advertising those images that were saved
+   * @param mode raw, compressed, depthCompressed or theora
+   */
   void createPublisher(int mode);
 
+  /**
+   *  Transforms a mode string to a mode number
+   * @param mode raw, compressed, depthCompressed or theora
+   * @return enum int that represents the compression mode
+   */
   int getNumberFromModeString(string mode);
 
+  /**
+   * Generates a unique ID from topic and mode
+   * @param topic topic used for ID
+   * @param mode_str mode used for ID
+   * @return unique subscriber-ID
+   */
   string generateID(string topic, string mode_str);
 
   const string& getID() const;

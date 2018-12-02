@@ -41,16 +41,18 @@ public:
       cv::Mat dst, grad_x, grad_y, abs_grad_x, abs_grad_y, grad_norm;
       std::vector<double> mean, stddev;
 
-      // cv::Laplacian(img,dst,ddepth, 1, delta,scale, cv::BORDER_DEFAULT);
-
       // Apply Sobel filter on both gradients
       cv::Scharr(img, grad_x, ddepth, 1, 0);
       cv::Scharr(img, grad_y, ddepth, 1, 0);
 
       cv::norm(grad_x, grad_y, cv::NORM_L2);
-      // cv::norm( grad_y, cv::NORM_L2);
 
       cv::addWeighted(grad_x, 0.5, grad_y, 0.5, 0, grad_norm);
+      cv::Mat grad_blur;
+      for (int i = 1; i < 31; i = i + 2)
+      {
+        cv::GaussianBlur(grad_norm, grad_blur, cv::Size(i, i), 0, 0);
+      }
 
       // calculate mean of standard deviations of all channels
       cv::meanStdDev(grad_norm, mean, stddev);
@@ -60,8 +62,6 @@ public:
       }
       stddev_d = stddev_d / stddev.size();
 
-      /* cv::imshow("depth", grad_norm);
-       cv::waitKey();*/
       blur_result = stddev_d;
 
       ROS_DEBUG_STREAM("Sobel filtered stddev of image: " << blur_result << " (threshold: " << threshold << ")");

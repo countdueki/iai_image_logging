@@ -3,7 +3,7 @@
 //
 
 #include "../include/header/iai_subscriber.h"
-
+unsigned int motion_count, blur_count, similar_count;
 void IAISubscriber::start()
 {
   if (spinner_->canStart())
@@ -25,7 +25,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     motion_detected_ = motion_detector.detectMotion(tf_msg_, tf_msg_prev_, tf_base_, tf_camera_);
     if (motion_detected_)
     {
-      ROS_WARN("motion detected");
+      ROS_DEBUG("motion detected");
       return;
     }
   }
@@ -66,8 +66,7 @@ void IAISubscriber::imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
     ROS_DEBUG_STREAM("saving raw image");
     saveImage(msg);
-    //pub_.publish(msg);
-    // show(msg);
+    // pub_.publish(msg);
   }
   r.sleep();
 }
@@ -81,6 +80,8 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
     if (motion_detected_)
     {
       ROS_DEBUG_STREAM("motion detected");
+      motion_count++;
+      ROS_WARN_STREAM("motions detected total: " << motion_count);
       return;
     }
   }
@@ -89,7 +90,9 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
     blur_detected_ = blur_detector.detectBlur(msg);
     if (blur_detected_)
     {
-      ROS_WARN_STREAM("blur detected");
+      ROS_DEBUG_STREAM("blur detected");
+      blur_count++;
+      ROS_WARN_STREAM("blurs detected total: " << blur_count);
       return;
     }
   }
@@ -101,8 +104,10 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
       similar_detected_ = sim_detector.detectMSE(sim_prev_c_, sim_curr_c_);
       if (similar_detected_)
       {
-        ROS_WARN_STREAM("similar image detected");
+        ROS_DEBUG_STREAM("similar image detected");
         sim_prev_c_ = sim_curr_c_;
+        similar_count++;
+        ROS_WARN_STREAM("similar detected total: " << similar_count);
         return;
       }
       else if (!motion_detected_ && !blur_detected_)
@@ -120,8 +125,7 @@ void IAISubscriber::compressedImageCallback(const sensor_msgs::CompressedImageCo
   {
     ROS_DEBUG_STREAM("saving compressed image");
     saveCompressedImage(msg);
-    //pub_.publish(*msg);
-    // show(msg);
+    // pub_.publish(*msg);
   }
 
   r.sleep();
@@ -137,50 +141,55 @@ void IAISubscriber::theoraCallback(const theora_image_transport::PacketConstPtr&
 
 void IAISubscriber::tfCallback(const tf::tfMessageConstPtr& msg)
 {
+  ros::Rate r(rate_);
   if (prev_tf_)
   {
-      tf_msg_prev_ = tf_msg_;
-      tf_msg_ = msg;
+    tf_msg_prev_ = tf_msg_;
+    tf_msg_ = msg;
   }
   else
   {
-      tf_msg_ = msg;
-      prev_tf_ = true;
+    tf_msg_ = msg;
+    prev_tf_ = true;
   }
+  r.sleep();
 }
 
 void IAISubscriber::saveImage(const sensor_msgs::ImageConstPtr& msg)
 {
-    try{
-  mongo::BSONObjBuilder builder;
-  string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
-  string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
-  builder.append("header",
-                 BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-  builder.append("encoding", msg->encoding);
-  builder.append("width", msg->width);
-  builder.append("height", msg->height);
-  builder.append("is_bigendian", msg->is_bigendian);
-  builder.append("step", msg->step);
-  builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
-
-  if (mode_ == RAW)
+  try
   {
-    builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
-                                            << "raw"
-                                            << "size" << (int)msg->data.size()));
-  }
-  else if (mode_ == DEPTH)
-  {
-    builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
-                                            << "depth"
-                                            << "size" << (int)msg->data.size()));
-  }
+    mongo::BSONObjBuilder builder;
+    string type = ros::message_traits::DataType<sensor_msgs::Image>::value();
+    string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+    builder.append("header",
+                   BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+    builder.append("encoding", msg->encoding);
+    builder.append("width", msg->width);
+    builder.append("height", msg->height);
+    builder.append("is_bigendian", msg->is_bigendian);
+    builder.append("step", msg->step);
+    builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
-  client_connection_->insert(collection_, builder.obj());
-    }catch (mongo::UserException e){
-        ROS_ERROR_STREAM(e.what());
+    if (mode_ == RAW)
+    {
+      builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                              << "raw"
+                                              << "size" << (int)msg->data.size()));
     }
+    else if (mode_ == DEPTH)
+    {
+      builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                              << "depth"
+                                              << "size" << (int)msg->data.size()));
+    }
+
+    client_connection_->insert(collection_, builder.obj());
+  }
+  catch (mongo::UserException e)
+  {
+    ROS_ERROR_STREAM(e.what());
+  }
 }
 
 void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstPtr& msg)
@@ -209,39 +218,45 @@ void IAISubscriber::saveCompressedImage(const sensor_msgs::CompressedImageConstP
     }
 
     client_connection_->insert(collection_, builder.obj());
-  }catch (mongo::UserException e){
-      ROS_ERROR_STREAM(e.what());
+  }
+  catch (mongo::UserException e)
+  {
+    ROS_ERROR_STREAM(e.what());
   }
 }
 
 void IAISubscriber::saveTheora(const theora_image_transport::PacketConstPtr& msg)
 {
-    try {
-        mongo::BSONObjBuilder builder;
+  try
+  {
+    mongo::BSONObjBuilder builder;
 
-        string type = ros::message_traits::DataType<theora_image_transport::Packet>::value();
-        string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
-        builder.append("header",
-                       BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
-        builder.append("start", msg->b_o_s);
-        builder.append("end", msg->e_o_s);
-        builder.append("position", (int) msg->granulepos);
-        builder.append("packetno", (int) msg->packetno);
-        builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
+    string type = ros::message_traits::DataType<theora_image_transport::Packet>::value();
+    string timestamp = boost::posix_time::to_iso_string(msg->header.stamp.toBoost());
+    builder.append("header",
+                   BSON("seq" << msg->header.seq << "stamp" << timestamp << "frame_id" << msg->header.frame_id));
+    builder.append("start", msg->b_o_s);
+    builder.append("end", msg->e_o_s);
+    builder.append("position", (int)msg->granulepos);
+    builder.append("packetno", (int)msg->packetno);
+    builder.appendBinData("data", msg->data.size(), mongo::BinDataGeneral, &msg->data[0]);
 
-        builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
-                                                << "theora"
-                                                << "size" << (int) msg->data.size()));
+    builder.append("il_meta", BSON("iai_id" << id_ << "topic" << topic_ << "type" << type << "mode"
+                                            << "theora"
+                                            << "size" << (int)msg->data.size()));
 
-        client_connection_->insert(collection_, builder.obj());
-    }catch (mongo::UserException e){
-        ROS_ERROR_STREAM(e.what());
-    }
+    client_connection_->insert(collection_, builder.obj());
+  }
+  catch (mongo::UserException e)
+  {
+    ROS_ERROR_STREAM(e.what());
+  }
 }
 
 void IAISubscriber::createSubscriber(int mode)
 {
-    if (!tf_msg_str_.empty())  tf_sub_ = nh_.subscribe(tf_msg_str_, 1, &IAISubscriber::tfCallback, this);
+  if (!tf_msg_str_.empty())
+    tf_sub_ = nh_.subscribe(tf_msg_str_, 1, &IAISubscriber::tfCallback, this);
 
   switch (mode)
   {

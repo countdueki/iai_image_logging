@@ -31,9 +31,35 @@ enum
 class IAIUpdater
 {
 public:
+  /**
+   * Set the Parameters for compressed topics
+   * @param cfg Configuration for dynamic reconfiguration
+   * @param req Reconfiguration request
+   * @param res Reconfiguration response
+   */
   static void setCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res);
+
+  /**
+   * Set the Parameters for theora topics
+   * @param cfg Configuration for dynamic reconfiguration
+   * @param req Reconfiguration request
+   * @param res Reconfiguration response
+   */
   static void setTheoraParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res);
+
+  /**
+ * Set the Parameters for compressed depth topics
+ * @param cfg Configuration for dynamic reconfiguration
+ * @param req Reconfiguration request
+ * @param res Reconfiguration response
+ */
   static void setDepthCompressedParameters(MainConfig& cfg, ReconfigureRequest req, ReconfigureResponse res);
+
+  /**
+   * Configuration callback for the dynamic reconfigure server. Handles the update of parameters by calling functions
+   * depending on (compression) mode.
+   * @param cfg Configuration that holds the update information
+   */
   static void mainConfigurationCb(MainConfig& cfg);
 };
 

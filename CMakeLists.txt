@@ -47,33 +47,11 @@ add_executable(iai_configurator
         include/header/iai_configurator.h
         )
 
-add_library(iai_conf_test
-        src/iai_configurator.cpp
-        include/header/iai_configurator.h)
 target_link_libraries(iai_configurator
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
         iai_subscriber
-
         )
-add_executable(conf_test
-
-        test/configurator_test.cpp
-
-        )
-
-target_link_libraries(conf_test
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
-        ${Boost_FILESYSTEM_LIBRARY}
-        ${Boost_SYSTEM_LIBRARY}
-        ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-        iai_conf_test
-
-
-        )
-enable_testing()
-add_test(NAME my_conf_test COMMAND conf_test)
 
 # -- INSTALL -- #
 # add python scripts
